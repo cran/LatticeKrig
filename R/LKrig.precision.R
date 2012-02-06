@@ -1,5 +1,26 @@
+# LatticeKrig  is a package for analysis of spatial data written for
+# the R software environment .
+# Copyright (C) 2012
+# University Corporation for Atmospheric Research (UCAR)
+# Contact: Douglas Nychka, nychka@ucar.edu, 
+# National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with the R software environment if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# or see http://www.r-project.org/Licenses/GPL-2
+
 LKrig.precision <-
-function( LKinfo, return.B=FALSE)
+function( LKinfo, return.B=FALSE, level.index=NA)
 {
    mx<- LKinfo$mx
    my<- LKinfo$my
@@ -9,28 +30,45 @@ function( LKinfo, return.B=FALSE)
      stop("number of levels and mx and my are not consistent")}
    offset<- LKinfo$offset
    alpha<- LKinfo$alpha
-   a.wght<- LKinfo$a.wght 
+   a.wght<- LKinfo$a.wght
+# some checks on arguments
+   if((length(alpha)!= L) |
+      (length(a.wght)!= L)){
+      stop("alpha or a.wght not right length")} 
 # ind holds non-zero indices and ra holds the values   
    ind<- NULL
    ra<-NULL
-# loop over levels the last level might be special ...   
-   for( j in 1:L){
-      delta.temp<- LKinfo$delta[j]
+   da<-rep(0,2)
+   if( is.na( level.index)){     
+# loop over levels this is the normal case 
+     for( j in 1:L){
 # evaluate the H matrix at level j.
-# each row of this matrix has an "a"  on diagonal and
-# -1  for the nearest neighbot basis functions.
-      tempB<-LKrig.MRF.precision(mx[j], my[j],a.wght = a.wght[j], edge=LKinfo$edge)
+# each row of this matrix has an "a.wght[j]"  on diagonal and
+# -1  for the nearest neighbor basis functions.
+# edges handled differently      
+        tempB<-LKrig.MRF.precision(mx[j], my[j],a.wght = a.wght[j], edge=LKinfo$edge)
 # accumulate the new block in the growing matrix.
-#     the indices that are not zero      
-      ind<- rbind( ind, tempB$ind+offset[j])
-#     the values of the matrix at these matrix locations      
-      ra<- c( ra, sqrt(alpha[j])*tempB$ra)   
-    }
+#     for the indices that are not zero      
+        ind<- rbind( ind, tempB$ind+offset[j])
+#     the values of the matrix at these matrix entries     
+        ra<- c( ra, (1/sqrt(alpha[j]))*tempB$ra) # changed
+# increment the dimensions
+        da[1]<- da[1] + tempB$da[1]
+        da[2]<- da[2] + tempB$da[2]
+      }
 # dimensions of the full matrix   
-# coerced to integer in LKrig.setup
-   da<- c( offset[L+1], offset[L+1])
+# should be da after loop
+# check this against indices in LKinfo
+     if( (da[1] != LKinfo$offset[L+1])|(da[2] != LKinfo$offset[L+1]) ){
+       stop("Mismatch of dimension with size in LKinfo")}
 # convert to spam format:
-   temp<-  spind2spam( list( ind= ind, ra=ra, da=da))
+   temp<-  spind2spam( list( ind= ind, ra=ra, da=da))}
+   else{
+      tempB<-LKrig.MRF.precision(mx[level.index], my[level.index],
+                                 a.wght = a.wght[level.index], edge=LKinfo$edge)
+      temp<-  spind2spam( list( ind= tempB$ind, ra=tempB$ra, da=tempB$da))
+    }
+      
    if( return.B){
      return(temp)}
    else{

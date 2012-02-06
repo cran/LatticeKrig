@@ -19,19 +19,19 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-predict.LKrig <-
-function( object, xnew=NULL,Z=NULL,drop.Z=FALSE,...){
-  if( is.null(xnew)){
-    xnew<- object$x}
-  if( is.null(Z)& object$nZ>0){
-    Z<- object$Z} 
-  NG<- nrow( xnew)
-  if( drop.Z|object$nZ==0){
-     temp1<-cbind( rep(1,NG), xnew)%*% object$d.coef[object$ind.drift,]}
-   else{
-     temp1<- cbind( rep(1,NG), xnew,Z)%*% object$d.coef}
-    PHIg<-   LKrig.basis( xnew,object$LKinfo)
-    temp2<- PHIg%*%object$c.coef
-return( temp1 + temp2)
+LKrig.cov.plot<- function( LKinfo, NP=200){
+ grid.info<- LKinfo$grid.info
+ ux<- seq( grid.info$xmin, grid.info$xmax,,NP)
+ uy<- seq( grid.info$ymin, grid.info$ymax,,NP)
+ x1<- cbind( ux,  rep(uy[NP/2], NP) )
+ x2<- cbind( ux[NP/2], uy[NP/2] )
+ d<- c( rdist(x1,x2) )
+# evaluate the covariance from the LKinfo object devised from table
+# to approximate the Matern in the X direction
+ y<-    c( LKrig.cov( x1,x2, LKinfo) ) 
+ x1<- cbind( rep(ux[NP/2], NP), uy)
+ d2<- c( rdist(x1,x2) )
+# same in Y direction    
+ y2<- c( LKrig.cov( x1,x2, LKinfo) )
+ return( list(d= cbind(d,d2), cov=cbind( y,y2) ) )
 }
-

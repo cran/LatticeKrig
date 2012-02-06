@@ -8,7 +8,9 @@ MLE.LKrig<- function(x,y,...,par.grid=NULL, verbose=FALSE){
 # capture arguments that also work for a direct call to LKrig
 # note that  alpha, a.wght and lambda will need to be modified in the
 # actual call as they might be vectors instead of scalars. 
-  LKrig.args<- c(list(x=x, y=y),  list(...)) 
+  LKrig.args<- c(list(x=x, y=y),  list(...))
+  if( verbose){
+    print( names(LKrig.args))}
    if(is.null(par.grid)){
     pg<-as.matrix( expand.grid( LKrig.args$alpha, LKrig.args$a.wght,LKrig.args$lambda))}
   else{
@@ -40,7 +42,7 @@ MLE.LKrig<- function(x,y,...,par.grid=NULL, verbose=FALSE){
   shat.MLE[k] <-out1$shat.MLE
   lnProfileLike[k] <-out1$lnProfileLike
   trA[k] <- out1$trA.est
-  SEtrA[k]<- sd(out1$trA.info)/sqrt(length(out1$trA.info))
+  SEtrA[k]<- sqrt(var(c(out1$trA.info))/ length(out1$trA.info))
   GCV[k]<- out1$GCV
    if(verbose){
      cat("trA", trA[k], fill=TRUE)}

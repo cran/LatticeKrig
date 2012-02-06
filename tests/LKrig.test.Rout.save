@@ -1,5 +1,5 @@
 
-R version 2.13.0 (2011-04-13)
+R version 2.14.0 (2011-10-31)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: i386-apple-darwin9.8.0/i386 (32-bit)
@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 > 
 > library( LatticeKrig)
 Loading required package: spam
-Package 'spam' is loaded. Spam version 0.23-0 (2010-09-01).
+Package 'spam' is loaded. Spam version 0.27-0 (2011-08-17).
 Type demo( spam) for some demos, help( Spam) for an overview
 of this package.
 Help for individual functions is optained by adding the
@@ -36,14 +36,6 @@ The following object(s) are masked from 'package:base':
     backsolve, forwardsolve, norm
 
 Loading required package: fields
- Use help(fields) for an overview of this library
-
-library( fields, keep.source=TRUE) retains comments in the source code.
-
-Copyright 2004-2011, Licensed under GPL, www.gpl.org/licenses/gpl.html 
- help(LKrig) gives an overview 
-
-Copyright 2011, Licensed under GPL, www.gpl.org/licenses/gpl.html 
 > options( echo=FALSE)
 testing:  d from LKrig and by hand
     PASSED test at tolerance  1e-08

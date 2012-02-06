@@ -1,3 +1,4 @@
+% corrections DMH 2/06/2012
 \name{Wendland.basis}
 \alias{Wendland.basis}
 \alias{WendlandFunction}
@@ -15,7 +16,7 @@ WendlandFunction(d)
 
 \arguments{
   \item{x1}{
-   A 2 column matrix of   2-d locations to evaluate the basis functions. Each row of \code{x1} is a 
+   A 2 column matrix of  2-d locations to evaluate the basis functions. Each row of \code{x1} is a 
 location. 
 
 }
@@ -25,9 +26,7 @@ location.
 }
 \item{d}{A vector of distances}
   \item{delta}{
-   A vector of scale parameters for the basis functions  
-
-}
+   A vector of scale parameters for the basis functions. }
   \item{max.points}{
    Maximum number of nonzero entries expected for the returned matrix.}
 
@@ -39,12 +38,12 @@ is often easy to estimate.}
 For debugging, don't evaluate the Wendland just return the pairwise distance matrix.}
 }
 \details{
-This function finds the pairwsie distances between the points x1 and  centers and evaluates a Wendland 
-function at these distances scaled by delta. In most applications delta is constant but a variable delta could be useful for 
+This function finds the pairwise distances between the points x1 and  centers and evaluates a Wendland 
+function at these distances scaled by delta. In most applications delta is constant, but a variable delta could be useful for 
 lon/lat regular grids. The Wendland function is for 2 dimensions and smoothness order 2. See \code{WendlandFunction} for the 
-polynomial form. This code has very simliar function to the fields function \code{wendland.cov}.  
+polynomial form. This code has a very similar function to the fields function \code{wendland.cov}.  
 
-In psudeo R code  for delta a scalar \code{Wendland.basis} evaluates as 
+In pseudo R code  for delta a scalar \code{Wendland.basis} evaluates as 
 \preformatted{
   BigD<- rdist( x1,centers)
   WendlandFunction(BigD/delta)

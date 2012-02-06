@@ -4,6 +4,7 @@
 \alias{LKrig.precision}
 \alias{LKrig.MRF.precision}
 \alias{LKrig.cov}
+\alias{LKrig.cov.plot}
 \alias{LKrig.sim}
 \title{
 Functions for generating a multiresolution, compactly supported basis,  
@@ -21,12 +22,14 @@ These functions support the \code{LKrig} function.  Creates radial
 
 \usage{
 LKrig.setup(x = NULL, NC, grid.info = NULL, nlevel = 1, alpha = 1, 
-              a.wght = NULL, beta = NULL, overlap = 2.5, normalize = TRUE, edge=FALSE) 
+              a.wght = NULL, beta = NULL, overlap = 2.5, normalize = TRUE,
+              edge=TRUE, rho.object = NULL) 
 LKrig.cov(x1, x2 = NULL, LKinfo, C = NA, marginal = FALSE) 
-LKrig.sim(x1, LKinfo, M=1)
+LKrig.cov.plot( LKinfo, NP=200)
+LKrig.sim(x1, LKinfo, M=1,just.coefficients = FALSE)
 LKrig.basis(x1, LKinfo, verbose = FALSE, spam.format = TRUE)
-LKrig.precision(LKinfo, return.B = FALSE)  
-LKrig.MRF.precision(mx,my, a.wght, edge=FALSE) 
+LKrig.precision(LKinfo, return.B = FALSE, level.index=NA)  
+LKrig.MRF.precision(mx,my, a.wght, edge=TRUE) 
 }
 \arguments{
  \item{alpha}{A scalar or vector with the relative weights to give the
@@ -51,11 +54,17 @@ vector or matrix.}
  delta} that specifies the range and spacing for the coarsest level
  grid.}
 
+\item{just.coefficients}{If TRUE just simulates the coefficients from the Markov Random field.}
+
+\item{level.index}{If  \code{NA} then the full precision matrix is found at all 
+levels. Otherwise the precision matrix is found just for the level specified by 
+level.index.}
+
  \item{LKinfo}{A list with components that give the information
   describing a multiresolution basis with a Markov random field used
   for the covariance of the basis coefficients. This list is created
   in \code{LKrig} or by \code{LKrig.setup} and returned in the output
-  object.  (See s.b ection on returned Value below for this list's
+  object.  (See section on returned Value below for this list's
   description.)}
 
 \item{marginal}{If TRUE returns the marginal variance. Currently not
@@ -67,7 +76,7 @@ implemented!}
  directions to determine the basis function centers. If the region is
  square then this will be \code{NC} grid points in each dimension
  giving a total \code{NC^2} grid points/basis functions. }
-
+\item{NP}{Number of grid points to evaluate the covariance function.}
 \item{nlevel}{Number of levels in multiresolution. Note that each
 subsequent level increases in size by a factor of 4= 2x2. }
 
@@ -89,6 +98,10 @@ t(B)\%*\%B }
 
 \item{spam.format}{ If TRUE matrix is returned in sparse matrix
 format.}
+
+
+\item{rho.object}{A prediction object to specify part of the marginal variance for the process.
+If omitted assumed to be the constant one.}
 
 \item{x}{Spatial locations for fitting surface. This is used to
 determine ranges of the grid for basis functions.}
@@ -223,6 +236,8 @@ If \code{C} is passed the result of multiplying the cross covariance matrix time
 
 \code{LKrig.sim} A  matrix with dimensions of \code{nrow(x1)} by \code{M} of simulated values at the locations \code{x1}. 
 
+\code{LKrig.cov.plot}Evaluates the covariance specified in the list LKinfo along the x and y axis as a function of distance from the center of the spatial domain. Note the rectangular extent of the spaial domain is part of the grid information in LKinfo. 
+
 }
 \author{
 Doug Nychka
@@ -232,6 +247,41 @@ Doug Nychka
 LKrig, mKrig, Krig, fastTps, Wendland
 }
 \examples{
+# First a high level example of conditional simulation
+#  --- Monte Carlo estimates of the surface estimates uncertainty
+  data(NorthAmericanRainfall)
+# rename for less typing lambda is approximate MLE 
+# a.wght close to 4 gives spline like model see help(MLE.search.LKrig) for details
+  x<- as.matrix(NorthAmericanRainfall[,c("longitude", "latitude")])
+  y<- log(NorthAmericanRainfall[,c("precip")]) # total precip in 1/10 mm for JJA
+# fit to actual data
+  rain.fit<-LKrig( x,y, NC=100, lambda=.000653392, a.wght=4.001)
+# 75X50 grid centerd on US
+  xg<- make.surface.grid( list( x= seq( -125,-70,,75), 
+                                y= seq(   25, 50,, 50)))
+# predicted surface
+  ghat<-  predict( rain.fit, xg)
+# now generate the error surface 
+# begin block 
+  set.seed(122) # set seed so same results are produced for help file
+  N<- nrow( x)
+  g.full<-LKrig.sim( rbind(x,xg), rain.fit$LKinfo) * sqrt(rain.fit$rho.MLE)
+  g.unconditional.data<- g.full[1:N] 
+  g.unconditional.surface<- g.full[ -(1:N)]
+  y.synthetic.data<- g.unconditional.data +  rain.fit$sigma.MLE* rnorm(length(y))
+  rain.fit.synthetic<- LKrig( x,y.synthetic.data, NC=100, lambda=.000653392, a.wght=4.001)
+  error<-  g.unconditional.surface - predict(  rain.fit.synthetic, xg)
+  g.conditional.draw<- ghat + error
+# end block
+# compare this random draw with the conditional mean
+  set.panel( 2,1)
+  image.plot( as.surface( xg,ghat))
+  world( add=TRUE)
+  image.plot(as.surface( xg,g.conditional.draw)) 
+  world( add=TRUE)
+# repeat simulation block to generate multiple draws
+  set.panel()
+
 # generating a basis on the domain [-1,1] by [-1,1] with 1 level
   ginfo<- list( xmin=-1, xmax=1, ymin=-1, ymax=1, delta= 2/(6-1))
 # this is the same as setting NC=6
@@ -244,28 +294,64 @@ LKrig, mKrig, Krig, fastTps, Wendland
 # using the grid information in an attribute of the grid points ( xg in this case)
   image.plot(as.surface(xg, PHI[,9]))
 #
-# See a more elaborate example at the end that illustrates indexing and 
-#  the basis shapes
+# What does the  LatticeKrig covariance function look like?
+# set up info object
+# number of basis function centers in first level
+# number of levels four in this case:  10*10* ( 1 +4 +16 + 64) total basis functions!
+# effective range scales as roughly kappa where    a.wght =  4 + 1/kappa^2    
+# exponentially increasing weights for the precision matrices.
+# or exponential decreasing marginal variances for the components.
+    NC<- 10 
+    nlevel<- 4
+    a.wght<- rep(  4 + 1/(.5)^2, nlevel)
+    alpha<-  1/2^(0:(nlevel-1)) 
+# the grid object list
+    ginfo2<- list( xmin=-1, xmax=1, ymin=-1, ymax=1, delta= 2/(NC-1))
+# edge= TRUE includes an adjustment for the edges and allows for larger ranges.
+    LKinfo2<- LKrig.setup(grid.info=ginfo2,
+                   nlevel=nlevel, a.wght=a.wght,alpha=alpha,edge=TRUE)
+# evaluate covariance  along the  horizontal line through (0,0) 
+    x2<- cbind( 0,0)
+    x1<-  cbind( seq(-1,1,,200), rep( 0,200))
+    look<- LKrig.cov( x1,x2, LKinfo2)
+#  plot 
+    plot( x1[,1], look, type="l")
 #
-# create four resolution levels of basis functions 
-# take a look at the covariance function 
-  NL<-4
-  a.wght<-  c(rep(4.5,3),10) # cranking up the range!
-  alpha<- c(rep(1,3),.2)
-#  lazy way to add the the grid info just give two points that are the domain corners 
-#  and also NC to define the spacing of basis functions for first level. 
-  xg<- make.surface.grid( list(x=seq(-1,1,,50), y= seq(-1,1,,50)))
-  LKinfo<- LKrig.setup(x=cbind(c(-1,1), c(-1,1)) , NC=8, alpha=alpha, a.wght=a.wght, nlevel=NL)
-  x0<-  cbind( 0,0)
-  hold<-  LKrig.cov(xg,x0,LKinfo )
-  image.plot( as.surface(xg, hold))
-  xline(0, col="magenta") # line for next example
-  title("correlation function with (0,0)")
 #
-# evaluate the covariance along x-axis to reduce number of points.
-  xslice<- cbind( seq(-1,1,,400),0)
-  hold<- LKrig.cov(xslice,x0,LKinfo )
-  plot( xslice[,1], hold, type="l", xlab="X slice through (0,0)", ylab="correlation")
+# full 2-d view of the covariance 
+ x2<- cbind( 0,0)
+ x1<- make.surface.grid( list(x=seq( -1,1,,40),  y=seq( -1,1,,40)))
+ look<- LKrig.cov( x1,x2, LKinfo2)
+ contour( as.surface( x1, look))
+# or to impress:  drape.plot( as.surface(x1,look), col= two.colors(256))
+# Note nearly circular contours.
+# of  course  look[,80/2] should look like plot above.
+#
+set.panel(2,1)
+# a selection of ranges:
+  hold<- matrix( NA, nrow=50, ncol=4)
+  kappa<- seq( .25,1,,4)
+  LKtemp<- LKinfo2
+  x2<- cbind( 0,0)
+  x1<-  cbind( seq(-1,1,,50), rep( 0,50))
+  for( k in 1:4){
+    LKtemp$a.wght<- rep(4  + 1/(kappa[k]^2), 4)
+    hold[,k]<-  LKrig.cov( x1,x2, LKtemp)
+  }
+  matplot( x1[,1], hold, type="l", lty=1, col=rainbow(5), pch=16 )
+
+# a selection of smoothnesses
+  ktemp<- .5 # fix range
+  alpha.power<- seq( 1,4,,4)
+  LKtemp<- LKinfo2
+  for( k in 1:4){
+    LKtemp$a.wght<- rep(4  + 1/(ktemp^2), 4)
+    LKtemp$alpha<-  LKinfo2$alpha^alpha.power[k]
+    hold[,k]<-  LKrig.cov( x1,x2, LKtemp)
+  }
+  matplot( x1[,1], hold, type="l", lty=1, col=rainbow(5) )
+
+  set.panel()
  
 # What does the precision matrix look like at a single level?
 # first make up the B matrix
@@ -297,14 +383,12 @@ set.panel(2,1)
           print(  matrix(Befull[k,], 6,7))}
    for(  k in (1:5)*6 +6){
           print(  matrix(Befull[k,], 6,7))}
-
-   
-set.panel()
+  set.panel()
 # 15 th row of precision matrix also reshaped. 
   Q<- t(Befull)\%*\%Befull  
   image.plot( 1:6, 1:7, matrix( Q[15,], 6,7))
-
 #
+# Simulating the LKrig process
 # simulate 6 realizations of process. 
   out<- LKrig.sim(xg, LKinfo,M=6)
   set.panel(2,3)
@@ -341,6 +425,7 @@ set.panel()
     image.plot(as.surface(xg, PHI[,idlast]))
     points( centers, cex=.2, col="grey")}
 
+  set.panel()
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -1,9 +1,31 @@
+# LatticeKrig  is a package for analysis of spatial data written for
+# the R software environment .
+# Copyright (C) 2012
+# University Corporation for Atmospheric Research (UCAR)
+# Contact: Douglas Nychka, nychka@ucar.edu, 
+# National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with the R software environment if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# or see http://www.r-project.org/Licenses/GPL-2
+
 LKrig <-
 function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
-                        grid.info=NULL, alpha=1.0,a.wght= 5, beta=NULL, nlevel=1,
+                        grid.info=NULL, alpha=1.0, a.wght=NULL, beta=NULL, nlevel=1,
                         iseed=123,NtrA=20,
                         use.cholesky=NULL, return.cholesky=FALSE,
-                        overlap=2.5, normalize=TRUE,edge=FALSE,
+                        overlap=2.5, normalize=TRUE,edge=TRUE,
+                        rho.object=NULL,
                         verbose=FALSE){
 # make sure locations are a matrix and get the rows  
   x<- as.matrix(x)
@@ -20,9 +42,13 @@ function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
 # the following function creates the master list LKinfo
 # if it has not been passed
 # this list describes the multi-resolution covariance model.
+   if( !is.null(beta)){
+    stop("beta parameter has been redefined as a.wght= -1/beta, use this instead")}
   if( is.null(LKinfo)){
-    LKinfo<- LKrig.setup(x,NC, grid.info, nlevel=nlevel,  alpha=alpha, a.wght=a.wght, beta=beta,
-                            overlap=overlap, normalize=normalize, edge=edge)}
+    LKinfo<- LKrig.setup(x,NC, grid.info, nlevel=nlevel,
+                         alpha=alpha, a.wght=a.wght, beta=beta, overlap=overlap,
+                         normalize=normalize, edge=edge,
+                         rho.object=rho.object)}
   if(verbose){
     print(LKinfo)}
 # number of basis functions   
@@ -121,7 +147,7 @@ function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
   wEyhat<-(wT.matrix%*%out3$d.coef + wPHI%*%out3$c.coef) 
   trA.info <- t((wEy *wEyhat)/weights)%*%rep(1,n)
   trA.est <- mean(trA.info)
-  trA.SE  <- sd(trA.info)/ sqrt( length(trA.info))
+  trA.SE  <- sqrt( var(trA.info)/ length(trA.info))
   if(verbose){
     cat("trA.est", trA.est, fill=TRUE)}
 # find the GCV function
@@ -135,7 +161,8 @@ function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
               fitted.values=fitted.values, residuals= residuals,
               LKinfo=LKinfo,
               GCV=GCV, lnProfileLike= out2$lnProfileLike,
-              rho.MLE=out2$rho.MLE, shat.MLE= out2$shat.MLE,lambda=lambda,
+              rho.MLE=out2$rho.MLE, shat.MLE= out2$shat.MLE, sigma.MLE= out2$shat.MLE,
+              lambda=lambda,
               lnDetCov= out2$lnDetCov, quad.form= out2$quad.form,
               trA.info=trA.info, trA.est=trA.est, trA.SE=trA.SE,
               eff.df= trA.est, m=m, lambda.fixed=lambda,
