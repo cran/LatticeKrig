@@ -21,6 +21,8 @@
 
 LKrig.basis <-
 function(x1, LKinfo, verbose = FALSE, spam.format=TRUE){
+  if( verbose){
+    cat("New version of LKrig.basis to save memory", fill=TRUE)}
 # order of Wendland is hardwired
   Korder<- 2
   grid.info<- LKinfo$grid.info
@@ -43,18 +45,20 @@ function(x1, LKinfo, verbose = FALSE, spam.format=TRUE){
 #  the radius basis.delta
       basis.delta<- delta*overlap
 #      
-      PHItemp<-Wendland.basis(x1, centers, basis.delta, max.points = NULL, mean.neighbor = 50,                           just.distance=FALSE)
+      PHItemp<-Radial.basis(x1, centers, basis.delta, max.points = NULL, mean.neighbor = 50,                           just.distance=FALSE, RadialBasisFunction=get(LKinfo$RadialBasisFunction))
        if( normalize){
-         if( LKinfo$a.wght[l]<=4 ){
+         if( any((LKinfo$a.wght)[[l]]  <= 4 ) ){
            stop("Can not normalize with a.wght <= 4")}
-# cholesky of just precision matrix at level l
-         Qc<-  chol( LKrig.precision(LKinfo,level.index=l) )
-         A <- forwardsolve(Qc, transpose = TRUE, t(PHItemp), upper.tri = TRUE)
+
+#  find precision matrix at lewvel alpha without multiplying by 1/alpha         
+         tempB <- LKrig.MRF.precision(LKinfo$mx[l], LKinfo$my[l], 
+            a.wght = (LKinfo$a.wght)[[l]], edge = LKinfo$edge)
+         tempB<- spind2spam(tempB)
+         Q.level<- t(tempB)%*%tempB
+         wght<- LKrig.quadraticform( Q.level, PHItemp) 
          if( nrow(x1)>1){
-           wght<- c(colSums( A**2))
            PHItemp<-diag.spam(1/sqrt(wght))%*%PHItemp}
          else{
-           wght<- sum( A**2)
            PHItemp@entries<- PHItemp@entries/ sqrt(wght)}
         }
 # accumulate new level of basis function.      
@@ -75,3 +79,31 @@ function(x1, LKinfo, verbose = FALSE, spam.format=TRUE){
   return(PHI)
 }
 
+LKrig.quadraticform<- function( Q, PHI){
+#   finds     the quadratic forms    PHI_j^T Q.inverse PHI_j  where PHI_j is the jth row of
+#   PHI. 
+                        nrow<-  dim( PHI)[1]                   
+                        if( nrow>1){
+                          BLOCKSIZE<- 2000
+                          wght<- rep( NA, nrow)
+                          counter<-1 
+                          while( counter< nrow){
+                            ind<- counter: min((counter+BLOCKSIZE), nrow)
+                            A <- forwardsolve(
+                                          l=chol(Q),
+                                          transpose = TRUE, x=t(PHI[ind,]), upper.tri = TRUE)
+                            wght[ind]<- c(colSums( A**2))
+                            counter<- counter + BLOCKSIZE}
+                        }
+#Unfortunately the case when there is one row needs to be handled separately.
+                        else{
+                           A <- forwardsolve(
+                                          l=chol(Q),
+                                          transpose = TRUE, x=t(PHI), upper.tri = TRUE)
+                          wght<- sum( A**2)}                        
+                        return( wght)                                               
+}
+
+
+ 
+  

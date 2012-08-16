@@ -39,17 +39,14 @@ function( x1, x2=NULL, LKinfo, C=NA, marginal=FALSE){
   }
     if (marginal){
       if( !is.null(x2)){
-        stop("x2 should not be passed to find marginal variance")}
-        PHI<- LKrig.basis( x1,LKinfo)
-#        Qc<-  chol( LKrig.precision(LKinfo) )
-#        A <- forwardsolve(Qc, transpose = TRUE, t(PHI), upper.tri = TRUE)
-#        test.variance<- c(colSums( A**2))
-        marginal.variance<- LKrig.quadraticform( LKrig.precision(LKinfo), PHI) 
-        if( LKinfo$scale.basis){
-# add in additional scaling if part of covariance model         
-           marginal.variance<- marginal.variance*predict(LKinfo$rho.object, x1) }
-        return( marginal.variance)
-   }
-# should not get here. 
+      stop("x2 should not be passed to find marginal variance")}
+      Qc<-  chol( LKrig.precision(LKinfo) )
+      PHI<- LKrig.basis( x1,LKinfo)
+      A <- forwardsolve(Qc, transpose = TRUE, t(PHI), upper.tri = TRUE)
+      marginal.variance<-  c(colSums( A**2))     
+      if( LKinfo$scale.basis){
+ # add in additional scaling if part of covariance model         
+         marginal.variance <- marginal.variance*predict(LKinfo$rho.object, x1) }
+      return( marginal.variance)}
 }
 

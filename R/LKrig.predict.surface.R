@@ -19,23 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-predict.LKrig <-
-function( object, xnew=NULL,Znew=NULL,drop.Z=FALSE,...){
-  if( is.null(xnew)){
-    xnew<- object$x}
-  if( is.null(Znew)& object$nZ>0){
-    Znew<- object$Z} 
-  NG<- nrow( xnew)
-# temp1 are predcitions for fixed part of the model
-# with or without the additional covariates, Znew.
-  if( drop.Z|object$nZ==0){
-     temp1<-cbind( rep(1,NG), xnew)%*% object$d.coef[object$ind.drift,]}
-   else{
-     temp1<- cbind( rep(1,NG), xnew,Znew)%*% object$d.coef}
-    PHIg<-   LKrig.basis( xnew,object$LKinfo)
-# temp2 is the nonparametric or component from the spatial process
-# described by the multiresolution basis
-    temp2<- PHIg%*%object$c.coef
-return( temp1 + temp2)
-}
+LKrig.predict.surface <-
+function(object,...){
+  predict.surface( object,...)}
 

@@ -1,5 +1,6 @@
 \name{LKrig.basis}
 \alias{LKrig.basis}
+\alias{LKrig.setup}
 \alias{LKrig.precision}
 \alias{LKrig.MRF.precision}
 \alias{LKrig.cov}
@@ -12,9 +13,9 @@ Functions for generating a multiresolution, compactly supported basis,
 multiresolution covariance functions and simulating from these processes.
 }
 \description{
-These functions support the \code{LKrig} function.  Their main function is to create and evaluate radial
+These functions support the \code{LKrig} function.  Creates radial
  basis functions of varying support on a nested set of regular grids.
- This series of grids form a multiresolution basis.  The Gaussian
+ These series of grids form a multiresolution basis.  The Gaussian
  process model is an expansion in these basis functions where the
  basis coefficients follow a Markov random field model for each
  resolution level.  This family of functions generate the basis using
@@ -22,6 +23,11 @@ These functions support the \code{LKrig} function.  Their main function is to cr
  also simulate realizations of the process.  }
 
 \usage{
+LKrig.setup(x=NULL, NC, nlevel, grid.info=NULL,
+                       lambda=NA, sigma=NA, rho=NA, 
+                       alpha=NA, a.wght=NA, overlap=2.5,
+                       normalize=TRUE, normalize.level=NULL,
+                       edge=TRUE, rho.object=NULL, RadialBasisFunction="WendlandFunction")
 #
 LKrig.cov(x1, x2 = NULL, LKinfo, C = NA, marginal = FALSE) 
 LKrig.cov.plot( LKinfo, NP=200)
@@ -33,9 +39,12 @@ LKrig.MRF.precision(mx,my, a.wght, edge=TRUE)
 LKrig.quadraticform( Q, PHI) 
 }
 \arguments{
+ \item{alpha}{A scalar or vector with the relative weights to give the
+different precision matrices for each level of coefficients.}
 
-\item{a.wght}{A vector that are the weights of the center
-points in the spatial autoregression. The weights should be greater than 4 for
+\item{a.wght}{A scalar or vector that are the weights of the center
+points in the Markov random fields at each level with the 4 nearest
+neighbors given weight -1. The weights should be greater than 4 for
 the fields to be stationary.}
 
 \item{C}{If passed the covariance matrix will be multiplied by this
@@ -43,12 +52,18 @@ vector or matrix.}
 
 \item{edge}{If FALSE no adjustments are made to edges.}
 
-
-\item{grid.list}{Specifies a grid of spatial locations using the  \code{grid.list} format 
-( help(grid.list)). These are the locations used to evaluate the fields generated from 
+\item{grid.info}{A list with components \code{xmin, xmax, ymin, ymax,
+ delta} that specifies the range and spacing for the coarsest level
+ grid.}
+\item{grid.list}{Specifies a grid of spatial locations using the format of a grid.list
+See help(grid.list). These are the locations used to evaluate the fields generated from 
 conditional simulation. The default is to generate an 80X80 grid based on range of the observations.}
 \item{just.coefficients}{If TRUE just simulates the coefficients from the Markov Random field.}
 
+\item{lambda}{The  "noise to signal ratio" or also known as the smoothing parameter it is 
+the parameter  \code{lambda = sigma^2/rho}. If specified the sigma and rho can be found by MLE. If not specified then
+lambda is found sigma and rho. The spatial predicions only depend on lambda and not on sigma and rho separately.}
+ 
 \item{level.index}{If  \code{NA} then the full precision matrix is found at all 
 levels. Otherwise the precision matrix is found just for the level specified by 
 level.index.}
@@ -67,23 +82,42 @@ implemented!}
 \item{my}{Number of grid points in the y dimension.}
 \item{M}{Number of simulated fields.}
  
-
+\item{NC}{Maximum number of grid points in either the x or y
+ directions to determine the basis function centers. If the region is
+ square then this will be \code{NC} grid points in each dimension
+ giving a total \code{NC^2} grid points/basis functions. }
 \item{NP}{Number of grid points to evaluate the covariance function.}
-
+\item{nlevel}{Number of levels in multiresolution. Note that each
+subsequent level increases in size by a factor of 4= 2x2. }
 \item{nx}{Number of rows in default grid to evaluate condtional field}
 \item{ny}{Number of columns in default grid to evaluate condtional field}
 
 \item{obj}{An object returned by \code{LKrig}}
-
-
-\item{PHI}{ A sparse matrix of basis functions (rows index points for evaluation, columns index basis functions}
+\item{overlap}{The amount of overlap between basis functions. If the
+grid spaciing in x and y is \code{delta} then the support of the basis
+functions will be \code{overlap*delta}.  This value is hardwired to
+2.5 in \code{LKrig} and also the default in \code{LKrig.setup}}
+ 
+\item{normalize}{If TRUE this output list argument will indicate the
+basis functions will be normalized to give a marginal variance of
+one.}
+\item{normalize.level}{A logical of length number of multiresolution levels. If TRUE then the 
+process at that level has its basis functions "normalized" to giva a constant marginal variance.
+Default is that all values are TRUE. This experiment argument might be used to avoid normalizing very 
+fine levels that have minimal artifacts and many basis functions to save on computation.}
+\item{PHI}{ A sparse matrix of basis functions (rows points of evaluation, columns index basis functions}
 \item{return.B}{ If TRUE B is returned instead of the precision matrix
 t(B)\%*\%B }
 \item{Q}{A sparse precision matrix}
-
+\item{sigma}{ A scalar, the measurement or nugget standard deviation for observational model.}
 \item{spam.format}{ If TRUE matrix is returned in sparse matrix
 format.}
 
+\item{RadialBasisFunction}{RBF used to generate multiresolution basis.}
+\item{rho.object}{A prediction object to specify part of the marginal variance for the process.
+If omitted assumed to be the constant one.}
+
+\item{rho}{ A scalar, the sill or marginal variance of the process.}
 
 \item{x}{Spatial locations for fitting surface. This is used to
 determine ranges of the grid for basis functions.}
@@ -99,32 +133,28 @@ index the different locations: to be precise \code{x1[i,1:2]} are the
 
 \item{verbose}{If TRUE intermediate steps and information is printed.}
 \item{Z.grid}{The covariates that are assoicated with the x.grid values. This is useful for 
-conditional simulation where the fields are evaluated at x.grid locations and using covariate values Z.grid. Z.grid is matrix with columns indexing the different covariates and rows indexed by the x.grid locations.}
+conditional simulation where the fields are evaluated at x.grid location and using covariate values Z.grid. Z.grid is matrix with columns indexing the different covariates and rows corresponding to the x.grid locations.}
 \item{\dots}{Arguments to be passed to the LKrig function to specify the spatial estimate. These are components in additional to what is in the LKinfo list returned by LKrig.}
-} 
-\details{ The basis functions are two-dimensional radial basis
-functions based on the compactly supported stationary covariance function
-(Wendland covariance) and centered on
-regular grid points with the scaling tied to the grid spacing.
+} \details{ The basis functions are two-dimensional radial basis
+functions based on the Wendland covariance function, centered on
+regular grid points and with the scaling tied to the spacing of the
+grid points.
 
 For a basis at the coarest level, the grid centers are generated by
-expanding the two sequences
-\preformatted{
-seq(grid.info$xmin,grid.info$xmax,grid.info$delta)
-seq(grid.info$ymin,grid.info$ymax,grid.info$delta) 
-}
-into a regular grid of center
+expanding the sequences \code{seq(grid.info$xmin,
+grid.info$xmax,grid.info$delta)} \code{seq(grid.info$ymin,
+grid.info$ymax,grid.info$delta)} into a regular grid of center
 points. The same spacing \code{delta} is used in both directions.  The
 unnormalized basis functions are evaluated at locations \code{x1} by
 finding the pairwise, radial distances among \code{centers} and
 \code{x1}, scaling by \code{grid.info$delta * overlap} and then
-evaluating with the function passed as \code{RadialBasisFunction}. By default this is 
-the 2-d Wendland covariance of order 2.  Perhaps the most
-important point about the \code{LKrig.basis} is that it is designed to return
+evaluating the 2-d Wendland covariance with order 2.  Perhaps the most
+important point about this R-function is that it is designed to return
 a matrix of all basis functions as a sequence of points. There is no
 need to have a function that evaluates basis functions individually.
 In R code for a set of locations \code{x1} and a rectangular spatial
 domain with ranges \code{xmin, xmax, ymin ,ymax}:
+
 \preformatted{
  centers<- expand.grid(seq(xmin,xmax,delta),
                        seq(ymin,ymax,delta) )
@@ -141,7 +171,7 @@ evaluted at each 2-d location.
 The basis functions are then normalized by scaling the basis functions
 at each location so that resulting marginal variance of the process is
 1. This is done to coax the covariance model closer to a stationary
-representation. It is easiest to express this normalization by pseudo
+representation. It is easiest to express this normalization as pseudo
 R code:
 
 If Sigma is the covariance matrix of the basis coefficients  
@@ -154,7 +184,7 @@ The actual code uses the function \code{Wendland.basis} to take
 advantage of some FORTRAN routines and spam functions for creating
 sparse formats. The normalization also uses sparse matrix methods and
 works with the precision matrix of the coefficients instead of the
-covariance and actually finds the marginal variance separately for each multi-resolution level separately. The quadratic form comprising the process
+covariance. Moreover, the quadratic form comprising the process
 variance is more efficiently computed using a Cholesky factorization
 of \code{Q}.
 
@@ -171,33 +201,33 @@ The precision matrix for the basis coefficients at each resolution has
 Below we give more details on how elements are modified for edge
 effects.  Following the notation in Lindgren and Rue a= 4 + k2 with k2
 greater than or equal to 0.  and some schematics for filling in the B
-matrix are given below (values are weights for the SAR on the lattice with 
-a period indicating zero weights).
+matrix are
 \preformatted{
-                                                 __________ 
-   .   -1    .          |  -1    .             |  4+k2  -1
-                        |                      |
-  -1  4+k2  -1          | 4+k2  -1             | -1      .
-                        |                      |
-   .  -1     .          |  -1    .             |  .      .
+
+       -1                -1                    4+k2  -1
+                   
+  -1  4+k2  -1           4+k2  -1               -1
+
+       -1                -1
 
 Interior point        Left edge when           Upper left corner when 
                       edge is FALSE            edge is FALSE
 }
-If \code{edge} is TRUE the edges are weighted to reflect other boundary conditions. 
+ 
 
+If \code{edge} is TRUE the edges are weighted to reflect other boundary conditions. 
 \preformatted{
-                                                 __________ 
-   .   -1    .          |  -.5    .             |  1+k2  -.5
-                        |                       |
-  -1  4+k2  -1          | 2+k2   -1             | -.5     .
-                        |                       |
-   .  -1     .          |  -.5    .             |  .      .
+
+       -1                -.5                    1+k2/4  -.5
+                   
+  -1  4+k2  -1           2+k2/2  -1               -.5
+
+       -1                -.5
 
 Interior point        Left edge when           Upper left corner when 
-                      edge is TRUE             edge is TRUE
+                      edge is TRUE            edge is TRUE
 }
- 
+
 
 
 }
@@ -206,16 +236,15 @@ Interior point        Left edge when           Upper left corner when
 \code{LKrig.basis}
 A matrix with number of rows equal to the rows of \code{x1} and columns equal to the number of 
 basis functions ( LKinfo$m). Attached to the matrix is an  \code{info} attribute that contains the 
-list passed as \code{LKinfo}. Usually this value is in spam sparse matrix format. 
+list passed as \code{LKinfo}. 
 
 \code{LKrig.setup}
-A object of class \code{LKinfo} with components giving the numbers of basis functions at each level and the information to 
-reconstruct the grid for the basis centers. This objects contains the parameters of the Markov random fields and 
-a logical to indicate whether to normalize the basis functions to a constant marginal variance. See help( LKinfo) for the complete description. Note that relatively few
-parameters need to be specified to fit a simple covariance (just \code{x, NC, nlevel, alpha and a.wght}).
+A list with components giving the numbers of basis functions at each level and the information to 
+reconstruct the grid for the basis centers. Also contains the parameters of the Markov random fields and 
+a logical to indicate whether to normalize the basis functions to a constant marginal variance. 
 
-\code{LKrig.precision} For \code{return.B ==FALSE} a sparse, square matrix with dimensions of the number of basis functions. For \code{return.B == TRUE} the "B" SAR matrix is returned. This is useful for checking this function. 
-
+\code{LKrig.precision} A sparse, square matrix with dimensions of the number of basis functions.
+If \code{return.B} is FALSE then this is the  precision matrix for the basis coefficients. 
 
 \code{LKrig.MRF.precision} A sparse square matrix with dimension (mx*my by mx*my)  with a.wght on the diagonal 
 and -1 in the positions for the 4 nearest neighboring points. Note that this matrix has dimensions of the number of grid points/ basis functions  (mx*my by mx*my) -- not  mx x my.  So the indexing of nearest neighbors is a little more complicated that in 1-dimensional grids. 
@@ -281,11 +310,11 @@ LKrig, mKrig, Krig, fastTps, Wendland
 
 
 # What does the  LatticeKrig covariance function look like?
-# set up LKinfo object
-# NC=10 sets the grid for the first level of basis functions
-# NC^2 = 100 grid points in first level if square domain.
-# given four levels the number of basis functions = 10^2 + 19^2 +37^2 + 73^2 = 5329
-# effective range scales as roughly kappa where    a.wght =  4 + kappa^2    
+# set up info object
+# number of basis function centers in first level
+# number of levels four in this case:  10*10* ( 1 +4 +16 + 64) total basis functions!
+# effective range scales as roughly kappa where    a.wght =  4 + 1/kappa^2    
+# exponentially increasing weights for the precision matrices.
 # or exponential decreasing marginal variances for the components.
     NC<- 10 
     nlevel<- 4

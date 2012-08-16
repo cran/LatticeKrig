@@ -29,29 +29,34 @@ function( LKinfo, return.B=FALSE, level.index=NA)
    if(L!= length(my)){
      stop("number of levels and mx and my are not consistent")}
    offset<- LKinfo$offset
-   alpha<- LKinfo$alpha
-   a.wght<- LKinfo$a.wght
+  
 # some checks on arguments
-   if((length(alpha)!= L) |
-      (length(a.wght)!= L)){
-      stop("alpha or a.wght not right length")} 
+   if(  (length(LKinfo$alpha)!= L) |
+       (length(LKinfo$a.wght)!= L) ){
+      stop("number of levels for alpha or a.wght not right length")} 
 # ind holds non-zero indices and ra holds the values   
    ind<- NULL
    ra<-NULL
    da<-rep(0,2)
    if( is.na( level.index)){     
-# loop over levels this is the normal case 
+# loop over levels  
      for( j in 1:L){
 # evaluate the H matrix at level j.
 # each row of this matrix has an "a.wght[j]"  on diagonal and
 # -1  for the nearest neighbor basis functions.
 # edges handled differently      
-        tempB<-LKrig.MRF.precision(mx[j], my[j],a.wght = a.wght[j], edge=LKinfo$edge)
-# accumulate the new block in the growing matrix.
-#     for the indices that are not zero      
+        tempB<-LKrig.MRF.precision(mx[j], my[j], a.wght = (LKinfo$a.wght)[[j]], edge=LKinfo$edge)
+# multiply this block by 1/ sqrt(diag( alpha[[j]]))
+        alpha.level<- (LKinfo$alpha)[[j]]
+        if( length(alpha.level)==1){
+          tempra<- 1/sqrt(alpha.level[1])* tempB$ra }
+        else{
+        rowindices<- tempB$ind[,1]
+        tempra<- 1/sqrt(alpha.level[ rowindices ] )* tempB$ra }
+# accumulate the new block 
+# for the indices that are not zero          
+        ra<- c( ra, tempra) 
         ind<- rbind( ind, tempB$ind+offset[j])
-#     the values of the matrix at these matrix entries     
-        ra<- c( ra, (1/sqrt(alpha[j]))*tempB$ra) # changed
 # increment the dimensions
         da[1]<- da[1] + tempB$da[1]
         da[2]<- da[2] + tempB$da[2]
@@ -59,15 +64,25 @@ function( LKinfo, return.B=FALSE, level.index=NA)
 # dimensions of the full matrix   
 # should be da after loop
 # check this against indices in LKinfo
-     if( (da[1] != LKinfo$offset[L+1])|(da[2] != LKinfo$offset[L+1]) ){
+#     
+   if( (da[1] != LKinfo$offset[L+1])|(da[2] != LKinfo$offset[L+1]) ){
        stop("Mismatch of dimension with size in LKinfo")}
 # convert to spam format:
    temp<-  spind2spam( list( ind= ind, ra=ra, da=da))}
    else{
-      tempB<-LKrig.MRF.precision(mx[level.index], my[level.index],
-                                 a.wght = a.wght[level.index], edge=LKinfo$edge)
-      temp<-  spind2spam( list( ind= tempB$ind, ra=tempB$ra, da=tempB$da))
-    }
+# case to find precision at just one arbitrary level     
+     tempB<-LKrig.MRF.precision(mx[level.index], my[level.index],
+                                 a.wght = (LKinfo$a.wght)[[level.index]], edge=LKinfo$edge)
+            alpha.level<- (LKinfo$alpha)[[level.index]]
+     if( length(alpha.level)==1){
+        tempra<- 1/sqrt(alpha.level[1])* tempB$ra }
+     else{
+        rowindices<- tempB$ind[,1]
+        tempra<- 1/sqrt(alpha.level[ rowindices ] )* tempB$ra
+     }   
+     temp<-  spind2spam( list( ind= tempB$ind, ra=tempra, da=tempB$da) )
+   }
+     
       
    if( return.B){
      return(temp)}

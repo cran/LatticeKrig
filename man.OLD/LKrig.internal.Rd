@@ -1,5 +1,5 @@
 % corrections DMH 2/03/2012
-\name{LKrig Internal}
+\name{LKrig.coef}
 \alias{LKrig.coef}
 \alias{LKrig.lnPlike}
 \alias{LKrig.traceA}
@@ -32,9 +32,9 @@ LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
   \item{Q}{Precision matrix for coefficients.}
 
    \item{residuals}{Residuals from fitting spatial process.}
-  \item{rho}{If lambda is not specified then the value of the  marginal varaince of the process.}
-  \item{sigma}{If lambda is not specified thn the values of the measurement error standard deviation.}
-  \item{wPHI}{Weighted matrix of basis functions. See \code{LKrig} source for construction.}
+  \item{rho}{If lambda is not specified the value of marginal varaince of the process.}
+  \item{sigma}{If lambda is not specified the values of the measurement error standard deviation.}
+  \item{wPHI}{Weighted matrix of basis functions. See \code{LKrig} for construction.}
   
   \item{wT.matrix}{Weighted matrix of fixed part of estimate.}
 
@@ -50,10 +50,10 @@ LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
 \code{LKrig.coef} and \code{LKrig.lnPlike} are two low
 level functions to find the basis function coefficients and to
 evaluate the likelihood. The coefficents ( \code{c.mKrig}) are also found
-because they provide for shortcut formulas for the standard errors and MLE esimates. 
+because the provide short cut formulas for the standard errors and MLE esimates. 
 These coefficients are identical to the basis coefficients (\code{c.coef}) found for usual Kriging in the mKrig function. \code{LKrig.lnPlike} also finds the
 profile MLE of sigma and rho given a fixed value for lambda (and
-\code{alpha} and  \code{a.wght}).  See the source for LKrig and also
+alpha, a.wght).  See the code in LKrig and also
 MLE.LKrig to see how these functions are used.
 
 \code{LKrig.traceA} Finds an estimate of the effective degrees of freedom of the smoothing matrix based a simple Monte Carlo scheme. The smoothing matrix A is the matrix for fixed covariance 
@@ -61,25 +61,26 @@ parameters so that  y.hat = A y, where y.hat are the predicted values at the dat
 trace(A) is the effective degrees of freedom.  If e are iid N(0,1) then the expected value of 
 t(e)\% * \% A \% * \% e is equal to the trace of A. This is the basis for estimating the  trace and the standard error for this estimate is based on \code{NtrA} independent samples. 
  
-\code{dfind2d} is a fast FORTRAN subroutine to find nearest neighbors within a fixed distance and is called by \code{Wendland.basis}. The function \code{dfind3d} is currently not used but is intended for future use to determine chordal distance between points on a sphere or cylinder. 
+\code{dfind2d} is a fast FORTRAN subroutine to find nearest neighbors within a fixed distance and is called by \code{Wendland.basis}. \code{dfind3d} is currently not used but is intended for chordal distance on the sphere. 
 
 }
 \value{
-\code{LKrig.coef} a list with components d.coef the coefficients of the spatial dirft and  for covariates (Z)
-and c.coef the basis function coefficients. The logical vector ind.drift from the LKrig object indicates with components of d.coef are associated with the polynomial spatial drift and which are other fixed spatial covariates. 
+\code{LKrig.coef} a list with components d.coef the coefficients for covariates (Z)
+and c.coef the basis function coefficients.
+See \code{predict.LKrig} for how predicted values are found.
 
 \code{LKrig.lnPlike} has the components:
-\describe{
-\item{lnProfileLike:}{the log likelihood profiled for lambda, alpha and a.wght}
 
- \item{rho.MLE:}{the MLE of rho given lambda, alpha and a.wght}
+ \code{lnProfileLike},  the log likelihood profiled for lambda, alpha and a.wght
 
- \item{shat.MLE:}{ the MLE of sigma given lambda, alpha and a.wght}
+ \code{rho.MLE}, the MLE of rho given lambda, alpha and a.wght
 
- \item{quad.form:}{the quadratic form in the exponent of the multivariate normal likelihood}
+ \code{shat.MLE}, the MLE of sigma given lambda, alpha and a.wght
 
- \item{lnDetCov:}{the log determinant of the covariance matrix in the likelihood}
-}
+ \code{quad.form}, the quadratic form in the exponent of the multivariate normal likelihood 
+
+ \code{lnDetCov}, the log determinant of the covariance matrix in the likelihood.
+
 }
 \author{
 %%  ~~who you are~~

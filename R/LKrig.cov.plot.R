@@ -25,12 +25,13 @@ LKrig.cov.plot<- function( LKinfo, NP=200){
  uy<- seq( grid.info$ymin, grid.info$ymax,,NP)
  x1<- cbind( ux,  rep(uy[NP/2], NP) )
  x2<- cbind( ux[NP/2], uy[NP/2] )
- d<- c( rdist(x1,x2) )
+  d<- c( rdist(x1,x2) )
 # evaluate the covariance from the LKinfo object devised from table
 # to approximate the Matern in the X direction
  y<-    c( LKrig.cov( x1,x2, LKinfo) ) 
  x1<- cbind( rep(ux[NP/2], NP), uy)
  d2<- c( rdist(x1,x2) )
+ 
 # same in Y direction    
  y2<- c( LKrig.cov( x1,x2, LKinfo) )
  return( list(d= cbind(d,d2), cov=cbind( y,y2) ) )

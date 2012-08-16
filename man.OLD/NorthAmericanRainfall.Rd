@@ -6,9 +6,9 @@ Observed North American summer precipitation from the
 historical climate network.
 }
 \description{
-Average rainfall in tenths of millimeters for the months
+Average rainfall in tenth of millimeters for the months
 of June, July and August for the period 1950-2010. Data is based on 
-1720 stations located in North America.
+1720 station located in North America.
 }
 \usage{data(NorthAmericanRainfall)}
 \format{
@@ -26,9 +26,9 @@ If the station is complete, then \code{precip} and \code{precipSE} will just be 
 
 \source{
 The monthly data used to construct this summary was generously provided by Xuebin Zhang, however,
-the orignal source is freely available as the Global Historical Climate Network Version 2 Precipitation
-quality controlled, curated and served by the US National Climatic Data Center (NCDC). 
-The adjusted data from this archive has been modified from its raw form to make the record more homogenous. Heterogenities can come from a variety of sources such as a moving the station a short distance or changes in instruments. See \url{http://www.ncdc.noaa.gov/ghcnm} 
+the orignal source is the freely available as Global Historical Climate Network Version 2 Precipitation
+qualtiy controlled, curated and served by the US National Climatic Data Center (NCDC). 
+The adjusted data has been from this archive has been modified from its raw form to make the record more homogenous. Heterogenities can come from a variety of sources such as a moving the station a short distance or changes in instruments. See \url{http://www.ncdc.noaa.gov/ghcnm} 
 }
 
 \examples{
@@ -37,9 +37,6 @@ x<- cbind(NorthAmericanRainfall$longitude,  NorthAmericanRainfall$latitude)
 y<- NorthAmericanRainfall$precip
 quilt.plot( x,y)
 world( add=TRUE)
-
-Zstat<- NorthAmericanRainfall$trend / NorthAmericanRainfall$trendSE
-quilt.plot( x, Zstat)
 
 }
 \keyword{datasets}

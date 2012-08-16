@@ -1,0 +1,43 @@
+refine.MLE.search.LKrig<- function( GridSearch, Ntries=10,Nstarts=30, inflate=1.2){ 
+  X.current<- GridSearch$par.matrix
+  Y.current<- GridSearch$out[,2]
+  X.temp<- X.current
+  Y.temp<- Y.current
+  nX<- ncol( X.temp)
+# maximize emulator Ntries times evaluating emulator maximu at true likelihood each time
+# and updating the desing points.
+  for ( k in 1:Ntries){
+    obj.like<- Tps( X.temp, Y.temp, m=3, lambda=0)
+    X.temp.range<- apply( X.temp,2, "range")
+    x.scale<-  c((X.temp.range[2,] -  X.temp.range[1,])/2)
+    x.center<- rbind(X.temp[which.max(Y.temp), ])
+#   use Nstarts for initial values of optimization
+    x.start<- LHS( Nstarts,nX,dup=10,x.center,x.scale )
+    optim.par<- matrix( NA, ncol=nX, nrow=Nstarts)
+    optim.value<- rep( NA, Nstarts)
+    for( J in 1:Nstarts){
+     look<- optim( x.start[k,],
+                  function(x){predict( obj.like,rbind(x))},
+                  method="L-BFGS-B",lower=X.temp.range[1,]*inflate,upper= X.temp.range[2,]*inflate,
+                  control=list(fnscale=-1,parscale= x.scale*.05) )
+     optim.par[J,]<- look$par
+     # negative to make this a maximum    
+     optim.value[J]<-look$value}
+     max.ind<-  which.max(optim.value)
+     par.temp<- rbind(optim.par[ max.ind,])
+     cat( par.temp, optim.value[max.ind], fill=TRUE)
+     par.grid.temp<-LKrig.make.par.grid( par.grid.matrix= par.temp, LKinfo=GridSearch$LKinfo.MLE)
+     # note this is very fragile because par.grid.temp is assumed as a passed value name  to par.grid
+     MR.temp<- eval( GridSearch$call)
+     X.temp<- rbind( X.temp, MR.temp$par.matrix)
+     Y.temp<- c( Y.temp,  MR.temp$out[,2])
+  }
+    par.grid.temp<-LKrig.make.par.grid( par.grid.matrix=   rbind(X.temp[ which.max(Y.temp),]),
+                                        LKinfo= GridSearch$LKinfo.MLE)
+    MR.MLE<- eval( GridSearch$call)
+    par.MLE<- MR.MLE$par.MLE
+    LKinfo.MLE<- MR.MLE$LKinfo.MLE
+    return( list( par.MLE=par.MLE,LKinfo.MLE= LKinfo.MLE, lnProfileLike= MR.MLE$out[,2],
+                   MR.MLE= MR.MLE, X.temp= X.temp, Y.temp=Y.temp,  GridSearch=GridSearch) )
+  }                              
+  

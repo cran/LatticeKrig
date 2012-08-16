@@ -23,17 +23,17 @@ Type 'q()' to quit R.
 > 
 > library( LatticeKrig)
 Loading required package: spam
-Package 'spam' is loaded. Spam version 0.27-0 (2011-08-17).
-Type demo( spam) for some demos, help( Spam) for an overview
-of this package.
-Help for individual functions is optained by adding the
-suffix '.spam' to the function name, e.g. 'help(chol.spam)'.
+Spam version 0.29-2 (2012-08-17) is loaded.
+Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+and overview of this package.
+Help for individual functions is also obtained by adding the
+suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
 
 Attaching package: 'spam'
 
 The following object(s) are masked from 'package:base':
 
-    backsolve, forwardsolve, norm
+    backsolve, forwardsolve
 
 Loading required package: fields
 > options( echo=FALSE)
@@ -55,6 +55,17 @@ c from mKrig and from residuals of LatticeKrig (this is big!) edge=TRUE
     PASSED test at tolerance  1e-08
 testing:  d from Lattice Krig and mKrig
     PASSED test at tolerance  1e-08
+    PASSED test at tolerance  1e-08
+testing:  marginal variance
+    PASSED test at tolerance  1e-08
+testing:  spatial alpha cov
+    PASSED test at tolerance  1e-08
+testing:  spatial alpha mar var
+    PASSED test at tolerance  1e-08
+testing:  spatial alpha cov tricksy alpha
+    PASSED test at tolerance  1e-08
+testing:  spatial alpha mar var  tricksy alpha
+    PASSED test at tolerance  1e-08
 testing:  Monte Carlo traces
     PASSED test at tolerance  1e-08
 testing:  predicted values   by hand and  from standard and DRK
@@ -68,7 +79,14 @@ testing:  predicted values LatticeKrig and mKrig
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
+    PASSED test at tolerance  1e-08
 testing:  LatticeKrig and direct test of lnDetCov
+    PASSED test at tolerance  1e-08
+testing:  Det with weights1
+    PASSED test at tolerance  1e-08
+testing:  Det with weights1=2
+    PASSED test at tolerance  1e-08
+testing:  Det with weights3
     PASSED test at tolerance  1e-08
 testing:  lnDetCov for mKrig and LatticeKrig
     PASSED test at tolerance  1e-08
@@ -80,6 +98,8 @@ testing:  Profile Likelihood concentrated on lambda
 testing:  predicted  values mKrig/Krig  w/weights
     PASSED test at tolerance  1e-08
 testing:  compare rhohat for mKrig and Krig with weights
+    PASSED test at tolerance  1e-08
+    PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
 testing:  test of LatticeKrig.coef c

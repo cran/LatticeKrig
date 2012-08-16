@@ -44,9 +44,9 @@ function(x, digits=4, ...){
      c1 <- c(c1, "Number of covariates")
      c2 <- c(c2, x$nZ)}
     if (!is.na(x$eff.df)) {
-        c1 <- c(c1, " Effective degrees of freedom")
+        c1 <- c(c1, " Effective degrees of freedom (EDF)")
         c2 <- c(c2, signif(x$eff.df, digits))
-        c1 <- c(c1, "   Standard Error of estimate: ")
+        c1 <- c(c1, "   Standard Error of EDF estimate: ")
         c2 <- c(c2, signif(x$trA.SE, digits))
     }
     c1 <- c(c1, "Smoothing parameter (lambda)")
@@ -65,14 +65,24 @@ function(x, digits=4, ...){
     dput(x$call)
     print(sum, quote = FALSE)
     cat(" ", fill = TRUE)
-    cat("Covariance Model: Wendland/Lattice", fill = TRUE)
+    cat("Covariance Model: Radial Basis/Lattice", fill = TRUE)
+    cat(" Radial Basis R function: ", LKinfo$RadialBasisFunction, fill=TRUE)
     cat(LKinfo$nlevel, "level(s)", LKinfo$m, " basis functions", fill=TRUE)
     for( k in 1: LKinfo$nlevel){ 
       cat("Lattice level", k,"is ", LKinfo$mx[k],"X",LKinfo$my[k], "spacing", LKinfo$delta[k], fill=TRUE)}
     cat( "Total number of basis functions: ", x$m,  "  with overlap of ", LKinfo$overlap, fill=TRUE)
-    cat("Value(s) for weighting (alpha): ", LKinfo$alpha,fill = TRUE)
-    cat("Value(s) for lattice dependence (a): ", LKinfo$a.wght,fill = TRUE)
-    cat("Equivalent range based on MRF (delta/sqrt(a-4)):",   LKinfo$delta/sqrt(LKinfo$a.wght-4), fill=TRUE)
+    if( length(  LKinfo$alpha[[1]]) ==1){
+    cat("Value(s) for weighting (alpha): ", unlist(LKinfo$alpha),fill = TRUE)}
+    else{
+    cat("alpha values passed as a vector for each level", fill=TRUE)}
+    if( length(  LKinfo$a.wght[[1]]) ==1){
+      a.wght<- unlist( LKinfo$a.wght)
+      cat("Value(s) for lattice dependence (a): ", a.wght,fill = TRUE)
+      cat("Equivalent range based on MRF (delta/sqrt(a-4)):",   LKinfo$delta/sqrt(a.wght-4),
+         fill=TRUE)
+    }
+    else{
+      cat("Value(s) for weighting in GMRF (a.wght): ", unlist(LKinfo$alpha),fill = TRUE)} 
     if( LKinfo$normalize){
       cat("Basis functions normalized so marginal process variance is stationary", fill=TRUE)}
     if(LKinfo$edge){

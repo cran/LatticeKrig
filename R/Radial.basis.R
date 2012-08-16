@@ -19,8 +19,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-Wendland.basis <- function(x1, center, delta, max.points = NULL, mean.neighbor = 50,
-                                  just.distance=FALSE){
+Radial.basis <- function(x1, center, delta, max.points = NULL, mean.neighbor = 50,
+                                  just.distance=FALSE, RadialBasisFunction="WendlandFunction"){
     
     d <- ncol(x1)
     n1 <- nrow(x1)
@@ -51,7 +51,7 @@ Wendland.basis <- function(x1, center, delta, max.points = NULL, mean.neighbor =
       return( out)}
     else{
 # evaluate distance  with Wendland 2.2
-      out@entries<- WendlandFunction(out@entries/delta[out@colindices])
+      out@entries<- do.call(RadialBasisFunction,list(d=out@entries/delta[out@colindices]) )
      return(out)}
 }
 

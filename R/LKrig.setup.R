@@ -20,13 +20,14 @@
 # or see http://www.r-project.org/Licenses/GPL-2
 
 LKrig.setup <-
-function(x=NULL,NC,grid.info=NULL, nlevel=1,
-                       alpha=1,a.wght=NULL, beta=NULL, overlap=2.5, normalize=TRUE,
-            edge=TRUE, rho.object=NULL){
+function(x=NULL, NC, nlevel, grid.info=NULL,
+                       lambda=NA, sigma=NA, rho=NA, 
+                       alpha=NA, a.wght=NA, overlap=2.5,
+                       normalize=TRUE, normalize.level=NULL,
+                       edge=TRUE, rho.object=NULL, RadialBasisFunction="WendlandFunction"){
 #
 # determines the multiresolution basis function indices.
 #
-  
   if( is.null(grid.info)){
     if( is.null(x)){
       stop("need to specify x locations")}
@@ -51,40 +52,58 @@ function(x=NULL,NC,grid.info=NULL, nlevel=1,
   mx[1]<- length( grid.list$x)
   my[1]<- length( grid.list$y)
   delta.save[1]<- delta
-    if( nlevel >1){
+ 
+  grid<- list(grid.list)
+# loop through levels doubling the grid resolution  
+  if( nlevel >1){
       for( j in 2:nlevel){     
         delta<- delta/2
         delta.save[j]<- delta
         grid.list<- list( x= seq( grid.info$xmin, grid.info$xmax,delta),
                     y= seq( grid.info$ymin, grid.info$ymax,delta))
+        grid<- c(grid, list(grid.list))
         mx[j]<- length( grid.list$x)
         my[j]<- length( grid.list$y)      
       }    
     }
   offset<- as.integer( c( 0, cumsum(mx*my)))
-  # Check that either beta or a.wght are specified, if a.wght is not specified,
-  # derive it from beta, if a.wght is specified, ignore beta
-  if( is.null(a.wght)){
-     stop(" a.wght needs to be specified.")}
-  if( !is.null(beta)){
-    stop("beta parameter has been redefined as a.wght= -1/beta, use this instead")
+# repeat a.wght to fill out for all levels. 
+  if( length(a.wght)==1){
+    a.wght<- as.list( rep(a.wght[1],nlevel)) }
+# coerce a.wght to  list  if it is passed as something else (most likely a vector)
+  if( !is.list(a.wght)){
+    a.wght<- as.list(a.wght)}
+# some checks on a.wght
+  a.wght.test<- unlist( a.wght)
+  if( any( !is.na(a.wght.test)) ){
+     if( any( a.wght.test<4)){              
+         stop("a.wght must be >=4 if specified")}
+     if( any(a.wght.test==4)&normalize){
+         stop("normalize must be FALSE if a.wght ==4")}
   }
-  if( any( a.wght <4)){
-     stop("a.wght must be >=4")}
-  if( any(a.wght==4)&normalize){
-    stop("normalize must be FALSE if a.wght ==4")}
-  if( length(a.wght)!=nlevel){
-    a.wght<- rep( a.wght[1], nlevel)}
-  if( length(alpha)!=nlevel){
-    alpha<- rep( alpha[1], nlevel)} 
+# coerce alpha to a list if it is passed as something else
+  if( !is.list( alpha)){
+    alpha<- as.list( alpha)}
+    scalar.alpha <- length(unlist(alpha)) == length( alpha)
+# Check some details about scaling the basis functions and how they are
+# normalized
   scale.basis<- !is.null(rho.object)
   if( scale.basis & !normalize){
     stop("Can not scale an unnormalized basis")}
-  
-  list( mx=mx, my=my,nlevel=nlevel,delta= delta.save,m= sum( mx*my),
-                 offset=offset,grid.info= grid.info,
-                 overlap=overlap, alpha=alpha, a.wght=a.wght, beta=beta,
-                 normalize=normalize, edge=edge,
-                 scale.basis=scale.basis, rho.object=rho.object)
+  if( is.null(normalize.level)){
+     normalize.level= rep( normalize, nlevel)}
+# set lambda if sigma and rho are passed. 
+  if(is.na(lambda[1])){
+    lambda<- sigma^2/ rho}
+# 
+  out<- list( mx=mx, my=my,nlevel=nlevel,delta= delta.save,m= sum( mx*my),
+                 offset=offset,grid.info= grid.info, grid= grid,
+                 overlap=overlap, alpha=alpha, a.wght=a.wght,
+                 lambda= lambda, sigma=sigma, rho=rho,
+                 normalize=normalize,normalize.level=normalize.level, edge=edge,
+                 scalar.alpha=scalar.alpha,
+                 scale.basis=scale.basis, rho.object=rho.object, RadialBasisFunction=RadialBasisFunction)
+  class(out)<-"LKinfo"
+  return( out)
 }
 

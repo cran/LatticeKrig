@@ -20,42 +20,47 @@
 # or see http://www.r-project.org/Licenses/GPL-2
 
 LKrig <-
-function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
-                        grid.info=NULL, alpha=1.0, a.wght=NULL, beta=NULL, nlevel=1,
+function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,
+                        LKinfo=NULL, 
                         iseed=123,NtrA=20,
-                        use.cholesky=NULL, return.cholesky=FALSE,
+                        use.cholesky=NULL, return.cholesky=TRUE,
+                        NC, nlevel, a.wght, alpha, lambda=NA, sigma=NA,
+                        rho=NA,  rho.object=NULL,
                         overlap=2.5, normalize=TRUE,edge=TRUE,
-                        rho.object=NULL,
+                        RadialBasisFunction="WendlandFunction",
                         verbose=FALSE){
 # make sure locations are a matrix and get the rows  
   x<- as.matrix(x)
   n<- nrow(x)
   if (any(duplicated(cat.matrix(x)))) 
         stop("locations are not unique see help(LKrig) ")
+# save seed if random number generation happening outside LKrig
+ 
+# if LKinfo is missing create it from passed arguments
+   if( is.null(LKinfo)){
+     LKinfo<- LKrig.setup(x,NC, nlevel=nlevel, lambda=lambda,sigma=sigma, rho=rho, 
+                         alpha=alpha, a.wght=a.wght, overlap=overlap,
+                         normalize=normalize, edge=edge,RadialBasisFunction= RadialBasisFunction,
+                         rho.object=rho.object)}
+# older code make pass LKinfo but leave out lambda here is a fix for that.   
+   if( !is.na( lambda) ){
+          LKinfo$lambda<- lambda}
 # makes sure there are no missing values
   if(!is.null(y)){
-    if (any(is.na(y))) 
-      stop("Missing values in y should be removed")}
+  if(any(is.na(y))) 
+    stop("Missing values in y should be removed")}
 # make sure covariate is a matrix  
-   if(!is.null(Z)){
-      Z<- as.matrix(Z)}
-# the following function creates the master list LKinfo
-# if it has not been passed
-# this list describes the multi-resolution covariance model.
-   if( !is.null(beta)){
-    stop("beta parameter has been redefined as a.wght= -1/beta, use this instead")}
-  if( is.null(LKinfo)){
-    LKinfo<- LKrig.setup(x,NC, grid.info, nlevel=nlevel,
-                         alpha=alpha, a.wght=a.wght, beta=beta, overlap=overlap,
-                         normalize=normalize, edge=edge,
-                         rho.object=rho.object)}
-  if(verbose){
+  if(!is.null(Z)){
+    Z<- as.matrix(Z)}
+  lambda= LKinfo$lambda
+  if( verbose){
+    cat("lambda",  lambda, fill=TRUE)  
     print(LKinfo)}
 # number of basis functions   
-   m<-  LKinfo$m
+  m<-  LKinfo$m
 # grid dimensions
-   mx<- LKinfo$mx
-   my<- LKinfo$my
+  mx<- LKinfo$mx
+  my<- LKinfo$my
 #  basis.delta<- overlap*delta
 # weighted observation vector  
   wy<- sqrt(weights)*y
@@ -69,8 +74,7 @@ function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
 # and multiplied by square root of diagonal weight matrix  
 # this can be a large matrix if not encoded in sparse format.
   wS<-  diag.spam(sqrt( weights))
- 
-  wPHI<-wS%*%LKrig.basis(x,LKinfo)
+  wPHI<-wS%*%LKrig.basis(x,LKinfo, verbose=verbose)
   if(verbose){
     cat("spam class and dim for wPHI", fill=TRUE)
     print( is.spam(wPHI))
@@ -81,17 +85,15 @@ function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
 
 # variational matrix used to find coefficients of fitted surface and evaluate
   
-############################################################################################
-# this is the regularized regression matrix that is the key to the entire algorithm:
-########################################################################################
   if(verbose){
     cat("spam class and dim for Q", fill=TRUE)
     print( is.spam(Q))
     print( dim( Q))}
+############################################################################################
+# this is the regularized regression matrix that is the key to the entire algorithm:
+########################################################################################
   M<- t(wPHI)%*% wPHI + lambda*(Q)
   nzero <- length(M@entries)
-#                            PC ERROR Message: Error in eval.with.vis(expr, envir, enclos) : 
-#                           get slot "entries" from an object of a basic class ("matrix") with no slots
   if(verbose){
     cat("Number of nonzero elements:", nzero, fill=TRUE)}
 #  
@@ -119,58 +121,48 @@ function( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,NC,lambda, LKinfo=NULL,
 #    # first check that it might be from the same
 #    if( sum( temp@colindices - use.cholesky@colindices)!=0){
 #      stop("use.cholesky not the same sparse pattern as  t(wPHI)%*% wPHI + lambda*(Q) ")}
-    Mc<-update.spam.chol.NgPeyton(use.cholesky, M)}
- 
-# If this is just to set up calculations return the intermediate results
-# this list is used in MLE.LKrig
-  out1<- LKrig.coef( Mc, wPHI, wT.matrix, wy, lambda)
+  Mc<-update.spam.chol.NgPeyton(use.cholesky, M)}
+# use Mc to find coefficients of estimate   
+  out1<- LKrig.coef( Mc, wPHI, wT.matrix, wy, lambda,weights)
   if( verbose){
     cat("d.coef", out1$d.coef, fill=TRUE)}
-  fitted.values<- (wT.matrix%*%out1$d.coef + wPHI%*%out1$c.coef)/sqrt(weights)
-  residuals<- y- fitted.values
-
-  out2<-LKrig.lnPlike(Mc, Q, y,lambda,residuals, weights)
-# save seed if random number generation happening outside LKrig
-  if(exists(".Random.seed",1)){
-    save.seed<- .Random.seed}
-  else{
-    save.seed <- NA} 
-    if( !is.na(iseed)){
-      set.seed(iseed)}
-# generate N(0,1)  
-  wEy<- matrix( rnorm( NtrA*n), n,NtrA)*sqrt(weights)
-# restore seed   
-   if( !is.na(iseed) & !is.na(save.seed[1])){
-         assign(".Random.seed",save.seed, pos=1)}
-#  
-  out3<- LKrig.coef( Mc, wPHI, wT.matrix, wEy, lambda)
-  wEyhat<-(wT.matrix%*%out3$d.coef + wPHI%*%out3$c.coef) 
-  trA.info <- t((wEy *wEyhat)/weights)%*%rep(1,n)
-  trA.est <- mean(trA.info)
-  trA.SE  <- sqrt( var(trA.info)/ length(trA.info))
-  if(verbose){
-    cat("trA.est", trA.est, fill=TRUE)}
-# find the GCV function
-  GCV=  (sum(weights*(residuals)^2)/n )  /( 1- trA.est/m)^2
-   if(verbose){
-    cat("GCV", GCV, fill=TRUE)}
-# the output object
-# note the ifelse switch whether to return the big cholesky decomposition  
-  object<-list(x=x,y=y,weights=weights, Z=Z,
-              d.coef=out1$d.coef, c.coef=out1$c.coef,
-              fitted.values=fitted.values, residuals= residuals,
+# partially fill object list with some components
+  object<-list(x=x,y=y,weights=weights, Z=Z,nZ=nZ,ind.drift=ind.drift,
               LKinfo=LKinfo,
-              GCV=GCV, lnProfileLike= out2$lnProfileLike,
-              rho.MLE=out2$rho.MLE, shat.MLE= out2$shat.MLE, sigma.MLE= out2$shat.MLE,
-              lambda=lambda,
-              lnDetCov= out2$lnDetCov, quad.form= out2$quad.form,
-              trA.info=trA.info, trA.est=trA.est, trA.SE=trA.SE,
-              eff.df= trA.est, m=m, lambda.fixed=lambda,
-              nonzero.entries=nzero,spatialdriftorder=2,nt=nt, 
-              nZ=nZ,ind.drift=ind.drift,  # What is m? Now m_old?
-              call=match.call())
+              lambda=lambda, sigma=sigma,rho=rho)
+# add in components from coefficient estimates  
+  object<- c( object, out1)
+#  
+  fitted.values<- predict.LKrig( object, x, Znew= object$Z) 
+# For reference:  fitted.values<- (wT.matrix%*%out1$d.coef + wPHI%*%out1$c.coef)/sqrt(weights)
+  residuals<- y- fitted.values
+  out2<-LKrig.lnPlike(Mc, Q, y, lambda, residuals, weights, sigma, rho)
+  object<- c( object, out2)
+  if( verbose){
+    cat("ln ProfileLike", out2$lnProfileLike, fill=TRUE)}
+# estimate trace by Monte Carlo if NtrA greater than zero  
+  if( NtrA>0){
+    out3<- LKrig.traceA(  Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed)
+# find GCV
+    out3$GCV = (sum(weights * (residuals)^2)/n)/(1 - out3$trA.est/n)^2
+  }
+  else{
+    out3<- list( trA.est= NA, trA.SE=NA, GCV=NA)}
+  object<- c( object, out3)
+#  
+  if(verbose){
+    print(out3)
+  }  
+#  
+# the output object
+# note the if else switch whether to return the big cholesky decomposition  
+  object<-c( object, list(
+                         fitted.values=fitted.values, residuals= residuals,
+                         m=m, lambda.fixed=lambda,
+                         nonzero.entries=nzero,spatialdriftorder=2,nt=nt, eff.df=out3$trA.est,
+                         call=match.call()))
   if( return.cholesky){
-     object$Mc <-Mc}
+     object$Mc <-Mc }
 # set the class and return.  
   class(object)<- "LKrig"
   return(object)

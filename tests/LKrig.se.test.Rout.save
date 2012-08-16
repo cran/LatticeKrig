@@ -1,0 +1,55 @@
+
+R version 2.14.0 (2011-10-31)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: i386-apple-darwin9.8.0/i386 (32-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> # fields, Tools for spatial data
+> # Copyright 2004-2011, Institute for Mathematics Applied Geosciences
+> # University Corporation for Atmospheric Research
+> # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
+> 
+> library(LatticeKrig)
+Loading required package: spam
+Spam version 0.29-2 (2012-08-17) is loaded.
+Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+and overview of this package.
+Help for individual functions is also obtained by adding the
+suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
+
+Attaching package: 'spam'
+
+The following object(s) are masked from 'package:base':
+
+    backsolve, forwardsolve
+
+Loading required package: fields
+> options( echo=FALSE)
+testing:  comparing predicted values LKrig and mKrig
+    PASSED test at tolerance  1e-08
+testing:  comparing SE values LKrig and mKrig equal weights
+    PASSED test at tolerance  1e-08
+testing:  sanity for SE Krig and mKrig equal weights
+    PASSED test at tolerance  1e-08
+testing:  sanity for SE Krig and mKrig unequal weights
+    PASSED test at tolerance  1e-08
+testing:   SE LKrig and mKrig unequal weights
+    PASSED test at tolerance  1e-08
+testing:  check on SE values with drop.Z=FALSE
+    PASSED test at tolerance  1e-08
+testing:  check on SE values with drop.Z=TRUE
+    PASSED test at tolerance  1e-08
+All done with SE tests TRUE> 
+> 
