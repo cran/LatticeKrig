@@ -88,7 +88,8 @@ LKrig.MRF.precision <- function(mx, my, a.wght, stationary = TRUE,
     #  specified.
     #
     ######################################################################
-    
+    #catch edge == TRUE
+    if( edge){ stop("edge correction not supported")}
     # Total number of lattice points.
     m <- mx * my
     cylinder <- (distance.type == "cylinder")
@@ -98,8 +99,7 @@ LKrig.MRF.precision <- function(mx, my, a.wght, stationary = TRUE,
     dim.a.wght <- dim(a.wght)
     constant.a.wght <- stationary
     # figure out if just a single a.wght or matrix is passed
-    first.order <- ifelse(constant.a.wght, length(a.wght) == 
-        1, length(dim.a.wght) == 2)
+    first.order <-  (( length(a.wght) == 1)|( length(dim.a.wght) == 2)) 
     # order of neighbors and center
     index <- c(5, 4, 6, 2, 8, 3, 9, 1, 7)
     # dimensions of precision matrix
@@ -156,55 +156,6 @@ LKrig.MRF.precision <- function(mx, my, a.wght, stationary = TRUE,
     #  index<- c( 5,4,6,2,8,3,9,1,7)
     #  lab2<- lab; lab2[index]<- lab; matrix( lab2, 3,3)
     #  temp<- matrix( Bj,ncol=5+4); for(  k in 1:9){ cat(lab[k], fill=TRUE);print( t( matrix(temp[,k],mx,my))[my:1,])}
-    #
-    ####################
-    ###### block for edge correction
-    if (edge) {
-        # reformat kappa2 so that it is easier to index edges
-        kappa2 <- (a.wght - 4)
-        kappa2 <- matrix(kappa2, mx, my)
-        # fix up boundaries with edge corrections
-        # orientation use row/column as spatial locations
-        if (!cylinder) {
-            # Order for first 5 indices is: center, top, bottom, left right
-            # fill in  order lower left, lower right, upper left, upper right
-            ra[1, 1, 1:5] <- c(1 + kappa2[1, 1]/4, -0.5, NA, 
-                NA, -0.5)
-            ra[mx, 1, 1:5] <- c(1 + kappa2[mx, 1]/4, -0.5, NA, 
-                -0.5, NA)
-            ra[1, my, 1:5] <- c(1 + kappa2[1, my]/4, NA, -0.5, 
-                NA, -0.5)
-            ra[mx, my, 1:5] <- c(1 + kappa2[mx, my]/4, NA, -0.5, 
-                -0.5, NA)
-            # edges
-            # lower then upper
-            for (i in 2:(mx - 1)) {
-                ra[i, 1, 1] <- c(2 + kappa2[i, 1]/2)
-                ra[i, 1, 2:5] <- c(-0.5, NA, -1, -1)
-                ra[i, my, 1] <- c(2 + kappa2[i, my]/2)
-                ra[i, my, 2:5] <- c(NA, -0.5, -1, -1)
-            }
-            #   left side   then right side
-            for (j in 2:(my - 1)) {
-                ra[1, j, 1] <- c(2 + kappa2[1, j]/2)
-                ra[1, j, 2:5] <- c(-1, -1, NA, -0.5)
-                ra[mx, j, 1] <- c(2 + kappa2[mx, j]/2)
-                ra[mx, j, 2:5] <- c(-1, -1, -0.5, NA)
-            }
-        }
-        else {
-            # handle edges for cylinder
-            for (i in 1:(mx)) {
-                ra[i, 1, 1] <- c(2 + kappa2[i, 1]/2)
-                ra[i, 1, 2:5] <- c(-0.5, NA, -1, -1)
-                ra[i, my, 1] <- c(2 + kappa2[i, my]/2)
-                ra[i, my, 2:5] <- c(NA, -0.5, -1, -1)
-            }
-        }
-    }
-    ##############################
-    #  end edge correction block
-    ###############################
     #
     # find all cases that are in lattice
     good <- !is.na(Bj)

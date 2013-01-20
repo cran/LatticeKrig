@@ -25,22 +25,20 @@ y<- y[1:20]
                return.cholesky=TRUE)
   obj2<- mKrig( x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
                       cov.args=list( LKinfo=obj1$LKinfo), NtrA=20, iseed=122)
+  obj3<- Krig( x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
+                      cov.args=list( LKinfo=obj1$LKinfo) )
   test.for.zero( obj1$fitted.values, obj2$fitted.values,
                   tag="comparing predicted values LKrig and mKrig")
-  test2.se<-predict.se.mKrig( obj2, x[1:3,])
-  test1.se<- predict.se.LKrig( obj1,  x[1:3,])
-  test.for.zero( test1.se,test2.se,
+  test.for.zero( obj1$fitted.values, obj3$fitted.values,
+                  tag="comparing predicted values LKrig and Krig")
+             
+  test3.se<-predictSE( obj3, x[1:3,])
+  test2.se<-predictSE.mKrig( obj2, x[1:3,])
+  test1.se<- predictSE.LKrig( obj1,  x[1:3,])
+  test.for.zero( test1.se, test2.se,
                   tag="comparing SE values LKrig and mKrig equal weights")
-#### sanity check that mKrig is giving right SEs
-#### test against Krig is persuasive as it uses a different and more direct method for
-#### computing SE
-   obj0<- Krig(  x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
-                      cov.args=list( LKinfo=obj1$LKinfo))
-   obj0$best.model[2]<- obj2$shat.MLE^2
-   obj0$best.model[3]<- obj2$rho.MLE
-   test0.se<- predict.se.Krig( obj0, x[1:3,])
- test.for.zero( test0.se,test1.se,
-                  tag="sanity for SE Krig and mKrig equal weights")
+  test.for.zero( test1.se, test3.se, 
+                  tag="comparing SE values LKrig and Krig equal weights")
 
 ###########################
 ##### weighted case
@@ -54,9 +52,9 @@ y<- y[1:20]
                        weights=weights)
  obj0<- Krig(  x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
                       cov.args=list( LKinfo=obj1$LKinfo), weights=weights)
- test0.se<- predict.se.Krig( obj0, x[1:3,])
- test1.se<- predict.se.LKrig( obj1,  x[1:3,])
- test2.se<-predict.se.mKrig( obj2, x[1:3,])
+ test0.se<- predictSE.Krig( obj0, x[1:3,])
+ test1.se<- predictSE.LKrig( obj1,  x[1:3,])
+ test2.se<-predictSE.mKrig( obj2, x[1:3,])
  test.for.zero( test0.se,test1.se,
                   tag="sanity for SE Krig and mKrig unequal weights")
  test.for.zero( test1.se,test2.se,
@@ -71,12 +69,12 @@ Z<- runif(20)
                return.cholesky=TRUE, weights=weights, Z=Z)
  obj0<- Krig(  x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
                       cov.args=list( LKinfo=obj1$LKinfo), weights=weights, Z=Z)
-  test0<- predict.se( obj0, drop.Z=FALSE, Z=Z)
-  test1<- predict.se( obj1, drop.Z=FALSE, Z=Z)
+  test0<- predictSE( obj0, drop.Z=FALSE, Z=Z)
+  test1<- predictSE( obj1, drop.Z=FALSE, Z=Z)
   test.for.zero( test0, test1, tag="check on SE values with drop.Z=FALSE")
 #
-  test0<- predict.se( obj0, drop.Z=TRUE)
-  test1<- predict.se( obj1, drop.Z=TRUE)
+  test0<- predictSE( obj0, drop.Z=TRUE)
+  test1<- predictSE( obj1, drop.Z=TRUE)
   test.for.zero( test0, test1, tag="check on SE values with drop.Z=TRUE")
 
 cat("All done with SE tests", fil=TRUE)

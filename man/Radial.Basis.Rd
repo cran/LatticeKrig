@@ -1,4 +1,23 @@
-% corrections DMH 2/06/2012
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2012
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
+% # Modified DH Dec 2013
+% Earlier modifications DH 2/06/2012
+
+
 \name{Radial.basis}
 \alias{Radial.basis}
 \alias{LKrig.cyl}
@@ -19,55 +38,74 @@ WendlandFunction(d)
 }
 
 \arguments{
-  \item{x1}{
-   A 2 column matrix of  2-d locations to evaluate the basis functions. Each row of \code{x1} is a 
-location. 
 
-}
-  \item{centers}{
-   A two column matrix specifying the basis function centers.
+\item{x1}{A 2 column matrix of 2-d locations to evaluate the basis
+functions. Each row of \code{x1} is a location.}
 
-}
-\item{d}{A vector of distances}
-  \item{delta}{
-   A vector of scale parameters for the basis functions. }
-  \item{max.points}{
-   Maximum number of nonzero entries expected for the returned matrix.}
+\item{centers}{A two column matrix specifying the basis function
+centers.}
 
-\item{distance.type}{The distance metric. See the entry in \code{LKrig} for details.}
+\item{d}{A vector of distances.}
 
-  \item{mean.neighbor}{
-   Average number of centers that are within delta of each x1 location. For centers on a regular grid this
-is often easy to estimate.}
+\item{delta}{A vector of scale parameters for the basis functions. }
 
-  \item{just.distance}{
-For debugging, don't evaluate the RBF just return the pairwise distance matrix.}
+\item{max.points}{Maximum number of nonzero entries expected for the
+returned matrix.}
+
+\item{distance.type}{The distance metric. See the entry in
+\code{LKrig} for details.}
+
+\item{mean.neighbor}{Average number of centers that are within delta
+of each x1 location. For centers on a regular grid this is often easy
+to estimate.}
+
+\item{just.distance}{For debugging, don't evaluate the RBF just return
+the pairwise distance matrix.}
+
 \item{R}{Radius used for cylinder coordinates.}
-\item{RadialBasisFunction}{The positive definite kernel used to generate the basis. The assumption is that this
-will take a nonnegative  argument and be zero outside [0,1].}
-\item{U}{A two column matrix with giving the locations in cylindrical coordiates. 
-First column is the angle in degrees and second column is the height.}
+
+\item{RadialBasisFunction}{The positive definite kernel used to
+generate the basis. The assumption is that this will take a
+nonnegative argument and be zero outside [0,1].}
+
+\item{U}{A two column matrix giving the locations in cylindrical
+coordinates.  First column is the angle in degrees and second column is
+the height.}
+
 }
 \details{
-This function finds the pairwise distances between the points x1 and  centers and evaluates the
-function RadialBasisFunction at these distances scaled by delta. In most applications delta is constant, but a variable delta could be useful for 
-lon/lat regular grids. The Wendland function is for 2 dimensions and smoothness order 2. See \code{WendlandFunction} for the 
-polynomial form. This code has a very similar function to the fields function \code{wendland.cov}.  
 
-In pseudo R code  for delta a scalar \code{Wendland.basis} evaluates as 
+This function finds the pairwise distances between the points x1 and
+centers and evaluates the function RadialBasisFunction at these
+distances scaled by delta. In most applications delta is constant, but
+a variable delta could be useful for lon/lat regular grids. The
+Wendland function is for 2 dimensions and smoothness order 2. See
+\code{WendlandFunction} for the polynomial form. This code has a very
+similar function to the fields function \code{wendland.cov}.
+
+In pseudo R code for delta a scalar \code{Wendland.basis} evaluates as
+
 \preformatted{
   BigD<- rdist( x1,centers)
   WendlandFunction(BigD/delta)
 }
-The actual code uses a FORTRAN subroutine to search over distances less than delta and also returns the 
-matrix in sparse format. 
 
-The function \code{LKrig.cyl} transforms coodinates on a cylinder, e.g. lon/lat when taken as a Mercator projection, and returns the 3-d coordinates. It is these 3-d coordinates that used to find distances to define the radial basis functions. For points that are close this "chordal" type distance will be close to the
-geodesic distance on a cylinde but not identical. 
+The actual code uses a FORTRAN subroutine to search over distances
+less than delta and also returns the matrix in sparse format.
+
+The function \code{LKrig.cyl} transforms coordinates on a cylinder,
+e.g. lon/lat when taken as a Mercator projection, and returns the 3-d
+coordinates. It is these 3-d coordinates that are used to find distances
+to define the radial basis functions. For points that are close this
+"chordal" type distance will be close to the geodesic distance on a
+cylinder but not identical.
+
 }
 \value{
-For \code{Wendland.basis} a matrix in sparse format with number of rows equal to nrow(x1) and
-columns equal to nrow(center).
+
+For \code{Wendland.basis} a matrix in sparse format with number of
+rows equal to nrow(x1) and columns equal to nrow(center).
+
 }
 \author{
 Doug Nychka

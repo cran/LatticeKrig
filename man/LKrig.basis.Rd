@@ -1,8 +1,28 @@
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2012
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
+% # Modified DH Dec 2013
+
 \name{LKrig.basis}
 \alias{LKrig.basis}
 \alias{LKrig.precision}
 \alias{LKrig.MRF.precision}
 \alias{LKrig.cov}
+\alias{LKrig.normalize.basis}
+\alias{LKrig.normalize.basis.fast}
 \alias{LKrig.cov.plot}
 \alias{LKrig.quadraticform}
 \alias{LKrig.spind2spam}
@@ -11,87 +31,122 @@ Functions for generating a multiresolution, compactly supported basis,
 multiresolution covariance functions and simulating from these processes.
 }
 \description{
-These functions support the \code{LKrig} function.  Their main function is to create and evaluate radial
- basis functions of varying support on a nested set of regular grids.
- This series of grids form a multiresolution basis.  The Gaussian
- process model is an expansion in these basis functions where the
- basis coefficients follow a Markov random field model for each
- resolution level.  This family of functions generate the basis using
- sparse matrices, evaluate the covariance function of the process and
- also simulate realizations of the process. \code{LKrig.cov.plot} is a useful function to get a 
-quick plot of the covariance function impled by a LatticeKrig specification.}
+These functions support the \code{LKrig} function.  Their main
+function is to create and evaluate radial basis functions of varying
+support on a nested set of regular grids.  This series of grids forms
+a multiresolution basis.  The Gaussian process model is an expansion
+in these basis functions where the basis coefficients follow a Markov
+random field model for each resolution level.  This family of
+functions generate the basis using sparse matrices, evaluate the
+covariance function of the process and also simulate realizations of
+the process. \code{LKrig.cov.plot} is a useful function to get a quick
+plot of the covariance function implied by a LatticeKrig
+specification.}
 
 \usage{
 #
 LKrig.cov(x1, x2 = NULL, LKinfo, C = NA, marginal = FALSE) 
 LKrig.cov.plot( LKinfo, NP=200, center = NULL, xlim = NULL, ylim = NULL)
 LKrig.basis(x1, LKinfo, verbose = FALSE, spam.format = TRUE)
-LKrig.precision(LKinfo, return.B = FALSE, level.index=NA)  
-LKrig.MRF.precision(mx,my, a.wght, stationary=TRUE, edge=FALSE, distance.type="Euclidean")
+LKrig.precision(LKinfo, return.B = FALSE, level.index=NA, verbose=FALSE)  
+LKrig.MRF.precision(mx,my, a.wght, stationary=TRUE, edge=FALSE,
+                        distance.type="Euclidean")
+LKrig.normalize.basis(Level, LKinfo, PHI)
+LKrig.normalize.basis.fast(Level, LKinfo, x )
 LKrig.quadraticform( Q, PHI) 
-LKrig.spind2spam(obj,add.zero.rows=TRUE)
+LKrig.spind2spam(obj, add.zero.rows=TRUE)
 }
-\arguments{
-\item{add.zero.rows}{If TRUE the conversion of the sparse matrix ot spam format will have at least one element in each row. If there are no elements explicitly given in \code{obj} then a element with value zero is added. This techincal detail is needed to accomodate the spam format for sparse matrices.}
 
-\item{a.wght}{A scalar, vector or list that specifies the weights of the center
-points and possibly the neighbor weights in the spatial autoregression. In the
-simplest model a.wght is a scalar and is used at all levels and at all lattice points. For this case  THE weights for four nearest neighbors have weight -1 and so a.wght should be greater than 4 for the fields to be stationary.}
+\arguments{
+
+\item{add.zero.rows}{If TRUE the conversion of the sparse matrix to
+spam format will have at least one element in each row. If there are
+no elements explicitly given in \code{obj} then a element with value
+zero is added. This technical detail is needed to accomodate the spam
+format for sparse matrices.}
+
+\item{a.wght}{A scalar, vector or list that specifies the weights of
+the center points and possibly the neighbor weights in the spatial
+autoregression. In the simplest model a.wght is a scalar and is used
+at all levels and at all lattice points. For this case the weights for
+four nearest neighbors have weight -1 and so a.wght should be greater
+than 4 for the fields to be stationary.}
 
 \item{C}{If passed the covariance matrix will be multiplied by this
 vector or matrix.}
 
-\item{center}{The point in the spatial domain that used to evalute the covariance function. The evalution is 
-done on a x and y transects through the spatial domain intersecting at \code{center} and finding the covariance 
-with respect to this point. If NULL defaults to the cneter of the spatial domain.}
+\item{center}{The point in the spatial domain that is used to evalute the
+covariance function. The evalution is done on x and y transects
+through the spatial domain intersecting at \code{center} and finding
+the covariance with respect to this point. If NULL defaults to the
+center of the spatial domain.}
 
-\item{distance.type}{The distance metric used. See doc entry under \code{LKrig}. }
+\item{distance.type}{The distance metric used. See doc entry under
+\code{LKrig}. }
 
-\item{edge}{If FALSE no adjustments are made to weights on edges.}
+\item{edge}{If FALSE no adjustments are made to weights on
+edges. edge==TRUE at this time will generate an error because edge
+corrections are not supported.}
 
+\item{Level}{The level of multiresolution.}
 
-\item{level.index}{If  \code{NA} then the full precision matrix is found at all 
-levels. Otherwise the precision matrix is found just for the level specified by 
-level.index.}
+\item{level.index}{If \code{NA} then the full precision matrix is
+found at all levels. Otherwise the precision matrix is found just for
+the level specified by level.index.}
 
- \item{LKinfo}{A list with components that give the information
-  describing a multiresolution basis with a Markov random field used
-  for the covariance of the basis coefficients. This list is created
-  in \code{LKrig} or by \code{LKrig.setup} and returned in the output
-  object.  (See section on returned Value below for this list's
-  description.)}
+\item{LKinfo}{A list with components that give the information
+describing a multiresolution basis with a Markov random field used for
+the covariance of the basis coefficients. This list is created in
+\code{LKrig} or by \code{LKrig.setup} and returned in the output
+object.  (See section on returned Value below for this list's
+description.)}
 
 \item{marginal}{If TRUE returns the marginal variance. Currently not
 implemented!}
-\item{mx}{Number of grid points in x dimension.}
 
-\item{my}{Number of grid points in the y dimension.}
+\item{mx}{Number of grid/lattice points in x dimension.}
 
-\item{NP}{Number of points to evlaute the covariance function along each transect of the spatial domain.}
-\item{obj}{An object returned by \code{LKrig} or a sparse matrix in row/column format passed to \code{LKrig.spind2spam}}
+\item{my}{Number of grid/lattice points in the y dimension.}
 
+\item{NP}{Number of points to evaluate the covariance function along
+each transect of the spatial domain.}
 
-\item{PHI}{ A sparse matrix of basis functions (rows index points for evaluation, columns index basis functions}
+\item{obj}{An object returned by \code{LKrig} or a sparse matrix in
+row/column format passed to \code{LKrig.spind2spam}.}
+
+\item{PHI}{ A sparse matrix of basis functions (rows index points for
+evaluation, columns index basis functions).}
+
 \item{return.B}{ If TRUE B is returned instead of the precision matrix
-t(B)\%*\%B }
-\item{Q}{A sparse precision matrix}
+t(B)\%*\%B.}
+
+\item{Q}{A sparse precision matrix.}
 
 \item{spam.format}{ If TRUE matrix is returned in sparse matrix
 format.}
-\item{stationary}{ If TRUE the precision matrix uses the same values of a.wght for each lattice point and its neighbors.}
 
-  \item{x1}{ A two column matrix of 2-dimension locations to evaluate
+\item{stationary}{ If TRUE the precision matrix uses the same values
+of a.wght for each lattice point and its neighbors.}
+
+\item{x}{A two column matrix of 2-dimension locations to evaluate
+basis functions.}
+
+\item{x1}{A two column matrix of 2-dimension locations to evaluate
 basis functions or the first set of locations to evaluate the
 covariance function or the locations for the simulated process.  Rows
 index the different locations: to be precise \code{x1[i,1:2]} are the
 "x" and "y" coordinates for the \code{i} th location. }
 
 \item{x2}{Second set of locations to evaluate covariance function.}
-\item{xlim}{Limits in x coordinate  for evaluating the covariance model. Default is the 
-spatial domain.}
-\item{ylim}{Limits in y coordinate  for evaluating the covariance model.Default is the 
-spatial domain.}
-\item{verbose}{If TRUE intermediate steps and information is printed.}
+
+\item{xlim}{Limits in x coordinate for evaluating the covariance
+model. Default is the spatial domain.}
+
+\item{ylim}{Limits in y coordinate for evaluating the covariance
+model.Default is the spatial domain.}
+
+\item{verbose}{If TRUE intermediate steps and other debugging
+information are printed.}
 
 } 
 \details{ The basis functions are two-dimensional radial basis
@@ -105,24 +160,26 @@ expanding the two sequences
 seq(grid.info$xmin,grid.info$xmax,grid.info$delta)
 seq(grid.info$ymin,grid.info$ymax,grid.info$delta) 
 }
-into a regular grid of center
-points. The same spacing \code{delta} is used in both directions.  The
-unnormalized basis functions are evaluated at locations \code{x1} by
-finding the pairwise, radial distances among \code{centers} and
-\code{x1}, scaling by \code{grid.info$delta * overlap} and then
-evaluating with the function passed as \code{RadialBasisFunction}. By default this is 
-the 2-d Wendland covariance of order 2.  Perhaps the most
-important point about the \code{LKrig.basis} is that it is designed to return
-a matrix of all basis functions as a sequence of points. There is no
-need to have a function that evaluates basis functions individually.
-In R code for a set of locations \code{x1} and a rectangular spatial
-domain with ranges \code{xmin, xmax, ymin ,ymax}:
+into a regular grid of center points. The same spacing \code{delta} is
+used in both directions.  The unnormalized basis functions are
+evaluated at locations \code{x1} by finding the pairwise, radial
+distances among \code{centers} and \code{x1}, scaling by
+\code{grid.info$delta * overlap} and then evaluating with the function
+passed as \code{RadialBasisFunction}. By default this is the 2-d
+Wendland covariance of order 2.  Perhaps the most important point
+about the \code{LKrig.basis} is that it is designed to return a matrix
+of all basis functions as a sequence of points. There is no need to
+have a function that evaluates basis functions individually.  In R
+code for a set of locations \code{x1} and a rectangular spatial domain
+with ranges \code{xmin, xmax, ymin ,ymax}:
+
 \preformatted{
  centers<- expand.grid(seq(xmin,xmax,delta),
                        seq(ymin,ymax,delta) )
  bigD<- rdist( x1, centers)/(delta*2.5)
  PHI<- Wendland.function( bigD)
 } 
+
 Note that there will be \code{nrow(centers)} basis functions generated
 where the precise number depends on the range of the domain and the
 choice of delta. The basis functions are indexed by the columns in
@@ -136,19 +193,26 @@ at each location so that resulting marginal variance of the process is
 representation. It is easiest to express this normalization by pseudo
 R code:
 
-If Sigma is the covariance matrix of the basis coefficients  
+If \code{Q} is the precision matrix of the basis coefficients then 
+in R/LatticeKrig code:
 \preformatted{
-process.variance <- diag(PHI\%*\% Sigma \%*\%t(PHI) )
-PHI.normalized <-  diag( 1/sqrt(process.variance)) \%*\% PHI
+Omega<-  solve(Q)
+process.variance <- diag(PHI\%*\% Omega \%*\%t(PHI) )
+PHI.normalized <-  diag(1/sqrt(process.variance)) \%*\% PHI
 }
+where \code{Omega} is the unnormalized covariance matrix of the basis
+function coefficients.
 
-The actual code uses the function \code{Wendland.basis} to take
-advantage of some FORTRAN routines and spam functions for creating
-sparse formats. The normalization also uses sparse matrix methods and
-works with the precision matrix of the coefficients instead of the
-covariance and actually finds the marginal variance separately for each multi-resolution level separately. The quadratic form comprising the process
-variance is more efficiently computed using a Cholesky factorization
-of \code{Q}.
+Although accurate, the code above is not an efficient algorithm to
+compute the unnormalized process variance.  First the normalization
+can be done level by level rather than dealing with the entire
+multiresolution process at once. Also it is important to work with the
+precision matrix rather than the covariance.  The function
+\code{LKrig.normalize.basis} takes advantage of the sparsity of the
+precision matrix for the coefficients and
+\code{LKrig.normalize.basis.fast} is a more efficient version when
+a.wght is constant for a given level and takes advantage of the
+Kronecker structure on the precision matrix at each level.
 
 The precision matrix for the basis coefficients at each resolution has
  the form \code{t(B)\%*\% B}. These matrices for the individual levels
@@ -160,11 +224,12 @@ The precision matrix for the basis coefficients at each resolution has
  diagonal elements have the value \code{a.wght} and the first order
  neighbors have the value -1.
 
-Below we give more details on how elements are modified for edge
-effects.  Following the notation in Lindgren and Rue a.wght= 4 + k2 with k2
-greater than or equal to 0.  and some schematics for filling in the B
-matrix are given below (values are weights for the SAR on the lattice with 
-a period indicating zero weights).
+Below we give more details on how the weights are determined.
+Following the notation in Lindgren and Rue a.wght= 4 + k2
+with k2 greater than or equal to 0. Some schematics for filling
+in the B matrix are given below (values are weights for the SAR on the
+lattice with a period indicating zero weights).
+
 \preformatted{
                                                  __________ 
    .   -1    .          |  -1    .             |  4+k2  -1
@@ -173,52 +238,71 @@ a period indicating zero weights).
                         |                      |
    .  -1     .          |  -1    .             |  .      .
 
-Interior point        Left edge when           Upper left corner when 
-                      edge is FALSE            edge is FALSE
+Interior point        Left edge              Upper left corner
 }
 
-If \code{edge} is TRUE the edges are weighted to reflect other boundary conditions. 
-We have found these corrections to be numerically unstable and so prefer at this 
-time of writing adding a buffer of lattice points and using the uncorrected weights.  
+Previous versions of LatticeKrig considered an edge correction to
+reflect other boundary conditions.  We have found these corrections to
+be numerically unstable, however, and so prefer at this time of
+writing adding a buffer of lattice points and using the uncorrected
+weights described above.
  
 }
 
 \value{
 
-\code{LKrig.basis}
-A matrix with number of rows equal to the rows of \code{x1} and columns equal to the number of 
-basis functions ( LKinfo$m). Attached to the matrix is an  \code{info} attribute that contains the 
-list passed as \code{LKinfo}. Usually this value is in spam sparse matrix format. 
-
-\code{LKrig.setup}
-A object of class \code{LKinfo} with components giving the numbers of basis functions at each level and the information to 
-reconstruct the grid for the basis centers. This objects contains the parameters of the Markov random fields and 
-a logical to indicate whether to normalize the basis functions to a constant marginal variance. See help( LKinfo) for the complete description. Note that relatively few
-parameters need to be specified to fit a simple covariance (just \code{x, NC, nlevel, alpha and a.wght}).
-
-\code{LKrig.precision} For \code{return.B ==FALSE} a sparse, square matrix with dimensions of the number of basis functions. For \code{return.B == TRUE} the "B" SAR matrix is returned. This is useful for checking this function. 
+\code{LKrig.basis} A matrix with number of rows equal to the rows of
+\code{x1} and columns equal to the number of basis functions
+(LKinfo$m). Attached to the matrix is an \code{info} attribute that
+contains the list passed as \code{LKinfo}. Usually this value is in
+spam sparse matrix format.
 
 
-\code{LKrig.MRF.precision} A sparse square matrix with dimension (mx*my by mx*my)  with a.wght on the diagonal 
-and -1 in the positions for the 4 nearest neighboring points. Note that this matrix has dimensions of the number of grid points/ basis functions  (mx*my by mx*my) -- not  mx x my.  So the indexing of nearest neighbors is a little more complicated that in 1-dimensional grids. 
+\code{LKrig.precision} For \code{return.B ==FALSE} a sparse, square
+matrix with dimensions of the number of basis functions. For
+\code{return.B == TRUE} the "B" SAR matrix is returned. This is useful
+for checking this function.
 
-\strong{\code{LKrig.cov}: } If \code{C=NA} a cross covariance matrix with dimensions \code{nrow(x1)} and 
-\code{nrow(x2)}. 
-If \code{C} is passed the result of multiplying the cross covariance matrix times \code{C}.
 
-\code{LKrig.sim} A  matrix with dimensions of \code{nrow(x1)} by \code{M} of simulated values at the locations \code{x1}. 
+\code{LKrig.MRF.precision} A sparse square matrix with dimension
+(mx*my by mx*my) with a.wght on the diagonal and -1 in the positions
+for the 4 nearest neighboring points. Note that this matrix has
+dimensions of the number of grid points/basis functions (mx*my by
+mx*my) -- not mx x my.  So the indexing of nearest neighbors is a
+little more complicated that in 1-dimensional grids.
 
-\code{LKrig.cov.plot} Evaluates the covariance specified in the list LKinfo with respect to the point 
-\code{center} along  a transects in the x and y directions intersecting this point.  Note the rectangular extent of the spatial domain is part of the grid information in LKinfo.
-Returns components \code{u}, \code{d} and \code{cov}. Each of these are two column matrices with the first column being results in the x direction and second column in the y direction. \code{d} are the distances of the points from the center and \code{u} are the actual x or y spatial coordinates. \code{cov} are the values of the covariance function. If normalize is TRUE these will in fact be the correlation function.  
- To plot the returned list use
+\strong{\code{LKrig.cov}: } If \code{C=NA} a cross covariance matrix
+with dimensions \code{nrow(x1)} and \code{nrow(x2)} is used. If \code{C} is
+passed the result of multiplying the cross covariance matrix times
+\code{C} is used.
+
+\strong{ \code{LKrig.sim}:} A matrix with dimensions of \code{nrow(x1)} by
+\code{M}. Each column are vectors of simulated values at the locations
+\code{x1}.
+
+\code{LKrig.cov.plot} Evaluates the covariance specified in the list
+LKinfo with respect to the point \code{center} along a transects in
+the x and y directions intersecting this point.  Note the rectangular
+extent of the spatial domain is part of the grid information in
+LKinfo.  Returns components \code{u}, \code{d} and \code{cov}. Each of
+these are two column matrices with the first column being results in
+the x direction and second column in the y direction. \code{d} are the
+distances of the points from the center and \code{u} are the actual x
+or y spatial coordinates. \code{cov} are the values of the covariance
+function. If normalize is TRUE these will in fact be the correlation
+functions.  To plot the returned list use
 \preformatted{
  out<- LKrig.cov.plot(LKinfo)
  matplot( out$d, out$cov, type="l")
 }
 
-\code{LKrig.quadraticform}{ Returns a vector that is diag( t(PHI)\%*\% solve(Q) \%*\% PHI)) closely
- related to the marginal variance of the process. } 
+\strong{ \code{LKrig.quadraticform}:} Returns a vector that is
+ \code{diag(t(PHI)\%*\% solve(Q) \%*\% PHI))} closely related to the marginal
+ variance of the process.
+
+\strong{ \code{LKrig.normalize.basis},
+\code{LKrig.normalize.basis.fast}:} A vector of variances
+corresponding to the unnormalized process at the locations.
 }
 \author{
 Doug Nychka
@@ -244,8 +328,9 @@ LKrig, mKrig, Krig, fastTps, Wendland
 # set up LKinfo object
 # NC=10 sets the grid for the first level of basis functions
 # NC^2 = 100 grid points in first level if square domain.
-# given four levels the number of basis functions = 10^2 + 19^2 +37^2 + 73^2 = 5329
-# effective range scales as roughly kappa where    a.wght =  4 + kappa^2    
+# given four levels the number of basis functions
+# = 10^2 + 19^2 +37^2 + 73^2 = 5329
+# effective range scales as roughly kappa where a.wght =  4 + kappa^2    
 # or exponential decreasing marginal variances for the components.
     NC<- 10 
     nlevel<- 4
@@ -253,7 +338,8 @@ LKrig, mKrig, Krig, fastTps, Wendland
     alpha<-  1/2^(0:(nlevel-1)) 
     LKinfo2<- LKrig.setup( cbind( c( -1,1), c(-1,1)), NC=NC,
                    nlevel=nlevel, a.wght=a.wght,alpha=alpha)
-# evaluate covariance  along the  horizontal line through midpoint of region -- (0,0) in this case. 
+# evaluate covariance  along the  horizontal line through
+# midpoint of region -- (0,0) in this case. 
     look<- LKrig.cov.plot( LKinfo2)
 # a plot of the covariance function in x and y with respect to (0,0)
     set.panel(2,1)  
@@ -265,7 +351,8 @@ LKrig, mKrig, Krig, fastTps, Wendland
 #
 #
 \dontrun{
-# full 2-d view of the covariance (this example follows the code in LKrig.cov.plot)
+# full 2-d view of the covariance (this example follows the code
+# in LKrig.cov.plot)
  x2<- cbind( 0,0)
  x1<- make.surface.grid( list(x=seq( -1,1,,40),  y=seq( -1,1,,40)))
  look<- LKrig.cov( x1,x2, LKinfo2)
@@ -283,7 +370,7 @@ set.panel(2,1)
     LKtemp<-  LKrig.setup( cbind( c( -1,1), c(-1,1)), NC=NC,
                    nlevel=nlevel,
                    a.wght= 4  + 1/(kappa[k]^2),
-                   alpha=alpha,edge=TRUE)
+                   alpha=alpha)
     hold[,k]<-  LKrig.cov( x1,x2, LKinfo=LKtemp)
   }
   matplot( x1[,1], hold, type="l", lty=1, col=rainbow(5), pch=16 )
@@ -300,7 +387,7 @@ set.panel(2,1)
    LKtemp<-  LKrig.setup( cbind( c( -1,1), c(-1,1)), NC=NC,
                    nlevel=nlevel,
                    a.wght= 4  + 1/(ktemp^2),
-                   alpha=alpha^alpha.power[k],edge=TRUE)
+                   alpha=alpha^alpha.power[k])
     hold[,k]<-  LKrig.cov( x1,x2, LKinfo=LKtemp)
   }
   matplot( x1[,1], hold, type="l", lty=1, col=rainbow(5) )
@@ -308,52 +395,20 @@ set.panel(2,1)
 }
  
 \dontrun{
- # generating a basis on the domain [-1,1] by [-1,1] with 1 level
- # no buffering grid points (not recommended in applications) just to make this smaller and easier to index
-  LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)), NC=6, nlevel=1, a.wght=4.5,alpha=1, NC.buffer=0 )
+# generating a basis on the domain [-1,1] by [-1,1] with 1 level
+# Default number of buffer points are added to each side. 
+  LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)), NC=6,
+                                 nlevel=1, a.wght=4.5,alpha=1 )
 # evaluate the basis functions on a grid to look at them
   xg<- make.surface.grid( list(x=seq(-1,1,,50), y= seq(-1,1,,50)))
   PHI<- LKrig.basis( xg,LKinfo)
   dim(PHI) # should be  2500=50^2  by  36=6^2
-# plot the 9th basis function  as.surface is a handy function to reformat the vector as an image object
-# using the grid information in an attribute of the grid points (xg in this case)
+# plot the 9th basis function  as.surface is a handy function to
+# reformat the vector as an image object
+# using the grid information in an attribute of the grid points 
   image.plot(as.surface(xg, PHI[,9]))
   points(  make.surface.grid( LKinfo$grid[[1]]), col="grey", cex=.5)
-# What does the precision matrix look like at a single level?
-# first make up the B matrix
-# without edge corrections
-  B<- LKrig.MRF.precision( 6,7, a.wght=5, edge=FALSE)
-  Bfull<- spind2full(B)
-# with edge correction
-  Be<- LKrig.MRF.precision( 6,7, a.wght=5, edge=TRUE)
-  Befull<- spind2full(Be)
-set.panel(3,2)
-  image.plot( 1:42, 1:42, Bfull)
-  image.plot( 1:42, 1:42, Befull)
-# element at row 15,  position (3,3) reshaped to 6X6 image
-  image.plot(1:6, 1:7, matrix(Bfull[15,], 6,7))
-  image.plot(1:6, 1:7, matrix(Befull[15,], 6,7))
-# element at row 13 reshaped to 6X6 image Note edge adjustment
-  image.plot(1:6, 1:7, matrix(Bfull[13,], 6,7))
-  image.plot(1:6, 1:7, matrix(Befull[13,], 6,7))
 
-# check corners:
-  for (  k in c(1,6, 6*(7-1) + 1, 6*7)){
-          print(  matrix(Befull[k,], 6,7))}
-# check edges:
-   for ( k in 2:5){
-         print(  matrix(Befull[k,], 6,7))}
-   for ( k in (2:5)+ 6*6 ){
-          print(  matrix(Befull[k,], 6,7))}
-   for(  k in (1:5)*6 +1){
-          print(  matrix(Befull[k,], 6,7))}
-   for(  k in (1:5)*6 +6){
-          print(  matrix(Befull[k,], 6,7))}
-  set.panel()
-# 15 th row of precision matrix also reshaped. 
-  Q<- t(Befull)\%*\%Befull  
-  image.plot( 1:6, 1:7, matrix( Q[15,], 6,7))
-#
 set.panel()
 }
 #
@@ -380,10 +435,8 @@ set.panel()
     id1<- LKinfo$offset[j]+ 1
     id2<-  LKinfo$offset[j]+ 10
     idlast<- LKinfo$offset[j]+ LKinfo$mx[j]*LKinfo$my[j]
-
-    centers<-  make.surface.grid( list( 
-                                 x= seq(grid.info$xmin, grid.info$xmax, LKinfo$delta[j]),
-                                 y= seq(grid.info$xmin, grid.info$xmax, LKinfo$delta[j]) ) )
+ 
+    centers<-  make.surface.grid( LKinfo$grid[[j]] )
     image.plot( as.surface(xg, PHI[,id1]))
     points( centers, cex=.2, col="grey")
     image.plot(as.surface(xg, PHI[,id2]))
@@ -395,72 +448,62 @@ set.panel()
 }
 \dontrun{
 # examining the stationarity of covariance model
-  temp.fun<- function( NC.buffer=0, edge=TRUE,NC=4,  a.wght=4.01){
-  LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)),nlevel=1, alpha=1,
-               a.wght=a.wght, NC=NC, edge=edge, NC.buffer=NC.buffer)
-  cov1y<- cov1x<- cov0x<- cov0y<-  matrix( NA, nrow=200, ncol=20)
- cov1dx<- cov1dy<- cov0dx<- cov0dy<-  matrix( NA, nrow=200, ncol=20)
-  cgrid<- seq( 0,1,,20)
-  for(  k in 1:20){
-     hold<- LKrig.cov.plot( LKinfo, center=rbind( c(cgrid[k], cgrid[k])), NP=200)
-     
-     cov1x[,k] <- hold$cov[,1]
-     cov1y[,k] <- hold$cov[,2]
-     cov1dx[,k] <- hold$d[,1]
-     cov1dy[,k] <- hold$d[,2]
-     hold<- LKrig.cov.plot( LKinfo, center=rbind( c(cgrid[k],0) ), NP=200)
-     cov0x[,k] <- hold$cov[,1]
-     cov0y[,k] <- hold$cov[,2]
-     cov0dx[,k] <- hold$d[,1]
-     cov0dy[,k] <- hold$d[,2]
-  }
-  matplot( cov1dx, cov1x, type="l", col= rainbow(20),
-               xlab="", ylab="correlation")
-   mtext( side=1, line=-1, text="diagonal X")
-  title( paste( ifelse(edge,"E", "noE"), " buffer=",NC.buffer), cex=.5)
-  matplot( cov1dy, cov1y, type="l", col= rainbow(20),
-               xlab="", ylab="")
-  mtext( side=1, line=-1, text="diagonal Y")
-  matplot(cov0dx, cov0x, type="l", col= rainbow(20),
-               xlab="",       ylab="")
- mtext( side=1, line=-1, text="middle X")
-  matplot( cov0dy, cov0y, type="l", col= rainbow(20),
-               xlab="",       ylab="")
- mtext( side=1, line=-1, text="middle Y")
- title( paste( NC, a.wght), cex=.5)
+  temp.fun<- 
+     function( NC.buffer=0, NC=4,  a.wght=4.01){
+        LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)),nlevel=1, alpha=1,
+                                 a.wght=a.wght, NC=NC,  NC.buffer=NC.buffer)
+        cov1y<- cov1x<- cov0x<- cov0y<-  matrix( NA, nrow=200, ncol=20)
+        cov1dx<- cov1dy<- cov0dx<- cov0dy<- matrix( NA, nrow=200, ncol=20)
+        cgrid<- seq( 0,1,,20)
+        for( k in 1:20){
+            hold<- LKrig.cov.plot( LKinfo,
+                            center=rbind( c(cgrid[k], cgrid[k])), NP=200)
+            cov1x[,k] <- hold$cov[,1]
+            cov1y[,k] <- hold$cov[,2]
+            cov1dx[,k] <- hold$d[,1]
+            cov1dy[,k] <- hold$d[,2]
+            hold<- LKrig.cov.plot( LKinfo,
+                             center=rbind( c(cgrid[k],0) ), NP=200)
+            cov0x[,k] <- hold$cov[,1]
+            cov0y[,k] <- hold$cov[,2]
+            cov0dx[,k] <- hold$d[,1]
+            cov0dy[,k] <- hold$d[,2]
+                }
+         matplot( cov1dx, cov1x, type="l", col= rainbow(20),
+                         xlab="", ylab="correlation")
+         mtext( side=1, line=-1, text="diagonal X")
+         title( paste(  " buffer=",NC.buffer), cex=.5)
+         matplot( cov1dy, cov1y, type="l", col= rainbow(20),
+                        xlab="", ylab="")
+         mtext( side=1, line=-1, text="diagonal Y")
+         matplot(cov0dx, cov0x, type="l", col= rainbow(20),
+                        xlab="",       ylab="")
+         mtext( side=1, line=-1, text="middle X")
+         matplot( cov0dy, cov0y, type="l", col= rainbow(20),
+                         xlab="",   ylab="")
+         mtext( side=1, line=-1, text="middle Y")
+         title( paste( NC, a.wght), cex=.5)
 }
-  
-set.panel(4,4)
-par(mar=c(3,4,1,0), oma=c(1,1,1,1))
-temp.fun( edge=TRUE,  NC.buffer=0)
-temp.fun( edge=TRUE,  NC.buffer=4)
-temp.fun( edge=FALSE, NC.buffer=0)
-temp.fun( edge=FALSE, NC.buffer=4)
-# stationary == curves should all line up!
-# last case is the best
 
- set.panel(4,4)
+
+ set.panel(3,4)
 par(mar=c(3,4,1,0), oma=c(1,1,1,1))
-temp.fun( edge=FALSE, NC.buffer=5, NC=4, a.wght=4.05)
-temp.fun( edge=FALSE, NC.buffer=5, NC=16, a.wght=4.05)
-temp.fun( edge=FALSE, NC.buffer=5, NC=64, a.wght=4.05)
-# this next one takes a while
-temp.fun( edge=FALSE, NC.buffer=5, NC=128, a.wght=4.05)
+temp.fun(  NC.buffer=5, NC=4, a.wght=4.05)
+temp.fun(  NC.buffer=5, NC=16, a.wght=4.05)
+temp.fun(  NC.buffer=5, NC=64, a.wght=4.05)
 
 set.panel(4,4)
 par(mar=c(3,4,1,0), oma=c(1,1,1,1))
-temp.fun( edge=FALSE, NC.buffer=4, NC=4)
-temp.fun( edge=FALSE, NC.buffer=6, NC=16)
-temp.fun( edge=FALSE, NC.buffer=12, NC=64)
+temp.fun( NC.buffer=0, NC=8)
+temp.fun( NC.buffer=2, NC=8)
+temp.fun( NC.buffer=4, NC=8)
 # this next one takes a while
-temp.fun( edge=FALSE, NC.buffer=16, NC=128)
+temp.fun( NC.buffer=8,  NC=8)
 # stationary == curves should all line up!
 
-
 }
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+
 \keyword{spatial}
 

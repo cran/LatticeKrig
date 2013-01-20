@@ -75,15 +75,20 @@ Radial.basis <- function(x1, centers, delta, max.points = NULL,
         cat("temp space set at", Nmax, fill = TRUE)
         stop("Ran out of space, increase max.points")
     }
+    # trim down to a sparse matrix object where the elements that have
+    # nonvalues (there are Nmax of these)
     N <- out$Nmax
-    
-    out <- LKrig.spind2spam(list(ind = matrix(out$ind, Nmax, 
-        2)[1:N, ], ra = out$rd[1:N], da = c(n1, n2)))
+#    print(N)
+#    return(  list(ind = matrix(out$ind, Nmax, 2)[1:N, ], ra = out$rd[1:N], da = c(n1, n2)))
+#     out@entries <- do.call(RadialBasisFunction, list(d = out@entries/delta[out@colindices]))
+    # in spind format:
+    out<- list(ind = matrix(out$ind, Nmax, 2)[1:N, ], ra = out$rd[1:N], da = c(n1, n2))
     if (just.distance) {
         return(out)
     }
-    # evaluate distance  with Wendland 2.2
-    out@entries <- do.call(RadialBasisFunction, list(d = out@entries/delta[out@colindices]))
+    out$ra <- do.call(RadialBasisFunction, list(d = out$ra/delta[ out$ind[,2] ]) )
+    out <- LKrig.spind2spam(out)
+ # evaluate distance  with RBF ---  usually Wendland2.2
     return(out)
 }
 

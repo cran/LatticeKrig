@@ -1,5 +1,5 @@
 
-R version 3.0.0 (2013-04-03) -- "Masked Marvel"
+R version 3.0.2 (2013-09-25) -- "Frisbee Sailing"
 Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-apple-darwin10.8.0 (64-bit)
 
@@ -22,7 +22,8 @@ Type 'q()' to quit R.
 > 
 > library( LatticeKrig)
 Loading required package: spam
-Spam version 0.29-2 (2012-08-17) is loaded.
+Loading required package: grid
+Spam version 0.40-0 (2013-09-11) is loaded.
 Type 'help( Spam)' or 'demo( spam)' for a short introduction 
 and overview of this package.
 Help for individual functions is also obtained by adding the
@@ -30,11 +31,12 @@ suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
 
 Attaching package: 'spam'
 
-The following object is masked from 'package:base':
+The following objects are masked from 'package:base':
 
     backsolve, forwardsolve
 
 Loading required package: fields
+Loading required package: maps
 > options( echo=FALSE)
 testing:  Direct formula
     PASSED test at tolerance  1e-08
@@ -57,4 +59,4 @@ testing:  lnLike arbitrary sigma and rho
 all done with lnPLike with weights
 > proc.time()
    user  system elapsed 
-  7.222   0.135   7.348 
+  7.980   0.105   8.077 

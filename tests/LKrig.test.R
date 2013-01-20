@@ -23,16 +23,18 @@ options( echo=FALSE)
   K<- LKrig.cov( x,x,LKinfo)
   tempM<-  K
   diag(tempM) <- (lambda) + diag(tempM)
+# Mi is proportional to the  inverse of the covariance matrix for the observations 
   Mi<- solve( tempM)
-  T.matrix<- cbind( rep(1,N),x) 
+  T.matrix<- cbind( rep(1,N),x)
+# this is estimating the fixed part using generalized least squares
   d.coef0 <-  solve( t(T.matrix)%*%Mi%*%T.matrix, t(T.matrix)%*%Mi%*%y)
   test.for.zero( obj$d.coef, d.coef0, tag="d from LKrig and by hand")
-#### this is c for standard Kriging equations as done in mKrig
+#### this is "c" coefficients for standard Kriging equations as done in mKrig
   temp2<- chol( tempM)
   c.coef0 <- forwardsolve(temp2, transpose = TRUE,
                         (y- T.matrix%*%d.coef0), upper.tri = TRUE)
   c.coef0 <- backsolve(temp2, c.coef0)
-### find these using mKrig (still standard Kriging) and the lattice covariance function:
+### find these using mKrig (still standard Kriging) but using the the LatticeKrig covariance function:
   obj0<- mKrig( x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
                                  cov.args=list(LKinfo=LKinfo),
                                  NtrA=20, iseed=122)
@@ -41,37 +43,12 @@ options( echo=FALSE)
 # residuals = lambda* c.coef0
 # use this to check the initial LatticeKrig result
  test.for.zero( obj0$fitted.values, obj$fitted.values)
+# here is a nontrivial test: compaaring the same Kriging estimate
+# using mKrig (via covariance function) and LatticeKrig (via precision and S-M-W identities)
  test.for.zero( lambda*obj0$c, (y-obj$fitted.values),
                tag="c from mKrig and from residuals of LatticeKrig (this is big!)" )
-
-########## redo tests with edge=TRUE
-  obj<- LKrig( x,y,NC=16, nlevel=1, alpha=1, lambda=lambda, a.wght=a.wght, NtrA=20,iseed=122, edge=TRUE)
-  LKinfo<- obj$LKinfo
-  K<- LKrig.cov( x,x,LKinfo)
-  tempM<-  K
-  diag(tempM) <- (lambda) + diag(tempM)
-  Mi<- solve( tempM)
-  T.matrix<- cbind( rep(1,N),x) 
-  d.coef0 <-  solve( t(T.matrix)%*%Mi%*%T.matrix, t(T.matrix)%*%Mi%*%y)
-  test.for.zero( obj$d.coef, d.coef0, tag="d from LKrig and by hand edge=TRUE")
-  temp2<- chol( tempM)
-#
-  c.coef0 <- forwardsolve(temp2, transpose = TRUE,
-                        (y- T.matrix%*%d.coef0), upper.tri = TRUE)
-  c.coef0 <- backsolve(temp2, c.coef0)
-### find these using mKrig (still standard Kriging) and the lattice covariance function:
-  obj0<- mKrig( x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
-                                 cov.args=list(LKinfo=LKinfo),
-                                 NtrA=20, iseed=122)
-  test.for.zero( obj0$c, c.coef0, tag="c from mKrig and by hand edge=TRUE" )
-# we also know that for standard Kriging
-# residuals = lambda* c.coef0
-# use this to check the initial LatticeKrig result
- test.for.zero( obj0$fitted.values, obj$fitted.values)
- test.for.zero( lambda*obj0$c, (y-obj$fitted.values),
-               tag="c from mKrig and from residuals of LatticeKrig (this is big!) edge=TRUE" )
-######### end tests with edge=TRUE
-
+# compare Monte Carlo estimates of trace
+ test.for.zero( obj$trA.info, obj0$trA.info, tag="Monte Carlo traces")
 #
 # test more complex covariance model:
 #
@@ -97,36 +74,48 @@ options( echo=FALSE)
    test.for.zero( Ktest1, LKrig.cov( x,xg, LKinfo=LKinfo))
    Ktest2<- PHI2%*%solve(Q)%*%t(PHI2)
    test.for.zero( diag(Ktest2), LKrig.cov( xg, LKinfo=LKinfo, marginal =TRUE), tag="marginal variance")
-#### add some spatially varying alpha's
-    N<- LKinfo$mx * LKinfo$my
- 
-# first a sanity check
-    alpha.list<-  list( rep( 1,N[1]), rep(.5,N[2]), rep( .2,N[3]))
 
-    LKinfo2<- LKrig.setup( x, NC=5, nlevel=3, alpha= alpha.list, a.wght=5)
+#### tests with  spatially varying alpha's
+ rm( obj, obj0) # remove previous objects
+# first a sanity check that the marginalization and alpha option is working
+# even when alpha's constant (obviously this is useful for debugging!)
+# nu weighted alpha that constant by level to get the basis function counts.
+   LKinfo<- LKrig.setup( x, NC=5, nlevel=3, nu=1, a.wght=5)
+   N<- LKinfo$mx * LKinfo$my
+
+   alpha.list<-  list( rep( 1,N[1]), rep(.5,N[2]), rep( .2,N[3]))
+   LKinfo2<- LKrig.setup( x, NC=5, nlevel=3, alpha= alpha.list, a.wght=5)
    PHI1<- LKrig.basis(x, LKinfo2)
    PHI2<- LKrig.basis(xg, LKinfo2)                  
    Q<- LKrig.precision( LKinfo2)
+# find covariane matrix "by hand" for this case.
    Ktest1<- PHI1%*%solve(Q)%*%t(PHI2)
    test.for.zero( Ktest1, LKrig.cov( x,xg, LKinfo=LKinfo2), tag="spatial alpha cov")
+# check marginal variance 
    Ktest2<- PHI2%*%solve(Q)%*%t(PHI2)
    test.for.zero( diag(Ktest2), LKrig.cov( xg, LKinfo=LKinfo2, marginal =TRUE), tag="spatial alpha mar var")
-# now varying alphas
+
+# now varying alphas using same kind of tests
    set.seed( 678)
+# here alpha weights are all different and random.
    alpha.list<- list(  runif(N[1]), runif(N[2]), runif(N[3]) )
  LKinfo2<- LKrig.setup( x, NC=5, nlevel=3, alpha= alpha.list, a.wght=5)
    PHI1<- LKrig.basis(x, LKinfo2)
    PHI2<- LKrig.basis(xg, LKinfo2)                  
    Q<- LKrig.precision( LKinfo2)
    Ktest1<- PHI1%*%solve(Q)%*%t(PHI2)
-   test.for.zero( Ktest1, LKrig.cov( x,xg, LKinfo=LKinfo2), tag="spatial alpha cov tricksy alpha")
+   test.for.zero( Ktest1, LKrig.cov( x,xg, LKinfo=LKinfo2), tag="spatial alpha cov w/ tricksy alpha")
    Ktest2<- PHI2%*%solve(Q)%*%t(PHI2)
    test.for.zero( diag(Ktest2), LKrig.cov( xg, LKinfo=LKinfo2, marginal =TRUE), tag="spatial alpha mar var  tricksy alpha")
 
-#### compare estimates of trace
-  test.for.zero( obj$trA.info, obj0$trA.info, tag="Monte Carlo traces")
-
-# evaluate predicted values
+  lambda<- .1
+  obj<- LKrig( x,y,NC=5, lambda=lambda,LKinfo=LKinfo2,
+                        nlevel=nlevel, alpha=alpha,a.wght=a.wght, NtrA=20,iseed=122)
+  LKinfo<- obj$LKinfo
+  obj0<- mKrig( x,y, lambda=lambda, m=2, cov.function="LKrig.cov",
+                                 cov.args=list(LKinfo=LKinfo),
+                                 NtrA=20, iseed=122)
+#  check predicted values
   glist<- fields.x.to.grid( x,10, 10)
   xg<-  make.surface.grid(glist)
   grid.info<- obj$LKinfo$grid.info
@@ -135,15 +124,16 @@ options( echo=FALSE)
   Tmatrix<- cbind( rep(1,nrow(xg)), xg)
   yhat0<- Tmatrix%*%obj0$d +
             LKrig.cov( xg,x, LKinfo)%*%obj0$c
-  
   PHIg<- LKrig.basis( xg, LKinfo)
   yhat1<- Tmatrix%*%obj$d.coef + PHIg%*%obj$c.coef
-  test.for.zero( yhat1, yhat0, tag="predicted values   by hand and  from standard and DRK")
-  test.for.zero( yhat1, predict(obj,xg), tag="predicted values from LatticeKrig and by hand"  )
+  test.for.zero( yhat1, predict(obj,xg), tag="predicted values from LatticeKrig and by hand, spatial alpha"  )
   test.for.zero( predict(obj,xg), predict(obj0,xg),
-                           tag="predicted values LatticeKrig and mKrig")
+                           tag="predicted values LatticeKrig and mKrig, spatial alpha")
+########## done with spatially varying alpha
 
-# tests for computing the determinant and quad form
+# tests for computing the determinant and quad form from log likelihood
+# see LatticeKrig tech report to sort these opaque computations!
+  rm( obj, obj0) # remove previous objects
   test.for.zero.flag<- 1
   alpha<- c(1,.5,.5)
   nlevel<-3
@@ -152,8 +142,8 @@ options( echo=FALSE)
   sum( log( eigen( A, symmetric=TRUE)$values))}
 
   data( ozone2)
-  x<-ozone2$lon.lat[1:20,]
-  y<- ozone2$y[16,1:20]
+  x<-ozone2$lon.lat[1:10,]
+  y<- ozone2$y[16,1:10]
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]
@@ -215,17 +205,12 @@ test.for.zero(   lnDet( B1) - lnDet(Q) - lnDet( W/lambda), hold, tag="Det with w
 test.for.zero(   lnDet( B2) - lnDet(Q) - lnDet( W/lambda), hold,  tag="Det with weights1=2")
 test.for.zero(  lnDet( B3) - lnDet(Q) - sum( log( weights))  + (N-N2)*log(lambda), hold, tag="Det with weights3")
 
-
-
-
-
-
-
-           
+         
 # now check these formulas as implemented in LatticeKrig
+ rm( obj, obj0) # remove previous objects
  data( ozone2)
-  x<-ozone2$lon.lat[1:20,]
-  y<- ozone2$y[16,1:20]
+  x<-ozone2$lon.lat[1:10,]
+  y<- ozone2$y[16,1:10]
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]
@@ -246,9 +231,10 @@ test.for.zero(  lnDet( B3) - lnDet(Q) - sum( log( weights))  + (N-N2)*log(lambda
 
 # repeat tests for weighted measurement errors.
 # recopy data to make reading easier
+  rm( obj, obj0) # remove previous objects
   data( ozone2)
-  x<-ozone2$lon.lat[1:20,]
-  y<- ozone2$y[16,1:20]
+  x<-ozone2$lon.lat[1:10,]
+  y<- ozone2$y[16,1:10]
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]

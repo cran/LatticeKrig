@@ -199,7 +199,7 @@ test.for.zero( c( hold[ind1, ind2]), c(hold2), tag="just level 2 Q matrix")
 #
 # check of component covariance matrices
    LKinfo<- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=5,
-                        a.wght=c(5,6,7), alpha=c(4,2,1), edge=TRUE)
+                        a.wght=c(5,6,7), alpha=c(4,2,1), edge=FALSE)
   set.seed(123)
   x1<- cbind( runif( 10), runif(10))
   x2<- cbind(0,0)
@@ -209,7 +209,7 @@ test.for.zero( c( hold[ind1, ind2]), c(hold2), tag="just level 2 Q matrix")
     grid.info$delta<- LKinfo$delta[l]
     LKinfo.temp<- LKrig.setup( grid.info=grid.info,
                          nlevel=1, a.wght=LKinfo$a.wght[l],
-                         alpha=1, edge=TRUE) 
+                         alpha=1, edge=FALSE) 
     comp[,l]<- LKrig.cov(x1,x2,LKinfo.temp )
   }
   look1<- comp%*%c(unlist( LKinfo$alpha))
@@ -219,8 +219,8 @@ test.for.zero( c( hold[ind1, ind2]), c(hold2), tag="just level 2 Q matrix")
 # check construction with spatial a.wght
   cat("Now check spatial a.wght and alpha", fill=TRUE)
 
-  LKinfo <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=1, NC=5,
-                        a.wght=5,
+  LKinfo<- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=1, NC=5,
+                        a.wght=4,
                         alpha=1, edge=FALSE)
   a.wght<-  list( matrix(4 + (1:LKinfo$m)*.1, LKinfo$mx[1], LKinfo$my[1]))
   LKinfo<- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=1, NC=5,
@@ -247,85 +247,6 @@ test.for.zero( c( hold[ind1, ind2]), c(hold2), tag="just level 2 Q matrix")
   look2<- spam2full( look)
   test.for.zero( diag( look2), unlist(a.wght), tag="spatial a.wght 3 levels")
 #
-# edge correction
-  a.wght<-  matrix( 4 + (1:25)*.1, 5,5)
-  kappa2 <- matrix(a.wght - 4, 5,5)
-  LKinfo <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=1,
-                        NC=5,NC.buffer=0,
-                        a.wght=list(a.wght),
-                        alpha=1, edge=TRUE)
-  look<- LKrig.precision( LKinfo=LKinfo, return.B=TRUE)
-  look2<- spam2full( look)
-  temp<- matrix( diag(look2), 5,5)
-  
-# corners
-  ind<- rbind( c(1,1), c(5,1), c(1,5), c(5,5))
-  test.for.zero( temp[ind],  1+ kappa2[ind]/4, tag="1 level corners")
-# edges
-  ind<- rbind( cbind(2:4,rep(1,3)),  cbind(rep(1,3),2:4), cbind(2:4,rep(5,3)), cbind(rep(5,3),2:4))
-  test.for.zero( temp[ind],  2+ kappa2[ind]/2, tag="1 level edges")
-# interior
-  ind<- cbind( rep( 2:4,4), rep( 2:4, c(4,4,4)))
-  test.for.zero( temp[ind],  4+ kappa2[ind], tag="1 level interior")
-  cat("Testing with 3 levels", fill=TRUE)
-# 3 levels
-   LKinfo0 <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4,NC.buffer=0,
-                        a.wght=NA,
-                        alpha=c(1,1,1), edge=TRUE)
-  a.wght<-  list(
-                 matrix( 4 + (1:16)*.1, LKinfo0$mx[1],LKinfo0$my[1]),
-                 matrix( 4+  (1:49)*.1, LKinfo0$mx[2],LKinfo0$my[2]),
-                 matrix( 4+ (1:169)*.1, LKinfo0$mx[3],LKinfo0$my[3])
-                 )
-  LKinfo <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4,NC.buffer=0,
-                        a.wght=a.wght,
-                        alpha=c(1,1,1), edge=TRUE)
-  look<- LKrig.precision( LKinfo, return.B=TRUE)
-  look2<- spam2full( look)
-  look3<- look2[ 1:169 +LKinfo$offset[3] , 1:169+ LKinfo$offset[3]]
-  temp<- matrix( diag( look3), 13,13)
-  kappa2 <- matrix( a.wght[[3]]-4, 13,13)
-  ind<- rbind( c(1,1), c(13,1), c(1,13), c(13,13))
-  test.for.zero( temp[ind],  1+ kappa2[ind]/4, tag="3rd level corners")
-# edges
-  ind<- rbind( cbind(2:12,rep(1,11)),  cbind(rep(1,11),2:12), cbind(2:12,rep(13,11)),
-              cbind(rep(13,11),2:12))
-  test.for.zero( temp[ind],  2+ kappa2[ind]/2, tag="1 level edges")
-# interior
-  ind<- cbind( rep( 2:12,11), rep( 2:12, rep(11,11) ))
-  test.for.zero( temp[ind],  4+ kappa2[ind], tag="1 level interior")
-  cat("tests of alpha weighting", fill=TRUE)
-# testing  alpha weighting
-# one level
-  alpha<-  (1:25)*.1
-  LKinfo <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=1, NC=5,NC.buffer=0,
-                        a.wght=5,
-                        alpha=list(alpha), edge=TRUE)
-  look<- LKrig.precision( LKinfo, return.B=TRUE)
-  look2<- spam2full(look)
-   LKinfo2 <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=1, NC=5,NC.buffer=0,
-                        a.wght=5,
-                        alpha=1, edge=TRUE)
-  look3<-  diag( 1/sqrt(alpha))%*%spam2full(LKrig.precision( LKinfo2, return.B=TRUE))
-  test.for.zero( look3, look2, tag="1 level spatial alpha")
-  look4<-  spam2full(LKrig.precision( LKinfo))
-  test.for.zero( t(look3)%*%look3, look4, tag="1 level spatial alpha Q")
-# three levels
-  alpha<-  list(  (1:16)*.1, (1:49)*.1, (1:169)*.1)
-  LKinfo <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4, NC.buffer=0,
-                        a.wght=5,
-                        alpha=alpha, edge=TRUE)
-  look<- LKrig.precision( LKinfo, return.B=TRUE)
-  look2<- spam2full( look)
- 
-  LKinfo2 <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4, NC.buffer=0,
-                        a.wght=5,
-                        alpha=c(1,1,1), edge=TRUE)
-  look3<- spam2full(LKrig.precision( LKinfo2, return.B=TRUE))
-  look3<-  diag( 1/sqrt(unlist(alpha)))%*%look3
-  test.for.zero( look3, look2, tag=" 3 levels spatial alpha buffer=0")
-  look4<-  spam2full(LKrig.precision( LKinfo))
-  test.for.zero( t(look3)%*%look3, look4, tag="3 levels spatial alpha Q buffer=0")
 
 # three levels nonzero buffer
   LKinfo0 <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4,NC.buffer=3,
@@ -335,13 +256,13 @@ test.for.zero( c( hold[ind1, ind2]), c(hold2), tag="just level 2 Q matrix")
   alpha<-  list(  (1:N[1])*.1, (1:N[2])*.1, (1:N[3])*.1)
   LKinfo <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4, NC.buffer=3,
                         a.wght=5,
-                        alpha=alpha, edge=TRUE)
+                        alpha=alpha, edge=FALSE)
   look<- LKrig.precision( LKinfo, return.B=TRUE)
   look2<- spam2full( look)
  
   LKinfo2 <- LKrig.setup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4, NC.buffer=3,
                         a.wght=5,
-                        alpha=c(1,1,1), edge=TRUE)
+                        alpha=c(1,1,1), edge=FALSE)
   look3<- spam2full(LKrig.precision( LKinfo2, return.B=TRUE))
   look3<-  diag( 1/sqrt(unlist(alpha)))%*%look3
   test.for.zero( look3, look2, tag=" 3 levels spatial alpha buffer=0")

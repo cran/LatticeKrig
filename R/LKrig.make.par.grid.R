@@ -53,5 +53,12 @@ LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
         }
         par.grid$a.wght <- temp.list
     }
+    NG <- length(par.grid$alpha)
+    if (length(par.grid$llambda) != NG) {
+        stop("llambda values not same length as alpha")
+    }
+    if (length(par.grid$a.wght) != NG) {
+        stop("a.wght values not same length as alpha")
+    }
     return(par.grid)
 }

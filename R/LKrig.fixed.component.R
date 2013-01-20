@@ -27,8 +27,8 @@ LKrig.fixed.component <- function(x, Z = NULL, m,
     #  returned matrix must have the columns from Z last.
     #  currently LKrig defaults m to 2.
     #
-    # NOTE: if Z is NULL the effect of cbind( something, Z)
-    # is to leave something unchanged.
+    # NOTE: if Z is NULL the effect of cbind( A, Z)
+    # is to return A 
     #
     if (distance.type == "Euclidean") {
         return(cbind(fields.mkpoly(x, m = m), Z))

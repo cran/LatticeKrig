@@ -7,12 +7,13 @@ LKrig.sim.conditional <- function(obj, M = 1, x.grid = NULL,
         }
         x.grid <- make.surface.grid(grid.list)
     }
-    ghat <- predict(obj, x.grid, Znew = Z.grid)
+    ghat <- predict(obj, xnew=x.grid, Znew = Z.grid)
     # NOTE the name x.grid may be misleading because it just needs to a column matrix of
     # locations. It need not follow any regualr pattern.
     # now generate the error surfaces
     # begin block
-    g.conditional.draw <- matrix(NA, ncol = M, nrow = nrow(x.grid))
+    g.conditional.draw <-    matrix(NA, ncol = M, nrow = nrow(x.grid))
+    d.coef.draw<- matrix(NA, ncol = M, nrow = length( obj$d.coef) )
     set.seed(122)
     N <- nrow(obj$x)
     # complete set of locations to evaluate the field must include the observations too
@@ -30,12 +31,14 @@ LKrig.sim.conditional <- function(obj, M = 1, x.grid = NULL,
         obj.fit.synthetic <- LKrig(obj$x, y.synthetic.data, LKinfo = obj$LKinfo, 
             lambda = obj$lambda, Z = obj$Z, weights = obj$weights, 
             ...)
+        d.coef.draw[,k] <- obj.fit.synthetic$d.coef
         #
         error <- g.unconditional.grid - predict(obj.fit.synthetic, 
-            x.grid, drop.Z = is.null(Z.grid), Znew = Z.grid)
+                            x.grid, drop.Z = is.null(Z.grid), Znew = Z.grid)
         # this result has the right covariance but zero mean add the conditional mean to it.
         g.conditional.draw[, k] <- ghat + error
     }
     #
-    return(list(x.grid = x.grid, ghat = ghat, g.draw = g.conditional.draw))
+    return(list(x.grid = x.grid, ghat = ghat, g.draw = g.conditional.draw,
+                           d.coef.draw= d.coef.draw))
 }

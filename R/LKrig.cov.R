@@ -24,24 +24,29 @@ LKrig.cov <- function(x1, x2 = NULL, LKinfo, C = NA,
     PHI1 <- LKrig.basis(x1, LKinfo)
     Q <- LKrig.precision(LKinfo)
     Qc <- chol(Q)
-    # note: construction of lattice basis depends on alpha and a.wght  and already normalizes to
-    # get unit marginal variances.
+    # note: construction of lattice basis depends on alpha and a.wght  and normalizes
+    # the basis 
+    # get unit marginal variances for the implied covariance function.
     if (!marginal) {
-        PHI2 <- LKrig.basis(x2, LKinfo)
-        if (is.na(C[1])) {
-            A <- forwardsolve(Qc, transpose = TRUE, t(PHI2), 
+      if( is.null(x2)){
+          PHI2<- PHI1}
+      else{
+         PHI2 <- LKrig.basis(x2, LKinfo)
+       }
+      if (is.na(C[1])) {
+          A <- forwardsolve(Qc, transpose = TRUE, t(PHI2), 
                 upper.tri = TRUE)
-            A <- backsolve(Qc, A)
-            return(PHI1 %*% A)
+          A <- backsolve(Qc, A)
+          return(PHI1 %*% A)
         }
         else {
-            A <- forwardsolve(Qc, transpose = TRUE, t(PHI2) %*% 
+          A <- forwardsolve(Qc, transpose = TRUE, t(PHI2) %*% 
                 C, upper.tri = TRUE)
-            A <- backsolve(Qc, A)
-            return(PHI1 %*% A)
+          A <- backsolve(Qc, A)
+          return(PHI1 %*% A)
         }
     }
-    if (marginal) {
+    else{
         if (!is.null(x2)) {
             stop("x2 should not be passed to find marginal variance")
         }

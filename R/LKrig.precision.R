@@ -19,12 +19,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.precision <- function(LKinfo, return.B = FALSE, 
-    level.index = NA) {
+LKrig.precision <- function(LKinfo, return.B = FALSE, level.index = NA,
+                                   verbose=FALSE) {
     mx <- LKinfo$mx
     my <- LKinfo$my
+    
     grid.info <- LKinfo$grid.info
     L <- LKinfo$nlevel
+    if( any(unlist(LKinfo$a.wght)<4)){
+        stop("a.wght less than 4")}
     if (L != length(my)) {
         stop("number of levels and mx and my are not consistent")
     }
@@ -46,7 +49,6 @@ LKrig.precision <- function(LKinfo, return.B = FALSE,
             # evaluate the H matrix at level j.
             # each row of this matrix has an 'a.wght[j]'  on diagonal and
             # -1  for the nearest neighbor basis functions.
-            # edges handled differently
             tempB <- LKrig.MRF.precision(mx[j], my[j], a.wght = (LKinfo$a.wght)[[j]], 
                 stationary = LKinfo$stationary, edge = LKinfo$edge, 
                 distance.type = distance.type)
@@ -94,8 +96,6 @@ LKrig.precision <- function(LKinfo, return.B = FALSE,
         temp <- LKrig.spind2spam(list(ind = tempB$ind, ra = tempra, 
             da = tempB$da))
     }
-    
-    
     if (return.B) {
         return(temp)
     }

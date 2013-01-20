@@ -19,7 +19,7 @@ n1<- nrow(x1)
 n2<- nrow(x2)
 
 look1<-Radial.basis(x1,x2, delta=.7, just.distance=TRUE)
-look1<- spam2full(look1)
+look1<- spind2full(look1)
 look2<- rdist( x1,x2)
 look2[ look2>.7] <-0
 test.for.zero( look1,look2)
@@ -27,7 +27,7 @@ test.for.zero( look1,look2)
 # test when range varies among different points
 delta<- c( rep(.6,10), rep( .3,n2-10))
 look1<- Radial.basis(x1,x2, delta=delta,just.distance=TRUE)
-look1<- spam2full(look1)
+look1<- spind2full(look1)
 ind<-matrix( delta, nrow=n1,ncol=n2, byrow=TRUE)
 look2<- rdist( x1,x2)
 look2[ look2> ind] <- 0
@@ -53,7 +53,7 @@ test.for.zero( look1,look2)
   temp[ temp>=60] <- 0
 #  image.plot( as.surface(x1,c(temp)))
   look1<-Radial.basis(x1,center, delta=60, just.distance=TRUE, distance.type="cylinder")
-  look2<- spam2full(look1)
+  look2<- spind2full(look1)
   test.for.zero( c(look2), c(temp), tag="cyl distance1")
 
   x1<- make.surface.grid( list( x= seq(0,360,,100), y= seq( -30,30,,15) ))

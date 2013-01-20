@@ -2,7 +2,7 @@
 # Copyright 2004-2009, Institute for Mathematics Applied to Geosciences
 # University Corporation for Atmospheric Research
 # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
-"predict.se.LKrig" <- function(object, xnew = NULL, 
+"predictSE.LKrig" <- function(object, xnew = NULL, 
     Znew = NULL, drop.Z = FALSE, verbose = FALSE, ...) {
     if (is.null(object$Mc)) {
         stop("need to include the sparse cholesky decompostion in LKrig object \r\nin calling LKrig set return.cholesky = TRUE")

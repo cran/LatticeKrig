@@ -1,5 +1,5 @@
 
-R version 3.0.0 (2013-04-03) -- "Masked Marvel"
+R version 3.0.2 (2013-09-25) -- "Frisbee Sailing"
 Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-apple-darwin10.8.0 (64-bit)
 
@@ -22,7 +22,8 @@ Type 'q()' to quit R.
 > 
 > library( LatticeKrig)
 Loading required package: spam
-Spam version 0.29-2 (2012-08-17) is loaded.
+Loading required package: grid
+Spam version 0.40-0 (2013-09-11) is loaded.
 Type 'help( Spam)' or 'demo( spam)' for a short introduction 
 and overview of this package.
 Help for individual functions is also obtained by adding the
@@ -30,11 +31,12 @@ suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
 
 Attaching package: 'spam'
 
-The following object is masked from 'package:base':
+The following objects are masked from 'package:base':
 
     backsolve, forwardsolve
 
 Loading required package: fields
+Loading required package: maps
 > options( echo=FALSE)
 testing:  d from LKrig and by hand
     PASSED test at tolerance  1e-08
@@ -43,13 +45,7 @@ testing:  c from mKrig and by hand
     PASSED test at tolerance  1e-08
 testing:  c from mKrig and from residuals of LatticeKrig (this is big!)
     PASSED test at tolerance  1e-08
-testing:  d from LKrig and by hand edge=TRUE
-    PASSED test at tolerance  1e-08
-testing:  c from mKrig and by hand edge=TRUE
-    PASSED test at tolerance  1e-08
-    PASSED test at tolerance  1e-08
-testing:  
-c from mKrig and from residuals of LatticeKrig (this is big!) edge=TRUE
+testing:  Monte Carlo traces
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
 testing:  d from Lattice Krig and mKrig
@@ -61,17 +57,13 @@ testing:  spatial alpha cov
     PASSED test at tolerance  1e-08
 testing:  spatial alpha mar var
     PASSED test at tolerance  1e-08
-testing:  spatial alpha cov tricksy alpha
+testing:  spatial alpha cov w/ tricksy alpha
     PASSED test at tolerance  1e-08
 testing:  spatial alpha mar var  tricksy alpha
     PASSED test at tolerance  1e-08
-testing:  Monte Carlo traces
+testing:  predicted values from LatticeKrig and by hand, spatial alpha
     PASSED test at tolerance  1e-08
-testing:  predicted values   by hand and  from standard and DRK
-    PASSED test at tolerance  1e-08
-testing:  predicted values from LatticeKrig and by hand
-    PASSED test at tolerance  1e-08
-testing:  predicted values LatticeKrig and mKrig
+testing:  predicted values LatticeKrig and mKrig, spatial alpha
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
@@ -87,6 +79,8 @@ testing:  Det with weights1=2
     PASSED test at tolerance  1e-08
 testing:  Det with weights3
     PASSED test at tolerance  1e-08
+Warning message:
+In rm(obj, obj0) : object 'obj0' not found
 testing:  lnDetCov for mKrig and LatticeKrig
     PASSED test at tolerance  1e-08
 testing:  quadratic forms for rho hat
@@ -109,4 +103,4 @@ testing:  test of LatticeKrig.coef d
 Done testing LatticeKrig
 > proc.time()
    user  system elapsed 
- 41.218   1.236  42.445 
+ 30.612   0.595  31.196 

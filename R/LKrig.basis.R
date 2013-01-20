@@ -57,27 +57,29 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE,
         delta <- LKinfo$delta[l]
         grid.list <- LKinfo$grid[[l]]
         centers <- make.surface.grid(grid.list)
-        if (verbose) {
-            print(dim(centers))
-        }
         #  set the range of basis functions, they are assumed to be zero outside
         #  the radius basis.delta
         basis.delta <- delta * overlap
         #
-        PHItemp <- Radial.basis(x1 %*% t(solve(V)), centers, 
+        x1Transformed<- x1 %*% t(solve(V))
+        PHItemp <- Radial.basis(x1Transformed, centers, 
             basis.delta, max.points = NULL, mean.neighbor = 50, 
             just.distance = FALSE, RadialBasisFunction = get(LKinfo$RadialBasisFunction), 
             distance.type = LKinfo$distance.type)
+normtime<-  system.time(
         if (normalize) {
-            #        if( any((LKinfo$a.wght)[[l]]  <= 4 ) ){
-            #           stop('Can not normalize with a.wght <= 4')}
-            #  find precision matrix at level l without multiplying by 1/alpha
-            tempB <- LKrig.MRF.precision(LKinfo$mx[l], LKinfo$my[l], 
-                a.wght = (LKinfo$a.wght)[[l]], edge = LKinfo$edge, 
-                distance.type = LKinfo$distance.type)
-            tempB <- LKrig.spind2spam(tempB)
-            Q.level <- t(tempB) %*% tempB
-            wght <- LKrig.quadraticform(Q.level, PHItemp)
+            if( LKinfo$fastNormalization){
+               wght <- LKrig.normalize.basis.fast(l, LKinfo, x1Transformed)
+             }
+            else{
+               tempB <- LKrig.MRF.precision(LKinfo$mx[l], LKinfo$my[l], 
+                     a.wght = (LKinfo$a.wght)[[l]], edge = LKinfo$edge, 
+                     distance.type = LKinfo$distance.type)
+               tempB <- LKrig.spind2spam(tempB)
+               wght <- LKrig.quadraticform(  t(tempB) %*% tempB, PHItemp)
+             }
+# now normalize the basis functions by the weights            
+# awkwardness of handling the 1 row case separately.
             if (nrow(x1) > 1) {
                 PHItemp <- diag.spam(1/sqrt(wght)) %*% PHItemp
             }
@@ -85,6 +87,8 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE,
                 PHItemp@entries <- PHItemp@entries/sqrt(wght)
             }
         }
+ )
+# cat( "Level",l, normtime, fill=TRUE)
         # accumulate new level of basis function.
         PHI <- cbind(PHI, PHItemp)
     }
@@ -124,8 +128,7 @@ LKrig.quadraticform <- function(Q, PHI) {
     }
     else {
         # Unfortunately the case when there is one row needs to be handled separately.
-        A <- forwardsolve(l = chol(Q), transpose = TRUE, x = t(PHI), 
-            upper.tri = TRUE)
+        A <- forwardsolve(l = chol(Q), transpose = TRUE, x = t(PHI), upper.tri = TRUE)
         wght <- sum(A^2)
     }
     return(wght)

@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.predict.surface <- function(object, ...) {
-    predict.surface(object, ...)
+predictSurface.LKrig <- function(object, ...) {
+    predictSurface(object, ...)
 }
 

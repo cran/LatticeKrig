@@ -20,29 +20,55 @@
 # or see http://www.r-project.org/Licenses/GPL-2
 
 predict.LKrig <- function(object, xnew = NULL, Znew = NULL, 
-    drop.Z = FALSE, ...) {
-    if (is.null(xnew)) {
-        xnew <- object$x
+    drop.Z = FALSE,return.levels=FALSE, ...) {
+newXPassed<- !is.null(xnew)
+   if (!newXPassed) {
+        xnew <- object$x    
     }
-    if (is.null(Znew) & (object$nZ > 0) & (!drop.Z)) {
-        Znew <- object$Z
-    }
-    NG <- nrow(xnew)
-    # temp1 are predictions for fixed part of the model
-    # with or without the additional covariates, Znew.
-    T.matrix <- LKrig.fixed.component(xnew, Z = Znew, m = 2, 
+includeZCovariate<- !drop.Z & (object$nZ > 0)
+NG <- nrow(xnew)
+# setting up Z covariate and some checks
+if(includeZCovariate){
+    if( newXPassed & is.null(Znew)){
+      stop("xnew has been specified, but no new Z covariates ")}
+    if (is.null(Znew) ) {
+        Znew <- object$Z }
+# sanity check on xnew and Znew 
+    if( NG!= nrow( Znew)){
+         stop(" x (locations) and Z (covariates) have different numbers of
+rows")}
+     }
+# predictions for fixed part of the model
+# and can be with or without the additional covariates, Znew.
+    T.matrix <- LKrig.fixed.component(xnew,  m = 2, 
         distance.type = object$LKinfo$distance.type)
-    if (drop.Z | object$nZ == 0) {
-        temp1 <- T.matrix %*% object$d.coef[object$ind.drift, 
-            ]
+    if (includeZCovariate) {
+       temp1 <- cbind(T.matrix,Znew) %*% object$d.coef
     }
     else {
-        temp1 <- T.matrix %*% object$d.coef
+# in the case of additional covariates only use the coefficients associated
+# with the spatial drift 
+       temp1 <- T.matrix %*% object$d.coef[object$ind.drift, ]
     }
     PHIg <- LKrig.basis(xnew, object$LKinfo)
-    # temp2 is the nonparametric or component from the spatial process
-    # described by the multiresolution basis
+# the nonparametric component from the spatial process
+# described by the multiresolution basis
+  if( !return.levels){
     temp2 <- PHIg %*% object$c.coef
-    return(temp1 + temp2)
+    return(temp1 + temp2)}  
+  else{
+    nLevels<- object$LKinfo$nlevel
+    temp2<- matrix( NA, ncol=nLevels, nrow= nrow( xnew))
+    for( level in 1:nLevels){
+# indices for each multiresolution level      
+       startLevel<- object$LKinfo$offset[level] +1
+       endLevel<-  object$LKinfo$offset[level+1]
+       indexLevel<- startLevel : endLevel
+       print( range( indexLevel))
+       temp2[,level]<- PHIg[,indexLevel] %*% object$c.coef[indexLevel]
+    }
+    temp2[,1] <- temp2[,1] 
+    return( cbind(temp1,temp2))
+  }
 }
 
