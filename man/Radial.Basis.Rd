@@ -1,6 +1,7 @@
 % corrections DMH 2/06/2012
 \name{Radial.basis}
 \alias{Radial.basis}
+\alias{LKrig.cyl}
 \alias{WendlandFunction}
 \title{
 Two dimensional radial basis functions based on a Wendland function.
@@ -10,9 +11,10 @@ Two dimensional radial basis functions based on a Wendland function and
 using sparse matrix format to reduce the storage.
 }
 \usage{
-Radial.basis(x1, center, delta, max.points = NULL, mean.neighbor =
+Radial.basis(x1, centers, delta, max.points = NULL, mean.neighbor =
                  50, just.distance = FALSE, RadialBasisFunction =
-                 "WendlandFunction")
+                 "WendlandFunction",distance.type="Euclidean")
+LKrig.cyl( U, R=1 ) 
 WendlandFunction(d)
 }
 
@@ -22,7 +24,7 @@ WendlandFunction(d)
 location. 
 
 }
-  \item{center}{
+  \item{centers}{
    A two column matrix specifying the basis function centers.
 
 }
@@ -32,14 +34,19 @@ location.
   \item{max.points}{
    Maximum number of nonzero entries expected for the returned matrix.}
 
+\item{distance.type}{The distance metric. See the entry in \code{LKrig} for details.}
+
   \item{mean.neighbor}{
    Average number of centers that are within delta of each x1 location. For centers on a regular grid this
 is often easy to estimate.}
 
   \item{just.distance}{
 For debugging, don't evaluate the RBF just return the pairwise distance matrix.}
+\item{R}{Radius used for cylinder coordinates.}
 \item{RadialBasisFunction}{The positive definite kernel used to generate the basis. The assumption is that this
 will take a nonnegative  argument and be zero outside [0,1].}
+\item{U}{A two column matrix with giving the locations in cylindrical coordiates. 
+First column is the angle in degrees and second column is the height.}
 }
 \details{
 This function finds the pairwise distances between the points x1 and  centers and evaluates the
@@ -54,6 +61,9 @@ In pseudo R code  for delta a scalar \code{Wendland.basis} evaluates as
 }
 The actual code uses a FORTRAN subroutine to search over distances less than delta and also returns the 
 matrix in sparse format. 
+
+The function \code{LKrig.cyl} transforms coodinates on a cylinder, e.g. lon/lat when taken as a Mercator projection, and returns the 3-d coordinates. It is these 3-d coordinates that used to find distances to define the radial basis functions. For points that are close this "chordal" type distance will be close to the
+geodesic distance on a cylinde but not identical. 
 }
 \value{
 For \code{Wendland.basis} a matrix in sparse format with number of rows equal to nrow(x1) and

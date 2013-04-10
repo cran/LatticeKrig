@@ -19,7 +19,24 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.predict.surface <- function(object, ...) {
-    predict.surface(object, ...)
+LKrig.fixed.component <- function(x, Z = NULL, m, 
+    distance.type = "Euclidean") {
+    # default function to create matrix for fixed part of model
+    #  x, Z, and drop.Z are required
+    #  Note that the degree of the polynomial is by convention (m-1)
+    #  returned matrix must have the columns from Z last.
+    #  currently LKrig defaults m to 2.
+    #
+    # NOTE: if Z is NULL the effect of cbind( something, Z)
+    # is to leave something unchanged.
+    #
+    if (distance.type == "Euclidean") {
+        return(cbind(fields.mkpoly(x, m = m), Z))
+    }
+    if (distance.type == "cylinder") {
+        # spatial polynomial only in latitude
+        return(cbind(fields.mkpoly(x[, 2], m = m), Z))
+    }
+    # should not get here
+    stop("distance type not recognized in LKrig.fixed.component")
 }
-

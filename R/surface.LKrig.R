@@ -2,7 +2,7 @@
 # the R software environment .
 # Copyright (C) 2012
 # University Corporation for Atmospheric Research (UCAR)
-# Contact: Douglas Nychka, nychka@ucar.edu, 
+# Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-surface.LKrig <-
-function(object,...){
-  surface.Krig( object,...)}
+surface.LKrig <- function(object, ...) {
+    surface.Krig(object, ...)
+}
 

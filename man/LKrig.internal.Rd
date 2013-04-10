@@ -9,7 +9,7 @@
 Internal functions for LatticeKrig package. 
 }
 \description{
-Two internal functions for \code{LKrig} that estimate  the 
+Some internal functions for \code{LKrig} that estimate  the 
 coefficients of the basis functions and compute the likelihood.
 }
 \usage{

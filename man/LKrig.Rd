@@ -1,7 +1,6 @@
 \name{LatticeKrig}
 \alias{LatticeKrig}
 \alias{LKrig}
-\alias{Matern2LKrig}
 \alias{predict.LKrig}
 \alias{predict.se.LKrig}
 \alias{print.LKrig}
@@ -23,14 +22,12 @@ LKrig( x,y=NULL, weights = rep(1, nrow(x)),Z=NULL,
                         LKinfo=NULL, 
                         iseed=123,NtrA=20,
                         use.cholesky=NULL, return.cholesky=TRUE,
-                        NC, nlevel, a.wght, alpha, lambda=NA, sigma=NA,
+                        NC, nlevel, a.wght, alpha, nu=NULL, lambda=NA, sigma=NA,
                         rho=NA,  rho.object=NULL,
                         overlap=2.5, normalize=TRUE,edge=TRUE,
                         RadialBasisFunction="WendlandFunction",
+                        V= diag( c(1,1)), distance.type="Euclidean",
                         verbose=FALSE)
-
-Matern2LKrig( range, smoothness,x = NULL, xlim=c(-1,1), ylim=c(-1,1), nlevel, NC=10,
-                                   check=FALSE, NP=500, NCtable=10)
 
 \method{predict}{LKrig}( object, xnew=NULL,Znew = NULL, drop.Z=FALSE, ...)
 
@@ -44,79 +41,121 @@ LKrig.predict.surface( object, ...)
 }
 \arguments{
   
-  \item{alpha}{ Variance weights for each level of resolution. This can be a vector or a list with \code{nlevel} components. As a list each component is a matrix specifying a weight for each coefficient.
-     See Details.}
+  \item{alpha}{ Variance weights for each level of resolution. This
+     can be a vector or a list with \code{nlevel} components. As a
+     list each component is a matrix specifying a weight for each
+     coefficient.  See Details.}
 
-  \item{a.wght}{The "a" spatial autoregressive parameter for a first order Markov Random field
- (see details  below) . This controls the spatial dependence and must be greater than or equal to 4. For \code{a.wght} = 4 normalize should be FALSE.
-  If there are multiple levels this can be a vector. See Details below.}
+  \item{a.wght}{The "a" spatial autoregressive parameter for a first
+ order Markov Random field. This controls the
+ spatial dependence and must be greater than or equal to 4. For
+ \code{a.wght} = 4 normalize should be FALSE.  If there are multiple
+ levels this can be a vector. See Details.}
 
 
-
-  \item{digits}{Number of digits in printed output.}
+  \item{distance.type}{The type of distance metric(as a text string)
+     used in determining the radial basis functions.  The current
+     choices are "Euclidean" and "cylinder" with cylinder being used
+     to have a periodic boundary condition in the x (horizontal)
+     coordinate.}  \item{digits}{Number of digits in printed output.}
    
   \item{drop.Z}{If true the fixed part will only be evaluated at the
-spatial drift polynomial part of the fixed model. The contribution from the other,
-Z, covariates in the fixed component will be omitted.}
+spatial drift polynomial part of the fixed model. The contribution
+from the other, Z, covariates in the fixed component will be omitted.}
 
-  \item{edge}{If TRUE an adjustment is made in the GMRF weights for edge effects.}
+  \item{edge}{If TRUE an adjustment is made in the GMRF weights for
+  edge effects.}
 
-%  \item{grid.info}{A list with information to construct the regular grid for the basis function centers.
-%  The components are: \code{xmin, xmax, ymin,ymax, delta}. If not passed this list is created by
-%  \code{LKrig.setup} from \code{x} and \code{NC}.}
-
- \item{iseed}{Random seed used in the Monte Carlo technique
-  for approximating the effective degrees of freedom (trace of the
+ \item{iseed}{Random seed used in the Monte Carlo technique for
+  approximating the effective degrees of freedom (trace of the
   smoothing matrix). If NA, no seed is set. }
 
- \item{lambda}{The ratio of the nugget variance (called sigma squared in \code{fields} and \code{LatticeKrig}) to the parameter 
+ \item{lambda}{The ratio of the nugget variance (called sigma squared
+  in \code{fields} and \code{LatticeKrig}) to the parameter
   controlling the marginal variance of the process (called rho in
-  \code{fields} and \code{LatticeKrig}). If sigma and rho are both specified then \code{lambda == sigma^2/rho}.} 
+  \code{fields} and \code{LatticeKrig}). If sigma and rho are both
+  specified then \code{lambda == sigma^2/rho}.}
 
- \item{LKinfo}{An object whose components specify  the LatticeKrig spatial model.
-  This is usually created by the function \code{LKrig.setup}. If NULL, this object is created and returned as 
-a component of the LKrig object. }
+ \item{LKinfo}{An object whose components specify the LatticeKrig
+  spatial model.  This is usually created by the function
+  \code{LKrig.setup}. If NULL, this object is created and returned as
+  a component of the LKrig object. }
 
-   \item{NC}{Controls the maximum number of grid points. For the first level there will be NC grid points in the larger dimension of the rectangular spatial domain. If the
- domain is square there will be NC*NC basis functions/ lattice points in the
-coarsest level of resolution. If domain is rectangular, the smaller dimension will have less than NC
-points.}
+   \item{NC}{Controls the maximum number of grid points. For the first
+ level there will be NC grid points in the larger dimension of the
+ rectangular spatial domain. If the domain is square there will be
+ NC*NC basis functions/ lattice points in the coarsest level of
+ resolution. If domain is rectangular, the smaller dimension will have
+ less than NC points.}
 
-  \item{nlevel}{Number of levels for the multiresolution basis. Each level increases the
-number of basis functions by roughly a factor of 4.}
+  \item{nlevel}{Number of levels for the multiresolution basis. Each
+level increases the number of basis functions by roughly a factor of
+4.}
 
-  \item{normalize}{If \code{TRUE} basis functions are normalized so that the 
-    marginal variance of the process covariance is constant and equal to rho. This
-    normalization avoids some of the  edge and periodic artifacts from using a discrete
-    set of basis functions.}
+  \item{normalize}{If \code{TRUE} basis functions are normalized so
+    that the marginal variance of the process covariance is constant
+    and equal to rho. This normalization avoids some of the edge and
+    periodic artifacts from using a discrete set of basis functions.}
 
   \item{NtrA}{Number of random samples used in Monte Carlo method for
 determining effective degrees of freedom. }
-  
-  \item{object}{The \code{LKrig} object.}
+ 
+ \item{nu}{If passed alpha vector is proportional to as \code{
+exp(-(1:nlevel)*nu)} and normalized to sum to one.}
 
-  \item{overlap}{The overlap between basis functions. This scaling is based on centers being spaced 
-1 unit distance apart and the Wendland function decreasing to zero at 1 unit distance. A scaling/overlap of 2.5 (the default)
-implies that the support of the basis functions will extend to a disc of radius 2.5.
- We recommend that this parameter not be changed unless one is sure of the effect on the 
-implied spatial covariance.}
+\item{object}{The \code{LKrig} object.}
 
-  \item{return.cholesky}{If TRUE the cholesky decomposition is included in the output list
-    (with the name \code{Mc}). This is needed for some of the subsquent computations such as finding prediction standard errors.   Set this argument to FALSE to avoid much larger objects when the decomposition is not needed. This option is often paired with a
-     subsequent call to
-     \code{LKrig} with \code{use.cholesky}. See the MLE.LKrig source code for details. }
-  \item{RadialBasisFunction}{An R function that defines the radial basis function to generate the multiresolution basis. Is assumed that this
-            function is compacted supported on the interval [0,1]. See WendlandFunction for an example.}
-  \item{rho}{Value of rho (sill variance) to use for spatial estimate. If omitted this is estimated as the MLE based on the value of lambda.}
-  \item{rho.object}{A prediction object that defines a spatially varying component for the 
-           marginal variance of the process. The object should be such that the code 
-   \code{predict(rho.object, x1)} will evaluate the function at 2-d locations \code{x1}. See Details below.
-} 
-  \item{sigma}{Value of sigma (nugget variance) to use for the spatial estimate.
-            If omitted this is estimated as the MLE based on the value of lambda.}
-  \item{verbose}{If \code{TRUE} print out intermediate results and messages.}
+\item{overlap}{The overlap between basis functions. This scaling is
+    based on centers being spaced 1 unit distance apart and the
+      Wendland function decreasing to zero at 1 unit distance. A
+      scaling/overlap of 2.5 (the default) implies that the support of
+      the basis functions will extend to a disc of radius 2.5.  We
+      recommend that this parameter not be changed unless one is sure
+      of the effect on the implied spatial covariance.}
+
+\item{return.cholesky}{If TRUE the cholesky decomposition is included
+    in the output list (with the name \code{Mc}). This is needed for
+    some of the subsquent computations such as finding prediction
+    standard errors.  Set this argument to FALSE to avoid much larger
+    objects when the decomposition is not needed. This option is often
+    paired with a subsequent call to \code{LKrig} with
+    \code{use.cholesky}. See the MLE.LKrig source code for details. }
+
+  \item{RadialBasisFunction}{An R function that defines the radial
+            basis function to generate the multiresolution basis. Is
+            assumed that this function is compacted supported on the
+            interval [0,1]. See WendlandFunction for an example.}
+
+  \item{rho}{Value of rho (sill variance) to use for spatial
+  estimate. If omitted this is estimated as the MLE based on the value
+  of lambda.}
+
+  \item{rho.object}{A prediction object that defines a spatially
+           varying component for the marginal variance of the
+           process. The object should be such that the code
+           \code{predict(rho.object, x1)} will evaluate the function
+           at 2-d locations \code{x1}. See Details below.  }
+
+  \item{sigma}{Value of sigma (nugget variance) to use for the spatial
+            estimate.  If omitted this is estimated as the MLE based
+            on the value of lambda.}
+
+  \item{verbose}{If \code{TRUE} print out intermediate results and
+  messages.}
   
-  \item{use.cholesky}{Use the symbolic part of the Cholesky decomposition passed in  this argument.}
+
+  \item{use.cholesky}{Use the symbolic part of the Cholesky
+  decomposition passed in this argument.}
+
+  \item{V}{A matrix used to scale and rotate coordinates to give an
+anisotropic basis function and covariance model. V is the 2X2 matrix
+describing the inverse linear transformation of the coordinates before
+distances are found.  In R code this transformation is: \code{x1 \%*\%
+t(solve(V))} Default is NULL, that is the transformation is just
+dividing distance by the scalar value \code{theta}. See Details below.
+If one has a vector of "theta's" that are the scaling for each
+coordinate then just express this as \code{V = diag(theta)} in the
+call to this function.}
 
   \item{weights}{A vector that is proportional to the reciprocal
   variances of the errors. I.e. errors are assumed to be uncorrelated
@@ -124,26 +163,21 @@ implied spatial covariance.}
 
   \item{xnew}{Matrix of locations for prediction.}
  
-  \item{x}{Spatial locations of observations. Or the \code{LKrig} object for printing. }
+  \item{x}{Spatial locations of observations. Or the \code{LKrig}
+  object for printing. }
  
   \item{y}{Spatial observations.}
  
   \item{Z}{Linear covariates to be included in fixed part of the model
-  that are distinct from the default first order polynomial in \code{x} (i.e. the spatial drift).}
-  \item{Znew}{Values of covariates, distinct from the spatial drift for predictions off of data locations}
+  that are distinct from the default first order polynomial in
+  \code{x} (i.e. the spatial drift).}
 
-  \item{\dots}{Additional arguments to pass to generic methods. See help(predict.surface)
-    for the details in calling LKrig.predict.surface}
+  \item{Znew}{Values of covariates, distinct from the spatial drift
+  for predictions off of data locations}
 
-  \item{range}{Range parameter for Matern target covariance in the LKrig approximation}
-  \item{smoothness}{Matern smoothness parameter. Currently is only .5 (exponential).}
-  \item{xlim}{X limits of domain}
-  \item{ylim}{Y limits of domain}
-  \item{check}{If TRUE evaluates the LKrig approximate covariance and the target 
-              Matern covariance on a grid of distances from the center of domain}
-  \item{NP}{Number of points to evaluate the LKrig and Matern covariances}
-  \item{NCtable}{Value of NC that is used to th create table of approximations. Currently 
-                  only NCtable=10 is supported.}
+  \item{\dots}{Additional arguments to pass to generic methods. See
+    help(predict.surface) for the details in calling
+    LKrig.predict.surface}
 }
 \details{
 This method combines compactly supported basis
@@ -153,96 +187,169 @@ field (or spatial process) is
  
  f(x) = N(x) + Z d + sum Phi.j(x) c.j.
 
-x is a location in two dimensions, N(x) is a low order (linear) polynomial, Z is a matrix of
-spatial covariates and d a coefficient vector. Phi.j for   1 <= j <= m is a set of fixed basis functions and c.j the coefficients. 
+x is a location in two dimensions, N(x) is a low order (linear)
+polynomial, Z is a matrix of spatial covariates and d a coefficient
+vector. Phi.j for 1 <= j <= m is a set of fixed basis functions and
+c.j the coefficients. The variance of f(x) is given by the parameter
+\code{rho} throughout this package. As explained below the process f
+is a sum of \code{nlevel} independent processes that have different
+scales of spatial dependence.  The \code{alpha} gives the relative
+weighting between these processes.  Thus, the minimum set of
+parameters needed to describe the covariance of f are the integer
+\code{NC}, two scalars \code{rho} and \code{a.wght} and a vector
+\code{alpha}. \code{alpha} has length the number of multiresolution
+levels but we recommend that it be constrained sum to one.  Thus in
+total there are a 1 + 2 + (nlevel - 1) parameters for a minimal
+specification of the covariance.  Note that this parsimonious
+specification results in a covariance that is close to being
+stationary and isotropic when \code{normalize} is \code{TRUE}.  An
+additional constraint on \code{alpha} is to make the weights
+\code{alpha[j]} proportional to \code{exp( - 2*j*nu)} where \code{nu}
+controls decay of the alpha weights. There is some theory to suggest
+that \code{nu} is analgous to the smoothness parameter from the Matern
+family (e.g. nu=.5 approximates the exponential). In this case the
+covariance model requires just four parameters, \code{NC, rho, a.wght,
+nu}.
 
-and the data model is
+The data model is
 
  Y.k = f(x.k) + e.k
 
-Y.k are (scalar) observations made at spatial locations  x.k 
-with e.k uncorrelated normal errors with variance sigma^2/weights.
+Y.k are (scalar) observations made at spatial locations x.k with e.k
+uncorrelated normal errors with variance sigma^2/weights.  Thus there
+is a minimum of one new parameter from the data model: sigma. Note
+that prediction only depends on the ratio \code{lambda = sigma^2/ rho}
+and not surprisingly lambda plays a key role in specifying and fitting
+a spatial model. Also taken with the model for f the minimum
+parameters needed for a spatial prediction are still four \code{NC,
+a.wght, nu} and \code{lambda}. For fixed lambda there are closed form 
+expressions for the MLEs for sigma and rho. LKrig exploits this feature
+by depending on lambda and then computing the MLEs for sigma and rho. 
 
 \strong{Spatial prediction:} 
-The basis functions are assumed to be fixed and the coefficients follow a multivariate Gaussian distribution. Given this spatial model for f,  it is possible to compute the conditional expectation of f
-given Y and also maximize the likelihood for the model parameters, lambda, alpha, 
-and a.wght.  This setting is known as fixed rank Kriging and is a common strategy for formulating a spatial model. Typically fixed rank Kriging is used to 
-reduce the dimension of the problem by limiting the number of basis functions. We take a different approach in allowing for models that might even have more basis functions than observations. This provides a spatial model that can come close to interpolating the observations and the spatial process is represented with many degrees of freedom. 
-The key is to make sure the model ingredients result in  sparse matrices where linear algebra is required for the computations. By doing so it is possible to compute the estimates and likelihood for large numbers of spatial locations. This model has an advantage over covariance tapering or
-compactly supported covariance functions (e.g. fastTps from fields), because the
-implied covariance functions can have longer range correlations.
+The basis functions are assumed to be fixed and the coefficients
+follow a multivariate Gaussian distribution. Given this spatial model
+for f, it is possible to compute the conditional expectation of f
+given Y and also maximize the likelihood for the model parameters,
+lambda, alpha, and a.wght.  This setting is known as fixed rank
+Kriging and is a common strategy for formulating a spatial
+model. Typically fixed rank Kriging is used to reduce the dimension of
+the problem by limiting the number of basis functions. We take a
+different approach in allowing for models that might even have more
+basis functions than observations. This provides a spatial model that
+can come close to interpolating the observations and the spatial
+process is represented with many degrees of freedom.  The key is to
+make sure the model ingredients result in sparse matrices where linear
+algebra is required for the computations. By doing so in this package it is possible
+to compute the estimates and likelihood for large numbers of spatial
+locations. This model has an advantage over covariance tapering or
+compactly supported covariance functions (e.g. \code{fastTps} from \code{fields}),
+because the implied covariance functions can have longer range
+correlations.
 
 \strong{Radial basis functions ( Phi.j ) :}
- The basis
- functions are two-dimensional radial basis functions (RBFs) that are derived from scaling and translations of a single covariance function. The default in LatticeKrig is to use the Wendland compactly supported 
- stationary covariance (order 2 for 2 dimensions) that is scaled to be zero beyond a distance of 1.  For d the distance between spatial locations, this Wendland function has the form:
-\preformatted{
-(1 - d)^6 * (35 * d^2 + 18 * d + 3))/3}
-when d is in [0,1] and zero for d > 1. 
-For a single level (\code{nlevel==1}) without normalization, however, the
- RBFs are centered at a regular grid of points and with radial support
- \code{delta*overlap} where \code{delta} is the spacing between grid
- points. We will also refer to this grid of centers as a lattice and the centers are also referred to as "nodes" in the RBF literature. The overlap for the Wendland has the default value of 2.5 and this represents a compromise between the number of nonzero matrix elements for computation and the shape of the covariance functions.
+ The basis functions are two-dimensional radial basis functions (RBFs)
+ that are derived from scaling and translations of a single covariance
+ function. The default in LatticeKrig is to use the Wendland compactly
+ supported stationary covariance (order 2 for 2 dimensions) that is
+ scaled to be zero beyond a distance of 1.  For d the distance between
+ spatial locations, this Wendland function has the standard form:
+
+\code{(1 - d)^6 * (35 * d^2 + 18 * d + 3))/3} for d in [0,1]
+
+  0  otherwise.
+
+ For a single level the RBFs are
+centered at a regular grid of points and with radial support
+\code{delta*overlap} where \code{delta} is the spacing between grid
+points. We will also refer to this grid of centers as a lattice and
+the centers are also referred to as "nodes" in the RBF literature. The
+overlap for the Wendland has the default value of 2.5 and this
+represents a compromise between the number of nonzero matrix elements
+for computation and the shape of the covariance functions.
 
 To create a multi-resolution basis, 
 each subsequent level is based on a grid with delta divided by
 2. See the example below and \code{help(LKrig.basis)} for more details.
-For multiple levels the basis functions can be grouped according to the resolution levels and the coefficients can be grouped in a similar manner. Because the coefficients are identified with locations on a lattice they it is easy to formulate a Markov random field for their distribution based on the relationship to neighboring lattice points. 
-There is one important difference in the basis construction
- -- a normalization -- and this aspect makes it different from a simple radial basis function specification and is  described below. 
+For multiple levels the basis functions can be grouped according to
+the resolution levels and the coefficients can be grouped in a similar
+manner. 
+There is one important difference in the basis construction -- a
+normalization -- and this aspect makes it different from a simple
+radial basis function specification and is described below.
 
 \strong{Markov random field (GMRF) for the coefficients (c.j) :}
-The distribution on the basis function coefficients is a multivariate normal, with a mean of zero and the
- the precision
-matrix, Q, (inverse of Q is the covariance matrix).
-Q is partitioned in a block format corresponding to the
-organization of the basis functions and coefficients into levels of resolution. Moreover, 
-coefficients at different levels are assumed to be independent and so Q will be block diagonal. If
-\code{nlevels} are specified, the ith block has a precision matrix 
-based on a first order spatial autoregression with \code{a.wght[i]}
-being related to the autoregressive parameter. The specific precision matrix for
-each block (level), Q.i, is implemented by
-\code{LK.MRF.precision}. 
-In the  case when alpha is a scalar, let C.i be the vector of basis coefficents at the ith level
-then we assume that
- \code{ B \%*\% C.i} will be independent N(0,1) random variables. By elementary properties of the covariance it follows that the precision matrix for C.i is  Q.i=
- t(B)\%*\%B. Thus, given B one can determine the precision matrix and hence the covariance matrix. 
+Because the coefficients are identified with locations on a
+lattice  it is easy to formulate a Markov random field for their
+distribution based on the relationship to neighboring lattice points.
+The distribution on the basis function coefficients is a multivariate
+ normal, with a mean of zero and the the precision matrix, Q, (inverse
+ of Q is the covariance matrix).  Q is partitioned in a block diagonal
+ format corresponding to the organization of the basis functions and
+ coefficients into levels of resolution. Moreover, coefficients at
+ different levels are assumed to be independent and so Q will be block
+ diagonal. If \code{nlevels} are specified, the ith block has a
+ precision matrix based on a spatial autoregression with
+ \code{a.wght[i]} being related to the spatial autoregressive parameter(s).
+ Schematically in the simplest case the weighting for an interior
+ lattice point and its four neighbors is
+\preformatted{ 
+.   .    .      .     .                                       
 
-Each row of B, corresponding to a point in the lattice in the
-interior, is "a" (\code{a.wght[i]}) on the diagonal and  -1 at each of the
-four nearest neighbors of the lattice points. Points on the edges and corners just
-have less neighbors but get the same weights if \code{edge=FALSE}.
-Following the format in Lindgren and Rue (2010)  let a= 4 + E with E greater than or equal to  0.
-(Where \code{sqrt(1/E)} can be associated with an approximate range parameter.)
-If \code{edge=TRUE} the central point is weighted different at the edges and corners. 
-
+.   .   -1      .     . 
+                     
+.  -1  a.wght  -1     .
+                      
+.   .   -1      .     .  
+  
+.   .    .      .     .
+Interior point      
+}
+The fundemental idea is that these weights applied to each point in
+ the lattice will result in a lattice of random variables that are
+ independent.  The specific precision matrix for each block (level),
+ Q.i, is implemented by \code{LKrig.MRF.precision}.  In the case when
+ alpha is a scalar, let C.i be the vector of basis coefficents at the
+ ith level then we assume that \code{ B \%*\% C.i} will be independent
+ N(0,1) random variables. By elementary properties of the covariance
+ it follows that the precision matrix for C.i is Q.i=
+ t(B)\%*\%B. Thus, given B one can determine the precision matrix and
+ hence the covariance matrix.  Each row of B, corresponding to a point
+ in the lattice in the interior, is "a" (\code{a.wght[i]}) on the
+ diagonal and -1 at each of the four nearest neighbors of the lattice
+ points. Points on the edges and corners just have less neighbors but
+ get the same weights if \code{edge=FALSE}.
+ 
 This description is a spatial autoregressive model (SAR). The matrix Q
 will of course have more nonzero values than B and the entries in Q
 can be identified as the weights for a conditional autoregressive
 model (CAR). Moreover, the CAR specification defines the neighborhood
 such that the Markov property holds. 
-Relating this to the precision matrix and it is an elementary property of the
-multivariate normal that relates the nonzero elements of Q to
-conditional independence of components of the multivariate random
-vector.  Values for \code{a.wght[i]} that are greater than 4 give
+Values for \code{a.wght[i]} that are greater than 4 give
 reasonable covariance models.  Moreover setting a.wght[i] to 4 and
-normalizing to FALSE in the call to LKrig will give a thin-plate
+\code{normalize} to FALSE in the call to LKrig will give a thin-plate
 spline type model that does not have a range parameter. An approximate
 strategy, however,  is to set a.wght close to 4 and get some benefit from the
-normalization for edge effects.
+normalization to reduce edge effects.
 
 \strong{Multiresolution process}
-
- Given basis functions and coefficients at each level we  have defined a spatial process g.i that can be evaluated at any location in the domain. These processes are weighted by the parameter vector alpha and then added together to give the full process.
- It is also assumed that the coefficients at different resolution levels are independent and so the processes at each level are also independent. The block diagonal structure for Q does not appear to limit how well this model can approximate  standard spatial models and simplifies the computations. 
-If the each g.i is normalized to have a marginal variance of one then g will have a variance that is the sum of the alpha parameters. Usually it is useful to constrain the alpha parameters to sum to one and then include an additional variance parameter, rho, be the marginal variance for g.
-So the full model for the spatial process used in LatticeKrig is 
+ Given basis functions and coefficients at each level we have defined
+ a spatial process g.i that can be evaluated at any location in the
+ domain. These processes are weighted by the parameter vector alpha
+ and then added together to give the full process.  It is also assumed
+ that the coefficients at different resolution levels are independent
+ and so the processes at each level are also independent. The block
+ diagonal structure for Q does not appear to limit how well this model
+ can approximate standard spatial models and simplifies the
+ computations.  If the each g.i is normalized to have a marginal
+ variance of one then g will have a variance that is the sum of the
+ alpha parameters. Usually it is useful to constrain the alpha
+ parameters to sum to one and then include an additional variance
+ parameter, rho, be the marginal variance for g.  So the full model
+ for the spatial process used in LatticeKrig is
 
 g(x) =   sqrt(rho) * sum.i  sqrt(alpha[i]) * g.i(x)
 
-The precision matrices for each C.i are given by a GMRF controlled by the value of a.wght[i]. 
-
- 
 The specification of the basis and GMRF
 is through the components of the object LKinfo, a required component for
 many LatticeKrig functions. High level functions such as \code{LKrig}
@@ -264,7 +371,7 @@ in order to determine the covariance for the observed data one needs
 to take in account both the GMRF covariance and the expansion using the
 basis functions. The reader is referred to the function \code{LKrig.cov}
 for an explicit code that computes the implied covariance function for
-the process f.  Formally if P is the covariance matrix (the inverse of
+the process f.  Formally, if P is the covariance matrix (the inverse of
 Q) for the coefficients then the covariance between the field at two
 locations x1 and x2, will be
 
@@ -283,10 +390,10 @@ checking and examining the implied covariance function.
 
 \strong{Normalizing the basis functions}
 The unnormalized basis functions result in a covariance that has some
-non-stationary artifacts (see example below) For a covariance matrix P
+non-stationary artifacts (see example below). For a covariance matrix P
 and for any location x one can evaluate the marginal variance of the
-unnormalized basis functions for each multiresolution level.  Based
-this computation there is a weighting function, say w.i(x) so that
+process using unnormalized basis functions for each multiresolution level.  Based
+this computation there is a weighting function, say w.i(x), so that
 when the normalized basis w.i(x) Phi.i(x) is used the marginal
 variance for the multiresolution process at each level will be one.
 This makes the basis functions dependent on the choice of Q and
@@ -308,7 +415,7 @@ logicals for the different levels.
 To examine what these edge effect artifacts are like 
 the marginal variances for a 6 by 6 basis is included at the end of the Examples Section.
 
-\strong{Nonstationary modifications to the covariance}
+\strong{Nonstationary and anisotropic modifications to the covariance}
 Given that the process at each level has been normalized to have
 marginal variance of one there are several other points where the
 variance can be modified. The variance at  level i is scaled by the
@@ -316,90 +423,125 @@ variance can be modified. The variance at  level i is scaled by the
 process is scaled by \code{rho}.  Each of these can been extended to 
 have some spatial variation and thus provide a model for nonstationarity. 
 
-An option in
-specifying the marginal variance is to prescribe a spatially varying
-multiplier. This component is specified by the object
-\code{rho.object}. By default this is not included (or assumed to be
-identically one) but, if used, the full specification for the marginal
-variance of the spatial process at location \code{x} is formally:
-\code{rho * predict(rho.object, x) * sum( alpha)}
-There is then a problem of
-identifiability between these and a good choice is to constrain
-\code{sum(alpha) ==1} so that \code{rho* predict(rho.object, x)} is associated with the
-marginal variance of the full spatial process.
+An option in specifying the marginal variance is to prescribe a
+spatially varying multiplier. This component is specified by the
+object \code{rho.object}. By default this is not included (or assumed
+to be identically one) but, if used, the full specification for the
+marginal variance of the spatial process at location \code{x} is
+formally: \code{rho * predict(rho.object, x) * sum( alpha)} There is
+then a problem of identifiability between these and a good choice is
+to constrain \code{sum(alpha) ==1} so that \code{rho*
+predict(rho.object, x)} is associated with the marginal variance of
+the full spatial process.
 
-A second option is to allow the alpha variance component parameters to vary across the lattices
-at each level. For this case alpha is a list with \code{nlevel} components and each component being a matrix with the same dimensions as the lattice at that level. 
-  The SAR weight matrix is taken to be the usual weights but each row is scaled by the corresponding value in the alpha weight matrix. To be precise  
-  the weight matrix is given in psuedo R code by 
+A second option is to allow the alpha variance component parameters to
+vary across the lattices at each level. For this case alpha is a list
+with \code{nlevel} components and each component being a matrix with
+the same dimensions as the lattice at that level.  The SAR weight
+matrix is taken to be the usual weights but each row is scaled by the
+corresponding value in the alpha weight matrix. To be precise the
+weight matrix is given in psuedo R code by
 
 \code{diag( 1/sqrt( c(alpha[[i]]))\%*\%B}
 
-leading to the precision matrix at level i of 
+leading to the precision matrix at level i of
 
   Q.i = t(B) \%*\% diag( c(1/alpha[[i]]))\%*\%B
 
-In this code note that the matrix of weights, \code{alpha[[i]]} is being stacked as a larger vector to match the implicit indexing of the basis coefficients. 
+In this code note that the matrix of weights, \code{alpha[[i]]} is
+being stacked as a larger vector to match the implicit indexing of the
+basis coefficients.
 
-\strong{The smoothing parameter lambda and effective degrees of freedom}
-Consistent with other fields package functions, the two main
-parameters in the model, sigma^2 and rho are parameterized as lambda
-= sigma^2/rho and rho. The MLEs for rho and sigma can be written in closed form as a function 
-of lambda and these estimates can be substituted into the full likelihood to give a concentrated version that can numerically be maximized over lambda. The smoothing parameter lambda is best varied on a log scale but it is difficult to interpret independent of the particular set of locations, sample size and covariance. A more useful interpretation of lambda is through the effective degrees of freedom and this value is found by default using a Monte Carlo technique. The effective degrees of freedom will vary with the dimension of the fixed regression part of the spatial model ( typical 3 = constant + linear terms) and the total number of observations. It can be interpreted as the approximate number of "parameters" needed to represent the spatial prediction surface. For a fixed covariance model the spatial estimate at the observation locations can be 
-represented as  f hat = A(lambda) y where A is a matrix that does not depend on observations. 
-The effective number of degrees of freedom is the trace of A(lambda) in analogy to the least squares regression "hat" matrix and has an inverse, monotonic relationship to lambda. The Monte Carlo method
-uses the fact that if e are iid N(0,1)  E( t(e) A(lambda) e) = trace( A(lambda)). 
+LKrig also has the flexibility to handle more general weights in the
+GMRF.  This is accomplished by \code{a.wght} being a list with as many
+components as levels. If each component is a vector of length nine
+then these are interpreted as the weights to be applied for the
+lattice point and its 8 nearest neighbors (see help(
+LKrig.MRF.precision) and the commented source code for details). If
+each component is a matrix then these are interpreted as the
+(nonstationary) center weights for each lattice point. Finally if the
+component is an array with three dimensions this specifies the center
+and 8 nearest neighhors for every point in the lattice.  At this point
+the choice of these weights beyond a stationary model is experimental
+and we will defer further documentation of these features to a future 
+version. 
 
-
-
+\strong{The smoothing parameter lambda and effective degrees of
+freedom} 
+ Consistent with other fields package functions, the two main
+parameters in the model, sigma^2 and rho are parameterized as lambda =
+sigma^2/rho and rho. The MLEs for rho and sigma can be written in
+closed form as a function of lambda and these estimates can be
+substituted into the full likelihood to give a concentrated version
+that can numerically be maximized over lambda. The smoothing parameter
+lambda is best varied on a log scale and is sometimes difficult to interpret
+independent of the particular set of locations, sample size and
+covariance. A more useful interpretation of lambda is through the
+effective degrees of freedom and an approximate value is found by default using
+a Monte Carlo technique. The effective degrees of freedom will vary
+with the dimension of the fixed regression part of the spatial model (
+typical 3 = constant + linear terms) and the total number of
+observations. It can be interpreted as the approximate number of
+"parameters" needed to represent the spatial prediction surface. For a
+fixed covariance model the spatial estimate at the observation
+locations can be represented as f hat = A(lambda) y where A is a
+matrix that does not depend on observations.  The effective number of
+degrees of freedom is the trace of A(lambda) in analogy to the least
+squares regression "hat" matrix and has an inverse, monotonic
+relationship to lambda. The Monte Carlo method uses the fact that if e
+are iid N(0,1) E( t(e) A(lambda) e) = trace( A(lambda)).
 
 \strong{Descriptions of specific functions and objects:}
 
-\strong{\code{LKrig}: } Find spatial process estimate for fixed covariance specificed by 
-\code{ nlevel, alpha, a.wght, NC,  and lambda}  or this information in an \code{LKinfo} list. 
-
-
+\strong{\code{LKrig}: } Find spatial process estimate for fixed
+covariance specificed by \code{ nlevel, alpha, a.wght, NC, and lambda}
+or this information in an \code{LKinfo} list.
 
 \strong{\code{predict.LKrig, predict.se.LKrig}: } 
-These functions evaluate the model at the 
-the data locations or at \code{xnew} if it is included. Note the use of the  \code{drop.Z} argument to either include the covariates or just restrict the computation to the spatial 
-drift and the smooth component. If \code{drop.Z} is FALSE then then \code{Znew} needs to be included for predictions off of the observation locations. The standard errors are computed under the assumption that the covariance is known, that it is the TRUE covariance for the process, and both the process and measurement errors are multivariate normal. The formula that is used involves some recondite shortcuts for efficiency but has been checked against the standard errors found from an alternative formula in the fields Krig function. (See the script Lkrig.se.tests.R in  the tests subdirectory for details.)
-
-
-\strong{\code{Matern2LKrig}: } This is an experimental function to approximate a Matern covariance
-function with a multiresolution, LKrig type covariance. Currently only tables for 
-the exponential and 3 and 4 levels have been computed and \code{NC} must be 10 or larger. Also this is computed for a limited set of range parameters. An error is returned if the range is larger or smaller than the limits covered by the tables. 
-Despite all these restrictions the function can be useful for some situations. To check the quality of the approximation if \code{check=TRUE} the approximate LKrig covariance and the 
-target Matern evaluated on a grid of distances are returned.
-For example to test the approximation to a range of .2 on the domain [-1,1]X[-1,1]
-(the default) using NC=10 and 4 levels. 
-\preformatted{
-  cov.approx<- Matern2LKrig( range=.2, smoothness=.5, NC=10, nlevel=4, check=TRUE)
-  matplot( cov.approx$d, cov.approx$y, type="l")
-}
-Dashed line is LKrig approximation and solid is Matern with distance evaluated in the
-X direction. See the components \code{d2} and \code{y2} to check the fit in the 
-Y direction. Note that the implied covariance for the LKrig model can be evaluated at
-arbitrary points using the \code{LKrig.cov} function. 
+These functions evaluate the model at the the data locations or at
+\code{xnew} if it is included. Note the use of the \code{drop.Z}
+argument to either include the covariates or just restrict the
+computation to the spatial drift and the smooth component. If
+\code{drop.Z} is FALSE then then \code{Znew} needs to be included for
+predictions off of the observation locations. The standard errors are
+computed under the assumption that the covariance is known, that it is
+the TRUE covariance for the process, and both the process and
+measurement errors are multivariate normal. The formula that is used
+involves some recondite shortcuts for efficiency but has been checked
+against the standard errors found from an alternative formula in the
+fields Krig function. (See the script Lkrig.se.tests.R in the tests
+subdirectory for details.)
 
 
 }
 \value{
 \strong{\code{LKrig: }}  
-An LKrig class object with components for evaluating the estimate at arbitrary locations, 
-describing the fit and as an option ( with \code{Mc.return=TRUE}) the Cholesky decomposition to allow for fast updating with new values of lambda, alpha and a.wght. 
-The "symbolic" first step in the sparse Cholesky decomposition can also be used to compute the sparse Cholesky decomposition for a different positive definite 
-matrix that has the same pattern of zeroes. This option is useful in computing the likelihood
-under different covariance parameters. For the LKrig covariance the sparsity pattern will be the 
-same if \code{NC}, \code{level}, \code{overlap} and the data locations \code{x} are kept the same. 
-The returned component \code{LKinfo} has class LKinfo and is a list with the information that describes the layout of the multiresolution basis functions and the covariance parameters for the GMRF. 
-(see help(LKinfo) and also \code{LK.basis} as an example.)
+An LKrig class object with components for evaluating the estimate at
+arbitrary locations, describing the fit and as an option ( with
+\code{Mc.return=TRUE}) the Cholesky decomposition to allow for fast
+updating with new values of lambda, alpha and a.wght.  The "symbolic"
+first step in the sparse Cholesky decomposition can also be used to
+compute the sparse Cholesky decomposition for a different positive
+definite matrix that has the same pattern of zeroes. This option is
+useful in computing the likelihood under different covariance
+parameters. For the LKrig covariance the sparsity pattern will be the
+same if \code{NC}, \code{level}, \code{overlap} and the data locations
+\code{x} are kept the same.  The returned component \code{LKinfo} has
+class LKinfo and is a list with the information that describes the
+layout of the multiresolution basis functions and the covariance
+parameters for the GMRF.  (see help(LKinfo) and also \code{LK.basis}
+as an example.)
 
-\strong{\code{predict.LKrig, predict.se.LKrig: }} A vector of predictions or standard errors. 
+\strong{\code{predict.LKrig, predict.se.LKrig: }} A vector of
+predictions or standard errors.
 
-\strong{\code{LKrig.predict.surface}: } A list in image format (i.e. having components \code{x,y,z}) of the surface evaluated on a regular grid. This surface can then be plotted using 
-several different R base package and fields functions e.g. \code{image}, \code{image.plot}\code{contour}, \code{persp}, \code{drape.plot}. The \code{surface} method just calls this
-function and then a combination of the image and contour plotting functions. 
+\strong{\code{LKrig.predict.surface}: } A list in image format
+(i.e. having components \code{x,y,z}) of the surface evaluated on a
+regular grid. This surface can then be plotted using several different
+R base package and fields functions e.g. \code{image},
+\code{image.plot}\code{contour}, \code{persp}, \code{drape.plot}. The
+\code{surface} method just calls this function and then a combination
+of the image and contour plotting functions.
 
 
 
@@ -409,7 +551,8 @@ Doug Nychka
 }
 
 \seealso{
-mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.precision
+mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
+ LKrig.precision
 }
 \examples{
 # Load ozone data set
@@ -422,23 +565,23 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.
   x<- x[good,]
   y<- y[good]
 
-##############################################################################################
+####################################################################################
 # Predict ozone concentrations over the domain using a single level lattice model
 # If the domain is square there will be 20X20 = 400 basis functions and the
 # a.wght is 5, smoothing parameter lambda = sigma^2 / rho is set to .01
-##############################################################################################
+####################################################################################
 
-  obj<- LKrig(x,y,NC=20, nlevel=1,alpha=1, lambda=.01, a.wght=5)
+  obj<- LKrig(x,y,NC=15, nlevel=1,alpha=1, lambda=.01, a.wght=5)
 # summary of fit
   print(obj)
 # Plot fitted surface.
   surface(obj) # see also predict.surface.LKrig to just evaluate on a grid
   US(add=TRUE)
-# Check effective degrees of freedom in surface.
+# Check effective degrees of freedom of fitted surface.
   obj$trA.est
 # NOTE: obj$LKinfo  has the full description of the Lattice Krig covariance model.
 # A cleaner way to fit the same model separating creating the LKinfo object and the fit
-  LKinfo<-  LKrig.setup( x, nlevel=1, alpha=1, NC=20, a.wght=5, lambda=.01)
+  LKinfo<-  LKrig.setup( x, nlevel=1, alpha=1, NC=15, a.wght=5, lambda=.01)
   obj2<- LKrig( x,y, LKinfo=LKinfo) 
 
 # maximize likelihood over lambda see help( LKrig.MLE) for details 
@@ -460,17 +603,15 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.
 
 ##############################################################################################
 # Use multiresolution model that approximates an exponential covariance
-# with a range of 3 (units of degrees) 
+# Note that a.wght realted to a range/scale parameter
+# is specified at a (seemingly) arbitrary value. 
 ##############################################################################################
-
-  LKinfo<-  Matern2LKrig( range= 3, smoothness=.5, x=x, nlevel=3, NC=10)$LKinfo
-# the values of alpha and a.wght that make this work
-  LKinfo$alpha
-  LKinfo$a.wght
+  
+  LKinfo<- LKrig.setup( x, NC=6, nu=1, nlevel=3, a.wght= 5)
 # take a look at the implied covariance function solid=along x dashed=along y
   check.cov<- LKrig.cov.plot( LKinfo)
   matplot( check.cov$d, check.cov$cov, type="l", lty=c(1,2))  
-# fit surface
+# go ahead and fit surface
   obj<- LKrig(x,y, LKinfo=LKinfo, lambda=.05)
 # summary of fit
   obj
@@ -478,12 +619,15 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.
 ##############################################################################################
 # Search over lambda to find MLE for ozone data with approximate exponential covariance
 ##############################################################################################
-  LKinfo.temp<-  Matern2LKrig( range= 3, smoothness=.5, x=x, nlevel=3, NC=10)$LKinfo
+\dontrun{
+  
+  LKinfo.temp<-  LKrig.setup( x, NC=6, nu=1,  nlevel=3, a.wght= 5)
 # starting value for lambda optimzation
   LKinfo.temp$lambda<- 1 
   MLE.search<- LKrig.MLE(x,y, LKinfo=LKinfo.temp)
+# this function returns an LKinfo object with the MLE for lambda included.
   MLE.ozone.fit<- LKrig( x,y,  LKinfo= MLE.search$LKinfo.MLE)
-
+} 
 ##############################################################################################
 # Including a covariate (linear fixed part in spatial model)
 ##############################################################################################
@@ -498,7 +642,7 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.
 #  lambda specified 
 
 # fit with elevation
-  obj.CO.elev<- LKrig( x.CO,y.CO,Z=Z.CO, nlevel=1, NC=20,alpha=1, lambda=.005, a.wght=4.1)
+  obj.CO.elev<- LKrig( x.CO,y.CO,Z=Z.CO, nlevel=1, NC=15, alpha=1, lambda=.005, a.wght=4.1)
 # BTW the coefficient for the linear term for elevation  is obj.CO$d.coef[4]
 # fitted surface without the elevation term
 \dontrun{
@@ -530,7 +674,7 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.
 }
 
 #####################################################################################
-# for a more elaborate search over the a.wght, alpha and lambda to find joint MLEs
+# for a more elaborate search over  a.wght, alpha and lambda to find joint MLEs
 # see help(LKrig.MLE)
 #####################################################################################
 
@@ -559,10 +703,21 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LK.MRF.precision, LK.
   world( add=TRUE, col="magenta")
   title("Gap-filled global predictions")
 }  
+## same example but use a periodic lattice in longitude and 
+## periodic basis functions. This is the "cylinder" model.
+\dontrun{
+  data(CO2)
+  LKinfo.cyl<- LKrig.setup( cbind( c( -180,180), range( CO2$lon.lat[,2])),NC=25,nlevel=1, lambda=.1,
+                             a.wght=5, alpha=1,  distance.type="cylinder")
+# 1127 basis functions from a 49X23 lattice
+  search.CO2<- LKrig.MLE( CO2$lon.lat,CO2$y, LKinfo=LKinfo.cyl)
+# MLE search over lambda
+  obj2<- LKrig( CO2$lon.lat,CO2$y, LKinfo=search.CO2$LKinfo.MLE)
+  surface( obj2)
+  world( add=TRUE)
+}  
 
 set.panel()
-
-
 #####################################################################################
 #  Comparing LKrig to ordinary Kriging
 #####################################################################################
@@ -618,7 +773,7 @@ set.panel()
 #  This is an example of why normalization seems important. 
 #####################################################################################
 
-#\dontrun{
+\dontrun{
 # specify covariance without normalization note all we need is the corners of domains
 # to setup the info list. 
   LKinfo<- LKrig.setup(cbind( c( -1,1), c(-1,1)), NC=6, nlevel=1,
@@ -631,7 +786,7 @@ set.panel()
 # basis function centers from the first (and only) level
   xp<- make.surface.grid( LKinfo$grid[[1]])
   points(xp)
-#}
+}
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

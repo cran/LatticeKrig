@@ -2,7 +2,7 @@
 # the R software environment .
 # Copyright (C) 2012
 # University Corporation for Atmospheric Research (UCAR)
-# Contact: Douglas Nychka, nychka@ucar.edu, 
+# Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
@@ -18,64 +18,207 @@
 # along with the R software environment if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
-LKrig.MRF.precision <-
-function(mx,my, a.wght, edge=TRUE) {
-  m<- mx*my
-  if( length(a.wght)==1){
-    a.wght<- rep( a.wght,m)}
-  kappa2<-(a.wght-4)
-  da<- as.integer( c(m,m))
-  I<- as.integer(rep(1:mx,my))
-  J<- as.integer(rep((1:my), rep( mx,my)))
-# contents of sparse matrix organize as 5 column matrix
-  ra<- cbind( 4+kappa2, matrix( -1,m, 4))
-#  Note: if  a.wght depends on lattice position
-# pass a.wght  as a matrix and use  ra<- as.numeric(c( ra,rep( c(a.wght), 4)))
-#  order is  center   top, bottom, left right
-#  superset of indices for center and nearest neighbors
-#  lattices points on boundaries will need to have some points trimmed
-  Bj<- c( I    + (J-1)*mx,
-         (I-1) + (J-1)*mx,
-         (I+1) + (J-1)*mx,
-          I    + (J-2)*mx,
-          I    +   (J)*mx )
- # fix up boundaries
- # reformat kappa2 so that it is easier to index edges
-     kappa2<- matrix( kappa2, mx,my)
-     if(edge){
-       # the corners: fill each separately for clarity
-       # corner.indices<- c( 1, mx, 1 + (my-1)*mx, mx*my)
-       # upper left, lower left, upper right lower right
-       ra[1,] <-             c(1 + kappa2[1,1]/4,  NA, -.5, NA, -.5)
-       ra[mx,]<-             c(1 + kappa2[mx,1]/4, -.5,  NA, NA, -.5)
-       ra[1 + (my-1)*mx,]<-  c(1 + kappa2[1,my]/4,  NA, -.5, -.5,  NA)
-       ra[mx*my,]<-          c(1 + kappa2[mx,my]/4, -.5,  NA, -.5,  NA)
-       # edges
-       for( j in 2:(my-1)){
-       # top row  then bottom row 
-         ra[ 1+ (j-1)*mx,]<-      c( 2 + kappa2[1,j]/2, NA, -1, -.5, -.5)
-         ra[ mx + (j-1)*mx,]<-    c( 2 + kappa2[mx,j]/2, -1, NA, -.5, -.5)
+
+
+LKrig.MRF.precision <- function(mx, my, a.wght, stationary = TRUE, 
+    edge = FALSE, distance.type = "Euclidean") {
+    # LatticeKrig is based on a set of location centers
+    # (also known as RBF nodes) to center the basis functions. This function
+    # takes advantage of the centers being on a regular grid and equally spaced.
+    # Thus the SAR weights applied to nearest neighbors can be generated from the
+    # row and column indices of the lattice points.
+    #
+    # How exactly is the lattice laid out?  Indexing the lattice by a 2-d, regularly spaced array
+    # it is assumed the indices are also the positions.
+    # row index is the 'x' and column index is the 'y'
+    # So  (1,1) is in the bottom left corner and (mx,nx) the top right.
+    # This is of course  different than the usual way matrices are listed.
+    # All directions for nearest neighbors use this 'location'
+    # interpretation of the matrix indices i.e.  thinking of the indices
+    # as the x and y coordinates  (1,2) is on _top_ of (1,1) -- not to the left.
+    #
+    # When the lattice is stacked as a vector of length m it is
+    # done column by column -- the default stacking by applying the
+    # 'c' operator to a matrix. The indexing for the stacked vector can be generated
+    # in a simple way by  c( matrix( 1:(mx*my), mx,my)) and this is used in the
+    # code below.
+    #  To list the indices with the right spatial orientation to label as top, bottom, left and right,
+    # use:  t(matrix( 1:(mx*my), mx,my))[my:1, ]
+    
+    ###############################################
+    #    CONVENTIONS FOR FILLING IN PRECISION MATRIX
+    ###############################################
+    #  Note: Dimensions of a.wght determine
+    #  how the precision matrix will be filled
+    #  For each node in the MRF there are
+    #  4 nearest neighbors and 4 additional second order
+    # neighbors
+    # labels for these connections are
+    #   'NE'    'top'    'NW'
+    #    'L'  'center'    'R'
+    #   'SE'    'bot'    'SW'
+    #
+    #  indices for these elements are given by
+    #  matrix(1:9, 3,3)
+    #   1 4 7
+    #   2 5 8
+    #   3 6 9
+    #  however, the way the function is coded
+    #  the ordering is scrammbled to be
+    #  index<- c( 5,4,6,2,8,3,9,1,7)
+    #  This seemingly disorganized order is from dealing with the center lattice point, then the
+    #  the nearest neighbors and then adding the second order set.
+    #
+    #  when stationary is TRUE here is how precision matrix is filled:
+    #
+    #  length(a.wght)==1  just the center value is used with -1 as default for
+    #  first order neighbors and 0 for second order
+    #
+    #  length(a.wght)==9  center value and all 8 neighbors as in diagram above
+    #  order of the elements in this case is the same as stacking the 3 columns
+    #  of 3X3 matrix. These are reordered below according to
+    #  index<- c( 5,4,6,2,8,3,9,1,7)
+    #
+    #  when stationary is FALSE here is how precision matrix is filled:
+    #
+    #  if  a.wght depends on lattice position
+    #  then dim(a.wght) should not be NULL and should have
+    #  three dimensions with sizes mx,my and the third can have length
+    #  1  or 9 depending on whether of the neighbor connections are
+    #  specified.
+    #
+    ######################################################################
+    
+    # Total number of lattice points.
+    m <- mx * my
+    cylinder <- (distance.type == "cylinder")
+    
+    #  pass a.wght as an (mx by my)  matrix
+    #  otherwise fill out matrix of this size with single value
+    dim.a.wght <- dim(a.wght)
+    constant.a.wght <- stationary
+    # figure out if just a single a.wght or matrix is passed
+    first.order <- ifelse(constant.a.wght, length(a.wght) == 
+        1, length(dim.a.wght) == 2)
+    # order of neighbors and center
+    index <- c(5, 4, 6, 2, 8, 3, 9, 1, 7)
+    # dimensions of precision matrix
+    da <- as.integer(c(m, m))
+    # contents of sparse matrix organize as a 3-dimensional array
+    # with the last dimension indexing the weights for center and four nearest neighbors.
+    if (first.order) {
+        ra <- array(NA, c(mx, my, 5))
+        # Note that correct filling happens both as a scalar or as an mx X my matrix
+        ra[, , 1] <- a.wght
+        ra[, , 2:5] <- -1
+    }
+    else {
+        ra <- array(NA, c(mx, my, 9))
+        for (kk in 1:9) {
+            if (constant.a.wght) {
+                ra[, , kk] <- a.wght[index[kk]]
+            }
+            else {
+                ra[, , kk] <- a.wght[, , index[kk]]
+            }
         }
-        for( i in 2:(mx-1)){
-       # left side   then right
-          ra[ i , ]<-            c( 2 + kappa2[i,1]/2, -.5, -.5, NA,  -1)
-          ra[ i + (my-1)*mx, ]<- c( 2 + kappa2[i,my]/2, -.5, -.5, -1,  NA)
+    }
+    #
+    #  Order for 5 nonzero indices is: center, top, bottom, left right
+    #  a superset of indices is used to make the arrays regular.
+    #  and NAs are inserted for positions beyond lattice. e.g. top neighbor
+    #  for a lattice point on the top edge. The NA pattern is also
+    #  consistent with how the weight matrix is filled.
+    #
+    #  indices to use at left and right boundaries depend on if periodic boundary
+    #  is specified (cylinder==TRUE)
+    Bi <- rep(1:m, 5)
+    i.c <- matrix(1:m, nrow = mx, ncol = my)
+    # indices for center, top, bottom, left, right
+    # NOTE that these are just shifts of the original matrix
+    Bj <- c(i.c, LKrig.shift.matrix(i.c, 0, -1, periodic = c(cylinder, 
+        F)), LKrig.shift.matrix(i.c, 0, 1, periodic = c(cylinder, 
+        F)), LKrig.shift.matrix(i.c, 1, 0, periodic = c(cylinder, 
+        F)), LKrig.shift.matrix(i.c, -1, 0, periodic = c(cylinder, 
+        F)))
+    # indices for NW, SW, SE, SW
+    if (!first.order) {
+        Bi <- c(Bi, rep(1:m, 4))
+        Bj <- c(Bj, c(LKrig.shift.matrix(i.c, 1, 1, periodic = c(cylinder, 
+            F)), LKrig.shift.matrix(i.c, -1, 1, periodic = c(cylinder, 
+            F)), LKrig.shift.matrix(i.c, 1, -1, periodic = c(cylinder, 
+            F)), LKrig.shift.matrix(i.c, -1, -1, periodic = c(cylinder, 
+            F))))
+    }
+    # A check:
+    #  lab<- c('center','top','bot','L','R'); temp<- matrix( Bj,ncol=5); for(  k in 1:5){ cat(lab[k], fill=TRUE);print( t( matrix(temp[,k],mx,my))[my:1,])}
+    #  lab<- c('center','top','bot','L','R', 'SE', 'SW', 'NE', 'NW')
+    #  index<- c( 5,4,6,2,8,3,9,1,7)
+    #  lab2<- lab; lab2[index]<- lab; matrix( lab2, 3,3)
+    #  temp<- matrix( Bj,ncol=5+4); for(  k in 1:9){ cat(lab[k], fill=TRUE);print( t( matrix(temp[,k],mx,my))[my:1,])}
+    #
+    ####################
+    ###### block for edge correction
+    if (edge) {
+        # reformat kappa2 so that it is easier to index edges
+        kappa2 <- (a.wght - 4)
+        kappa2 <- matrix(kappa2, mx, my)
+        # fix up boundaries with edge corrections
+        # orientation use row/column as spatial locations
+        if (!cylinder) {
+            # Order for first 5 indices is: center, top, bottom, left right
+            # fill in  order lower left, lower right, upper left, upper right
+            ra[1, 1, 1:5] <- c(1 + kappa2[1, 1]/4, -0.5, NA, 
+                NA, -0.5)
+            ra[mx, 1, 1:5] <- c(1 + kappa2[mx, 1]/4, -0.5, NA, 
+                -0.5, NA)
+            ra[1, my, 1:5] <- c(1 + kappa2[1, my]/4, NA, -0.5, 
+                NA, -0.5)
+            ra[mx, my, 1:5] <- c(1 + kappa2[mx, my]/4, NA, -0.5, 
+                -0.5, NA)
+            # edges
+            # lower then upper
+            for (i in 2:(mx - 1)) {
+                ra[i, 1, 1] <- c(2 + kappa2[i, 1]/2)
+                ra[i, 1, 2:5] <- c(-0.5, NA, -1, -1)
+                ra[i, my, 1] <- c(2 + kappa2[i, my]/2)
+                ra[i, my, 2:5] <- c(NA, -0.5, -1, -1)
+            }
+            #   left side   then right side
+            for (j in 2:(my - 1)) {
+                ra[1, j, 1] <- c(2 + kappa2[1, j]/2)
+                ra[1, j, 2:5] <- c(-1, -1, NA, -0.5)
+                ra[mx, j, 1] <- c(2 + kappa2[mx, j]/2)
+                ra[mx, j, 2:5] <- c(-1, -1, -0.5, NA)
+            }
         }
-     }
-# find all cases that are in lattice  
-  good<- c( rep( TRUE,m),
-           (I-1) > 0,
-           (I)   < mx,
-           (J-2) >=0,
-           (J)   <my )
-# remove cases that are beyond the lattice and coerce to integer
-# also reshape ra as a vector stacking 5 columns
-  Bi<- rep(1:m,5)
-  Bi<- as.integer(Bi[good])
-  Bj<- as.integer(Bj[good])
-  ra<- c(ra)[good]     
-# spind format, easier to accumulate columns
-# see calling function LKrig.precision
-  return( list( ind=cbind(Bi,Bj), ra=ra, da=da))
+        else {
+            # handle edges for cylinder
+            for (i in 1:(mx)) {
+                ra[i, 1, 1] <- c(2 + kappa2[i, 1]/2)
+                ra[i, 1, 2:5] <- c(-0.5, NA, -1, -1)
+                ra[i, my, 1] <- c(2 + kappa2[i, my]/2)
+                ra[i, my, 2:5] <- c(NA, -0.5, -1, -1)
+            }
+        }
+    }
+    ##############################
+    #  end edge correction block
+    ###############################
+    #
+    # find all cases that are in lattice
+    good <- !is.na(Bj)
+    # remove cases that are beyond the lattice and coerce to integer
+    # also reshape ra as a vector stacking 9 columns
+    #
+    Bi <- as.integer(Bi[good])
+    Bj <- as.integer(Bj[good])
+    ra <- c(ra)[good]
+    # return spind format because this is easier to accumulate
+    # matrices at different multiresolution levels
+    # see calling function LKrig.precision
+    return(list(ind = cbind(Bi, Bj), ra = ra, da = da))
 }
+
+
 

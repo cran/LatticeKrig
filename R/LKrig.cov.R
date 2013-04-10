@@ -2,7 +2,7 @@
 # the R software environment .
 # Copyright (C) 2012
 # University Corporation for Atmospheric Research (UCAR)
-# Contact: Douglas Nychka, nychka@ucar.edu, 
+# Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,37 +19,45 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.cov <-
-function( x1, x2=NULL, LKinfo, C=NA, marginal=FALSE){
-  PHI1<- LKrig.basis( x1,LKinfo)
-  Q<-  LKrig.precision(LKinfo) 
-  Qc <-chol(Q)
-# note: construction of lattice basis depends on alpha and a.wght  and already normalizes to
-# get unit marginal variances. 
-  if( !marginal){
-      PHI2<- LKrig.basis( x2,LKinfo)
-      if (is.na(C[1])) {
-        A <- forwardsolve(Qc, transpose = TRUE, t(PHI2), upper.tri = TRUE)
-        A <- backsolve(Qc, A)
-      return( PHI1%*%A)}
-      else{
-        A <- forwardsolve(Qc, transpose = TRUE, t(PHI2)%*%C, upper.tri = TRUE)
-        A <- backsolve(Qc, A)
-        return(PHI1%*%A)}
-  }
-    if (marginal){
-      if( !is.null(x2)){
-        stop("x2 should not be passed to find marginal variance")}
-        PHI<- LKrig.basis( x1,LKinfo)
-#        Qc<-  chol( LKrig.precision(LKinfo) )
-#        A <- forwardsolve(Qc, transpose = TRUE, t(PHI), upper.tri = TRUE)
-#        test.variance<- c(colSums( A**2))
-        marginal.variance<- LKrig.quadraticform( LKrig.precision(LKinfo), PHI) 
-        if( LKinfo$scale.basis){
-# add in additional scaling if part of covariance model         
-           marginal.variance<- marginal.variance*predict(LKinfo$rho.object, x1) }
-        return( marginal.variance)
-   }
-# should not get here. 
+LKrig.cov <- function(x1, x2 = NULL, LKinfo, C = NA, 
+    marginal = FALSE) {
+    PHI1 <- LKrig.basis(x1, LKinfo)
+    Q <- LKrig.precision(LKinfo)
+    Qc <- chol(Q)
+    # note: construction of lattice basis depends on alpha and a.wght  and already normalizes to
+    # get unit marginal variances.
+    if (!marginal) {
+        PHI2 <- LKrig.basis(x2, LKinfo)
+        if (is.na(C[1])) {
+            A <- forwardsolve(Qc, transpose = TRUE, t(PHI2), 
+                upper.tri = TRUE)
+            A <- backsolve(Qc, A)
+            return(PHI1 %*% A)
+        }
+        else {
+            A <- forwardsolve(Qc, transpose = TRUE, t(PHI2) %*% 
+                C, upper.tri = TRUE)
+            A <- backsolve(Qc, A)
+            return(PHI1 %*% A)
+        }
+    }
+    if (marginal) {
+        if (!is.null(x2)) {
+            stop("x2 should not be passed to find marginal variance")
+        }
+        PHI <- LKrig.basis(x1, LKinfo)
+        #        Qc<-  chol( LKrig.precision(LKinfo) )
+        #        A <- forwardsolve(Qc, transpose = TRUE, t(PHI), upper.tri = TRUE)
+        #        test.variance<- c(colSums( A**2))
+        marginal.variance <- LKrig.quadraticform(LKrig.precision(LKinfo), 
+            PHI)
+        if (LKinfo$scale.basis) {
+            # add in additional scaling if part of covariance model
+            marginal.variance <- marginal.variance * predict(LKinfo$rho.object, 
+                x1)
+        }
+        return(marginal.variance)
+    }
+    # should not get here.
 }
 

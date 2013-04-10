@@ -1,8 +1,7 @@
 
-R version 2.14.0 (2011-10-31)
-Copyright (C) 2011 The R Foundation for Statistical Computing
-ISBN 3-900051-07-0
-Platform: i386-apple-darwin9.8.0/i386 (32-bit)
+R version 3.0.0 (2013-04-03) -- "Masked Marvel"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin10.8.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -16,6 +15,12 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> 
+> # fields, Tools for spatial data
+> # Copyright 2004-2011, Institute for Mathematics Applied Geosciences
+> # University Corporation for Atmospheric Research
+> # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
+> 
 > library( LatticeKrig)
 Loading required package: spam
 Spam version 0.29-2 (2012-08-17) is loaded.
@@ -26,18 +31,29 @@ suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
 
 Attaching package: 'spam'
 
-The following object(s) are masked from 'package:base':
+The following object is masked from 'package:base':
 
     backsolve, forwardsolve
 
 Loading required package: fields
-> # fields, Tools for spatial data
-> # Copyright 2004-2011, Institute for Mathematics Applied Geosciences
-> # University Corporation for Atmospheric Research
-> # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
-> 
-> library( LatticeKrig)
 > options( echo=FALSE)
+testing:  MRF index
+    PASSED test at tolerance  1e-08
+testing:  MRF value
+    PASSED test at tolerance  1e-08
+testing:  MRF a.wght as matrix
+    PASSED test at tolerance  1e-08
+plot window will lay out plots in a 5 by 4 matrix 
+testing:  MRF weight placement
+    PASSED test at tolerance  1e-08
+    PASSED test at tolerance  1e-08
+    PASSED test at tolerance  1e-08
+testing:  MRF cyl weight placement
+    PASSED test at tolerance  1e-08
+testing:  MRF cyl corner weight placement
+    PASSED test at tolerance  1e-08
+testing:  MRF cyl corner weight placement
+    PASSED test at tolerance  1e-08
 testing:  diagonal elements of precision 3-levels
     PASSED test at tolerance  1e-08
 testing:  just level 2 B matrix
@@ -67,18 +83,31 @@ testing:  1 level edges
     PASSED test at tolerance  1e-08
 testing:  1 level interior
     PASSED test at tolerance  1e-08
+Testing with 3 levels
 testing:  3rd level corners
     PASSED test at tolerance  1e-08
 testing:  1 level edges
     PASSED test at tolerance  1e-08
 testing:  1 level interior
     PASSED test at tolerance  1e-08
+tests of alpha weighting
 testing:  1 level spatial alpha
     PASSED test at tolerance  1e-08
 testing:  1 level spatial alpha Q
     PASSED test at tolerance  1e-08
-testing:   3 levels spatial alpha
+testing:   3 levels spatial alpha buffer=0
     PASSED test at tolerance  1e-08
-testing:  3 levels spatial alpha Q
+testing:  3 levels spatial alpha Q buffer=0
+    PASSED test at tolerance  1e-08
+testing:   3 levels spatial alpha buffer=0
+    PASSED test at tolerance  1e-08
+testing:  3 levels spatial alpha Q buffer=3
+    PASSED test at tolerance  1e-08
+testing:  adding  7 buffer points
+    PASSED test at tolerance  1e-08
+testing:  correct nesting of buffer=0  grid
     PASSED test at tolerance  1e-08
 Done testing LKrig.precision
+> proc.time()
+   user  system elapsed 
+  3.444   0.126   3.562 

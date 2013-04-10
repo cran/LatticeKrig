@@ -2,7 +2,7 @@
 # the R software environment .
 # Copyright (C) 2012
 # University Corporation for Atmospheric Research (UCAR)
-# Contact: Douglas Nychka, nychka@ucar.edu, 
+# Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,23 +19,30 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-predict.LKrig <-
-function( object, xnew=NULL,Znew=NULL,drop.Z=FALSE,...){
-  if( is.null(xnew)){
-    xnew<- object$x}
-  if( is.null(Znew)& object$nZ>0){
-    Znew<- object$Z} 
-  NG<- nrow( xnew)
-# temp1 are predcitions for fixed part of the model
-# with or without the additional covariates, Znew.
-  if( drop.Z|object$nZ==0){
-     temp1<-cbind( rep(1,NG), xnew)%*% object$d.coef[object$ind.drift,]}
-   else{
-     temp1<- cbind( rep(1,NG), xnew,Znew)%*% object$d.coef}
-    PHIg<-   LKrig.basis( xnew,object$LKinfo)
-# temp2 is the nonparametric or component from the spatial process
-# described by the multiresolution basis
-    temp2<- PHIg%*%object$c.coef
-return( temp1 + temp2)
+predict.LKrig <- function(object, xnew = NULL, Znew = NULL, 
+    drop.Z = FALSE, ...) {
+    if (is.null(xnew)) {
+        xnew <- object$x
+    }
+    if (is.null(Znew) & (object$nZ > 0) & (!drop.Z)) {
+        Znew <- object$Z
+    }
+    NG <- nrow(xnew)
+    # temp1 are predictions for fixed part of the model
+    # with or without the additional covariates, Znew.
+    T.matrix <- LKrig.fixed.component(xnew, Z = Znew, m = 2, 
+        distance.type = object$LKinfo$distance.type)
+    if (drop.Z | object$nZ == 0) {
+        temp1 <- T.matrix %*% object$d.coef[object$ind.drift, 
+            ]
+    }
+    else {
+        temp1 <- T.matrix %*% object$d.coef
+    }
+    PHIg <- LKrig.basis(xnew, object$LKinfo)
+    # temp2 is the nonparametric or component from the spatial process
+    # described by the multiresolution basis
+    temp2 <- PHIg %*% object$c.coef
+    return(temp1 + temp2)
 }
 

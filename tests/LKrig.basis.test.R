@@ -45,5 +45,29 @@ dind<-matrix( delta, nrow=n1,ncol=n2, byrow=TRUE)
 look2<- Wendland2.2(rdist( x1,x2)/dind)
 test.for.zero( look1,look2)
 
-cat( "Done with testing Wendland family", fill=TRUE)
+# tests for cylindrical geometry
+  x1<- make.surface.grid( list( x= seq(0,360,,120), y= seq( -30,30,,20) ))
+  center<- rbind(c(20,5))
+  R<- 360/(2*pi)
+  temp<- rdist( LKrig.cyl(x1,R), (LKrig.cyl(center, R)))
+  temp[ temp>=60] <- 0
+#  image.plot( as.surface(x1,c(temp)))
+  look1<-Radial.basis(x1,center, delta=60, just.distance=TRUE, distance.type="cylinder")
+  look2<- spam2full(look1)
+  test.for.zero( c(look2), c(temp), tag="cyl distance1")
+
+  x1<- make.surface.grid( list( x= seq(0,360,,100), y= seq( -30,30,,15) ))
+  center<-  make.surface.grid( list( x= seq(0,360,,15), y= seq( -30,30,,5) ))
+  look1<-Radial.basis(x1,center, delta=60, distance.type="cylinder")
+  look2<- spam2full(look1)
+  R<- 360/(2*pi)
+  temp<- rdist( LKrig.cyl(x1,R), (LKrig.cyl(center, R)))
+  temp2<- WendlandFunction( temp/60)
+  test.for.zero( c(look2), c(temp2), tag="cyl distance2")
+
+  obj<- LKrig.setup( rbind( c(0,-30), c(360,30)), NC=10, a.wght=rep(5,4), nlevel=4,
+                                  alpha=rep(1,4),distance.type="cylinder")
+
+
+cat( "Done with testing LKrig basis", fill=TRUE)
 options( echo=TRUE)

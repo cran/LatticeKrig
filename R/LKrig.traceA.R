@@ -2,7 +2,7 @@
 # the R software environment .
 # Copyright (C) 2012
 # University Corporation for Atmospheric Research (UCAR)
-# Contact: Douglas Nychka, nychka@ucar.edu, 
+# Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,25 +19,30 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.traceA<- function( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA){
-   if(exists(".Random.seed",1)){
-    save.seed <- .Random.seed}
-   else{
-    save.seed <- NA}  
-  n<- length( weights)
-# set  new seed to use for Monte Carlo estimate of trace A(lambda)
-  if( !is.na(iseed)){
-      set.seed(iseed)}
-# generate N(0,1)  
-  wEy<- matrix( rnorm( NtrA*n), n,NtrA)*sqrt(weights)
-# restore  original random seed   
-   if( !is.na(iseed) & !is.na(save.seed[1])){
-     assign(".Random.seed",save.seed, pos=1)}
-#  
-   out3<- LKrig.coef( Mc, wPHI, wT.matrix, wEy,lambda, weights)
-   wEyhat<-(wT.matrix%*%out3$d.coef + wPHI%*%out3$c.coef) 
-   trA.info <- colSums((wEy *wEyhat)/weights)
-   trA.est <- mean(trA.info)
-   trA.SE  <- sqrt( var(trA.info)/ length(trA.info))
-   list( trA.est= trA.est, trA.SE=trA.SE)
+LKrig.traceA <- function(Mc, wPHI, wT.matrix, lambda, 
+    weights, NtrA, iseed = NA) {
+    if (exists(".Random.seed", 1)) {
+        save.seed <- .Random.seed
+    }
+    else {
+        save.seed <- NA
+    }
+    n <- length(weights)
+    # set  new seed to use for Monte Carlo estimate of trace A(lambda)
+    if (!is.na(iseed)) {
+        set.seed(iseed)
+    }
+    # generate N(0,1)
+    wEy <- matrix(rnorm(NtrA * n), n, NtrA) * sqrt(weights)
+    # restore  original random seed
+    if (!is.na(iseed) & !is.na(save.seed[1])) {
+        assign(".Random.seed", save.seed, pos = 1)
+    }
+    #
+    out3 <- LKrig.coef(Mc, wPHI, wT.matrix, wEy, lambda, weights)
+    wEyhat <- (wT.matrix %*% out3$d.coef + wPHI %*% out3$c.coef)
+    trA.info <- colSums((wEy * wEyhat)/weights)
+    trA.est <- mean(trA.info)
+    trA.SE <- sqrt(var(trA.info)/length(trA.info))
+    list(trA.est = trA.est, trA.SE = trA.SE)
 }

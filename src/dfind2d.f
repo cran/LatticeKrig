@@ -5,6 +5,7 @@
 c****   counter  for accumulating close points
         kk=0 
           do  15 i= 1, n1
+            kksave= kk
             do 10 j =1,n2
 c**** accumulate squared differences
               dtemp= (x1(i,1) - x2(j,1))**2 + (x1(i,2) - x2(j,2))**2
@@ -20,7 +21,7 @@ c**** check if there is still array space
                 ind(kk,2)= j
                 rd(kk)= sqrt( dtemp)
               endif     
- 10        continue
+ 10        continue          
  15      continue
          iflag=1
          Nmax=kk  

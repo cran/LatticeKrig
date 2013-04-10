@@ -85,8 +85,8 @@ For those readers that use which.max these functions are natural extensions and 
 }
 }
 \value{
-  \item{out}{A matrix with columns: effective degrees of freedom, ln Profile likelihood, 
-Generalized cross-validation function, MLE sigma, MLE rho. The rows correspond to the different parameters in the rows of the \code{par.grid} components. }
+  \item{summary}{A matrix with columns: effective degrees of freedom, ln Profile likelihood, 
+Generalized cross-validation function, MLE sigma, MLE rho, full likelihood and number of parameter evalutations. The rows correspond to the different parameters in the rows of the \code{par.grid} components. }
 \item{par.grid }{List of parameters used in search. Some parameters might be filled in from the initial par.grid list passed and also from \code{LKinfo}.}
 \item{LKinfo}{ LKinfo list that was either passed or created}
 \item{index.MLE}{Index for case that has largest Likelihood value}
@@ -134,12 +134,12 @@ case when the parameters alpha might be a list of nlevel matrices.}
 # This is a "thin plate spline-like" estimate 
   NG<-5 # make this larger ( e.g. 15) for a better estimate
   par.grid<- list( a.wght= rep( 4.05,NG),alpha= rep(1, NG), llambda=  seq(-8,-2,,NG))
-  LKinfo<- LKrig.setup(x,NC=15,nlevel=1)
+  LKinfo<- LKrig.setup(x,NC=12,nlevel=1)
   lambda.search.results<-LKrig.MLE(
                               x,y,LKinfo=LKinfo, par.grid=par.grid, lambda.profile=FALSE)
-  lambda.search.results$out
+  lambda.search.results$summary
 # profile likelihood
-  plot( lambda.search.results$out[,1:2], 
+  plot( lambda.search.results$summary[,1:2], 
          xlab="effective degrees freedom",
          ylab="ln profile likelihood")
 # fit at largest likelihood value:
@@ -151,11 +151,11 @@ case when the parameters alpha might be a list of nlevel matrices.}
   NG<-3
   par.grid<- list( a.wght= c( 4.05,4.1,5),alpha= rep(1, NG), llambda= c(-5,NA,NA))
 # NOTE: NAs in llambda mean use the previous MLE for llambda as the current starting value. 
-  LKinfo<- LKrig.setup(x,NC=15,nlevel=1)
+  LKinfo<- LKrig.setup(x,NC=12,nlevel=1)
   lambda.search.results<-LKrig.MLE(
                               x,y,LKinfo=LKinfo, par.grid=par.grid,
                               lambda.profile=TRUE, verbose=TRUE)
-  lambda.search.results$out
+  print(lambda.search.results$summary)
 # note first result a.wght = 4.05 is the optimized result for the grid search given above.
 
 ##############################################################################################    
@@ -184,78 +184,45 @@ case when the parameters alpha might be a list of nlevel matrices.}
 ##############################################################################################
 
 # this scatterplot is good for a quick look because  effective degrees of freedom is a useful summary of fit. 
-  plot( alpha.search.results$out[,1:2], 
+  plot( alpha.search.results$summary[,1:2], 
          xlab="effective degrees freedom",
          ylab="ln profile likelihood")
- 
-
-
+#
 \dontrun{
 # a more defensible two level model search 
 # with profiling over lambda.
 #  This takes a few minutes
-  Ndes<- 20 
+  Ndes<- 40 
   nlevel<-2 
-  set.seed(123)
   par.grid<- list()
-# create grid of alphas to sum to 1 use a mixture model parametrization
-#  alpha1 = (1/(1 + exp(gamma1)) , alpha2 = exp( gamma1) / ( 1 + exp( gamma1))
-  par.grid$gamma<- runif( Ndes, -3,4)
-# values for range (a.wght)
+## create grid of alphas to sum to 1 use a mixture model parametrization:
+## alpha1 = (1/(1 + exp(gamma1)) , alpha2 = exp( gamma1) / ( 1 + exp( gamma1))
+  set.seed(123)
+  par.grid$gamma<- runif( Ndes,-3,4)
+## values for range (a.wght)
   a.wght<-  4 + 1/exp(seq( 0,4,,Ndes))
   par.grid$a.wght<- cbind( a.wght, a.wght)
-# log lambda grid search values
+# log lambda grid search values (these are the starting values)
   par.grid$llambda<- rep(-4, Ndes)
   LKinfo1<- LKrig.setup( x, NC=15, nlevel=nlevel)
-# NOTE: a.wght in call is not used 
- search.results<- LKrig.MLE( x,y,LKinfo=LKinfo1, par.grid=par.grid,
- lambda.profile=TRUE, verbose=TRUE)
+##
+## the search over the parameter list in par.grid  maximizing over lambda 
+  search.results<- LKrig.MLE( x,y,LKinfo=LKinfo1, par.grid=par.grid,
+                                 lambda.profile=TRUE)
 # plotting results
 set.panel(1,2)
- plot( search.results$out[,1:2], 
+ plot( search.results$summary[,1:2], 
          xlab="effective degrees freedom",
          ylab="ln profile likelihood")
  xtemp<- matrix(NA, ncol=2, nrow=Ndes)
  for( k in 1:Ndes){
    xtemp[k,] <- c( (search.results$par.grid$alpha[[k]])[1], (search.results$par.grid$a.wght[[k]])[1] )}
- quilt.plot( xtemp,search.results$out[,2])
+ quilt.plot( xtemp,search.results$summary[,2])
 #  fit using Tps
- tps.out<- Tps(  xtemp,search.results$out[,2], lambda=0)
+ tps.out<- Tps(  xtemp,search.results$summary[,2], lambda=0)
  contour( predict.surface(tps.out), lwd=3,add=TRUE)
-
-set.panel()
+ set.panel()
 }
-
-\dontrun{
-# evaluating likelhood at  parameters that approximate an
-# exponential covariance function with different ranges. 
-# this takes a few minutes
-  Nrange<- 10
-  range.grid<- seq( 2.5,6,,Nrange)
-  nlevel<- 3
-  a.wght.grid<- alpha.grid<- matrix( NA, nrow=Nrange, ncol=nlevel)
-  for(  j in 1:Nrange){
-    LKinfo.approx<- Matern2LKrig( range.grid[j], .5, x, NC=15, nlevel=nlevel)$LKinfo
-# the parameters are returned in the list of list format
-# need to unlist to save as a matrix row. 
-    a.wght.grid[j,]<-  unlist(LKinfo.approx$a.wght)
-    alpha.grid[j,]<-  unlist(LKinfo.approx$alpha)} 
-  LKinfo.ref<-  Matern2LKrig( mean(range.grid), .5, x, NC=15, nlevel=nlevel)$LKinfo
-#  
-  par.grid<-list()
-  par.grid$alpha<- alpha.grid
-  par.grid$a.wght<- a.wght.grid 
-# specify first start for llambda but then use previous MLE as the start for new range
-  par.grid$llambda<- rep(-3, Nrange)
-# evaluate likelihood over these ranges but profile over lambda
-  range.search.results<- LKrig.MLE( x,y, par.grid=par.grid,LKinfo=LKinfo.ref)
-# same kind of plot as above but more compact code  
-# profile surface using effective degrees of freedom and the range.
-  plot( range.grid, range.search.results$out[,2], 
-         xlab="approx exponential range",
-         ylab="ln profile likelihood")
-# Try other lambda values
- }
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

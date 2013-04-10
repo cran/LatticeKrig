@@ -2,7 +2,7 @@
 # the R software environment .
 # Copyright (C) 2012
 # University Corporation for Atmospheric Research (UCAR)
-# Contact: Douglas Nychka, nychka@ucar.edu, 
+# Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,91 +19,151 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.setup <-
-function(x=NULL, NC, nlevel, grid.info=NULL,
-                       lambda=NA, sigma=NA, rho=NA, 
-                       alpha=NA, a.wght=NA, overlap=2.5,
-                       normalize=TRUE, normalize.level=NULL,
-                       edge=TRUE, rho.object=NULL, RadialBasisFunction="WendlandFunction"){
-#
-# determines the multiresolution basis function indices.
-#
-  if( is.null(grid.info)){
-    if( is.null(x)){
-      stop("need to specify x locations")}
-# if center range is missing use the locations
-    grid.info<- list( xmin= min( x[,1]), xmax= max( x[,1]),
-                      ymin= min( x[,2]), ymax= max( x[,2]))
-# spacing for grid
-    d1<- grid.info$xmax- grid.info$xmin
-    d2<- grid.info$ymax- grid.info$ymin
-# actual number of grid points is determined by the spacing delta
-# determine delta so that centers are equally
-# spaced in both axes and NC is the maximum number of grid points
-# along the larger range.     
-  grid.info$delta<- max(c(d1,d2))/(NC-1)}
-# determine spacing in x and y dimensions.  
-  delta<- grid.info$delta   
-  grid.list<- list( x= seq( grid.info$xmin, grid.info$xmax,delta),
-                    y= seq( grid.info$ymin, grid.info$ymax,delta))
-  delta.save<- mx<-my<- rep(NA, nlevel)
-# loop through multiresolution levels decreasing delta by factor of 2
-# and compute number of grid points. 
-  mx[1]<- length( grid.list$x)
-  my[1]<- length( grid.list$y)
-  delta.save[1]<- delta
- 
-  grid<- list(grid.list)
-# loop through levels doubling the grid resolution  
-  if( nlevel >1){
-      for( j in 2:nlevel){     
-        delta<- delta/2
-        delta.save[j]<- delta
-        grid.list<- list( x= seq( grid.info$xmin, grid.info$xmax,delta),
-                    y= seq( grid.info$ymin, grid.info$ymax,delta))
-        grid<- c(grid, list(grid.list))
-        mx[j]<- length( grid.list$x)
-        my[j]<- length( grid.list$y)      
-      }    
+LKrig.setup <- function(x = NULL, NC = NULL, NC.buffer = 5, 
+    nlevel, grid.info = NULL, lambda = NA, sigma = NA, rho = NA, 
+    alpha = NA, nu = NULL, a.wght = NA, overlap = 2.5, normalize = TRUE, 
+    normalize.level = NULL, edge = FALSE, rho.object = NULL, 
+    RadialBasisFunction = "WendlandFunction", distance.type = "Euclidean", 
+    V = diag(c(1, 1)), verbose = FALSE) {
+    #
+    # determines the multiresolution basis function indices.
+    #
+    
+    # check distance choices
+    if (is.na(match(distance.type, c("Euclidean", "cylinder")))) {
+        stop("distance type is not supported (or is misspelled!).")
     }
-  offset<- as.integer( c( 0, cumsum(mx*my)))
-# repeat a.wght to fill out for all levels. 
-  if( length(a.wght)==1){
-    a.wght<- as.list( rep(a.wght[1],nlevel)) }
-# coerce a.wght to  list  if it is passed as something else (most likely a vector)
-  if( !is.list(a.wght)){
-    a.wght<- as.list(a.wght)}
-# some checks on a.wght
-  a.wght.test<- unlist( a.wght)
-  if( any( !is.na(a.wght.test)) ){
-     if( any( a.wght.test<4)){              
-         stop("a.wght must be >=4 if specified")}
-     if( any(a.wght.test==4)&normalize){
-         stop("normalize must be FALSE if a.wght ==4")}
-  }
-# coerce alpha to a list if it is passed as something else
-  if( !is.list( alpha)){
-    alpha<- as.list( alpha)}
-    scalar.alpha <- length(unlist(alpha)) == length( alpha)
-# Check some details about scaling the basis functions and how they are
-# normalized
-  scale.basis<- !is.null(rho.object)
-  if( scale.basis & !normalize){
-    stop("Can not scale an unnormalized basis")}
-  if( is.null(normalize.level)){
-     normalize.level= rep( normalize, nlevel)}
-# set lambda if sigma and rho are passed. 
-  if(is.na(lambda[1])){
-    lambda<- sigma^2/ rho}
-# 
-  out<- list( mx=mx, my=my,nlevel=nlevel,delta= delta.save,m= sum( mx*my),
-                 offset=offset,grid.info= grid.info, grid= grid,
-                 overlap=overlap, alpha=alpha, a.wght=a.wght,
-                 lambda= lambda, sigma=sigma, rho=rho,
-                 normalize=normalize,normalize.level=normalize.level, edge=edge,
-                 scalar.alpha=scalar.alpha,
-                 scale.basis=scale.basis, rho.object=rho.object, RadialBasisFunction=RadialBasisFunction)
-  class(out)<-"LKinfo"
-  return( out)
+    #further checks for cylinder case
+    if (distance.type == "cylinder") {
+        if (V[1, 1] != 1) {
+            stop("can not scale the angular coordinate (x[,1]),\nassumed to be in degrees")
+        }
+        if ((V[2, 1] != 0) | (V[1, 2] != 0)) {
+            stop("can have off diagonal elements in V")
+        }
+    }
+    #
+    if (is.null(grid.info)) {
+        # if center grid information is missing create grid based on the locations
+        # find range of scaled locations
+        if (is.null(x)) {
+            stop("need to specify x locations")
+        }
+        if (is.null(NC)) {
+            stop("need to specify NC for grid size")
+        }
+        range.x <- apply(as.matrix(x) %*% t(solve(V)), 2, "range")
+        if (verbose) {
+            cat("ranges of transformed variables", range.x, fill = TRUE)
+        }
+        grid.info <- list(xmin = range.x[1, 1], xmax = range.x[2, 
+            1], ymin = range.x[1, 2], ymax = range.x[2, 2])
+        d1 <- grid.info$xmax - grid.info$xmin
+        d2 <- grid.info$ymax - grid.info$ymin
+        grid.info$delta <- ifelse(distance.type == "cylinder", 
+            d1/(NC - 1), max(c(d1, d2))/(NC - 1))
+    }
+    
+    # check that cylinder geometry has the right delta with x i.e.divides range evenly.
+    if (distance.type == "cylinder") {
+        d1 <- grid.info$xmax - grid.info$xmin
+        NC.test <- d1/grid.info$delta
+        if (round(NC.test - round(NC.test)) > 1e-08) {
+            stop("delta spacing in x dimension must be even for\ncylinder geometry")
+        }
+    }
+    # find the grid centers
+    out.grid <- LKrig.make.centers(grid.info, nlevel, NC.buffer, 
+        distance.type)
+    #
+    # if a.wght is not a list with nlevel components then
+    # assume this is a scalar or vector of values for center value.
+    if (!is.list(a.wght)) {
+        # some checks on a.wght
+        # coerce a.wght to list if it is passed as something else (most likely a vector)
+        if (nlevel == 1) {
+            a.wght <- list(a.wght)
+        }
+        else {
+            # repeat a.wght to fill out for all levels.
+            if (length(a.wght) == 1) {
+                a.wght <- rep(a.wght, nlevel)
+            }
+            a.wght <- as.list(c(a.wght))
+        }
+    }
+    #################################
+    # check length of a.wght list
+    if (length(a.wght) != nlevel) {
+        stop("length of a.wght list differs than of nlevel")
+    }
+    #
+    # now figure out if the model is stationary
+    # i.e. a.wght pattern is to be  repeated for each node
+    # this is the usual case
+    # if not stationary a.wght should lists of arrays that
+    # give values for each node separately
+    stationary <- is.null(dim(a.wght[[1]]))
+    # simple check on sizes of arrays
+    if (stationary) {
+        N.a.wght <- length(a.wght[[1]])
+        # allowed lengths for a.wght are just the center 1 values
+        # or 9 values for center,  first, and second order neighbors
+        if (is.na(match(N.a.wght, c(1, 9)))) {
+            stop("a.wght needs to be of length 1 or 9")
+        }
+        for (k in 1:length(a.wght)) {
+            if (length(length(a.wght[[k]])) != N.a.wght) {
+                stop(paste("a.wght level", k, " should have length", 
+                  N.a.wght))
+            }
+        }
+    }
+    else {
+        for (k in 1:length(a.wght)) {
+            dim.a.wght <- dim(a.wght[[k]])
+            if ((dim.a.wght[1] != out.grid$mx[k]) | (dim.a.wght[2] != 
+                out.grid$my[k])) {
+                stop(paste("a.wght array at level", k, " has wrong first two dimensions", 
+                  ))
+            }
+        }
+    }
+    ############################################# end a.wght checks
+    if (!is.null(nu)) {
+        alpha <- exp(-2 * (1:nlevel) * nu)
+        alpha <- alpha/sum(alpha)
+    }
+    # coerce alpha to a list if it is passed as something else
+    if (!is.list(alpha)) {
+        alpha <- as.list(alpha)
+    }
+    scalar.alpha <- length(unlist(alpha)) == length(alpha)
+    # Check some details about scaling the basis functions and how they are
+    # normalized
+    scale.basis <- !is.null(rho.object)
+    if (scale.basis & !normalize) {
+        stop("Can not scale an unnormalized basis")
+    }
+    if (is.null(normalize.level)) {
+        normalize.level = rep(normalize, nlevel)
+    }
+    # set lambda if sigma and rho are passed.
+    if (is.na(lambda[1])) {
+        lambda <- sigma^2/rho
+    }
+    #
+    out <- list(nlevel = nlevel, grid.info = grid.info, NC = NC, 
+        NC.buffer = NC.buffer, delta = out.grid$delta.save, mx = out.grid$mx, 
+        my = out.grid$my, m = out.grid$m, m.domain = out.grid$m.domain, 
+        NC.buffer.x = out.grid$NC.buffer.x, NC.buffer.y = out.grid$NC.buffer.y, 
+        offset = out.grid$offset, grid = out.grid$grid, overlap = overlap, 
+        alpha = alpha, nu = nu, a.wght = a.wght, stationary = stationary, 
+        lambda = lambda, sigma = sigma, rho = rho, normalize = normalize, 
+        normalize.level = normalize.level, edge = edge, scalar.alpha = scalar.alpha, 
+        scale.basis = scale.basis, rho.object = rho.object, RadialBasisFunction = RadialBasisFunction, 
+        distance.type = distance.type, V = V)
+    class(out) <- "LKinfo"
+    return(out)
 }
 
