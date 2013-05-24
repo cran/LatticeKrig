@@ -23,6 +23,8 @@
 \alias{LKrig.traceA}
 \alias{dfind2d}
 \alias{dfind3d}
+\alias{LKrigUnrollZGrid}
+
 \title{
 Internal functions for LatticeKrig package. 
 }
@@ -35,10 +37,15 @@ LKrig.coef(Mc, wPHI, wT.matrix, wy, lambda, weights)
 LKrig.lnPlike(Mc, Q, y, lambda, residuals, weights,
  sigma = NA, rho = NA)
 LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
-
+LKrigUnrollZGrid( grid.list, ZGrid=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+
+%  \item{distance.type}{Distance (and geometry) for coordinates.}
+
+  \item{grid.list}{The grid for evaluting surface}
+
   \item{iseed}{Random seed used to generate the Monte Carlo
    samples. Keep the same to compare results with mKrig and also for
    multiple values of lambda.}
@@ -46,6 +53,8 @@ LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
  \item{lambda}{The ratio of the nugget variance (sigma squared) to the
   parameter controlling the marginal variance of the process (called
   rho in fields).}
+
+%  \item{m}{Parameter specifying the degree of polynomial is (m-1).}
 
   \item{Mc}{Cholesky decomposition of regression matrix.}
 
@@ -62,6 +71,8 @@ LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
   \item{sigma}{If lambda is not specified then the values of the
   measurement error standard deviation.}
 
+
+
   \item{wPHI}{Weighted matrix of basis functions. See \code{LKrig}
   source for construction.}
   
@@ -73,7 +84,15 @@ LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
 
   \item{wy}{Weighted observations.}
 
+ % \item{x}{Matrix of spatial locations}
+
   \item{y}{Spatial observation.}
+
+%  \item{Z}{A matrix of covariates}
+
+  \item{ZGrid}{A list or array with the covariates on the same grid as that specified by 
+the  grid.list argument. }
+
 }
 \details{
 \code{LKrig.coef} and \code{LKrig.lnPlike} are two low level functions
@@ -103,6 +122,9 @@ function \code{dfind3d} is currently not used but is intended for
 future use to determine chordal distance between points on a sphere or
 cylinder.
 
+\code{LKrigDefaultFixedFunction} Is called to construct the fixed part of the 
+spatial model. The default is a polynomial of degree (m-1).
+
 }
 \value{
 \code{LKrig.coef} a list with components d.coef the coefficients of
@@ -126,7 +148,12 @@ and a.wght}
 
 \item{lnDetCov:}{the log determinant of the covariance matrix in the
  likelihood}
+
 }
+
+\code{LKrigDefaultFixedFunction}{A matrix with dimension nrow(x) and columns
+of the number of polynomial terms  and the number of columns of Z if given.}
+
 }
 \author{
 Doug Nychka

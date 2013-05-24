@@ -1,10 +1,21 @@
-LKrig.MLE <- function(x, y, ..., LKinfo, par.grid = NULL, 
-    lambda.profile = TRUE, verbose = FALSE, lowerBoundLogLambda=-16) {
+LKrig.MLE <- function(x, y, ..., LKinfo, use.cholesky=NULL, par.grid = NULL, 
+    lambda.profile = TRUE, verbose = FALSE, lowerBoundLogLambda=-16,
+                      nTasks=1, taskID=1, tol=.005) {
     LKrig.args <- c(list(x = x, y = y), list(...))
     # at this point LKinfo has the correct value for the number of multiresolution levels
-    par.grid <- LKrig.make.par.grid(par.grid = par.grid, LKinfo = LKinfo)
-    # output matrix
+    par.grid <- LKrig.make.par.grid(par.grid = par.grid, LKinfo = LKinfo) 
     NG <- length(par.grid$alpha)
+    # adjust the for loop from 1:NG if this
+    # function is called through Rmpi (i.e. if nTasks!=1)
+    # idea is that task with ID will work on
+    # NG1 through NG2 -- a fraction of the total number in par.grid
+     if( NG < nTasks ){
+        stop("Too many tasks for the number of parameter values")
+      }
+    indexTemp<- round(seq( 0,NG,,nTasks+1))
+    NG1<- indexTemp[taskID] + 1
+    NG2<- indexTemp[taskID+1]
+    #
     out <- matrix(NA, nrow = NG, ncol = 9,
                   dimnames = list(NULL, c("EffDf", "lnProfLike", "GCV", 
                   "sigma.MLE", "rho.MLE", "llambda.MLE", "lnLike", "counts value", "grad")))
@@ -13,22 +24,27 @@ LKrig.MLE <- function(x, y, ..., LKinfo, par.grid = NULL,
     lnProfileLike.max <- -1e+20
     lnLike.eval<- NULL
     llambda.opt<- NA
-    for (k in 1:NG) {
+    for (k in NG1:NG2) {
     # if starting value is missing use the optimum from previous fit
     # this only really makes sense if other parameters have some sort of continuity from k-1 to k.
         llambda.start<- ifelse (is.na( par.grid$llambda[k]), llambda.opt,  par.grid$llambda[k] )  
      # first fit to get cholesky symbolic decomposition
-        LKinfo.temp<- LKinfoUpdate( LKinfo, a.wght = (par.grid$a.wght[[k]]),
+        LKinfo.temp<- LKinfoUpdate( LKinfo,
+                                   a.wght = (par.grid$a.wght[[k]]),
                                     alpha =  (par.grid$alpha[[k]]),
-                                    nu = par.grid$nu[k], lambda=exp(llambda.start) )
+                                       nu = par.grid$nu[k],
+                                   lambda = exp(llambda.start) )
     # for first pass save symbolic decomposition for M
-        if( k ==1 ){ use.cholesky <- NULL}
-    #    
-        obj <- do.call("LKrigFindLambda",c(
-                                       LKrig.args,
-                                       list(LKinfo = LKinfo.temp,lambda.profile=lambda.profile)
-                                           )
-                                      )
+        if( k == NG1 ){ use.cholesky <- NULL}
+           obj <- do.call("LKrigFindLambda",
+                      c( LKrig.args,
+                        list(       LKinfo = LKinfo.temp,
+                            lambda.profile = lambda.profile,
+                              use.cholesky = use.cholesky,
+                                        tol=tol
+                            )
+                        )
+                        )
      # Note: if lambda.profile == FALSE the starting lambda is passed through as the "optimal" one
         llambda.opt<- obj$summary["llambda.opt"]
      # compare to current largest likelihood and update the LKinfo.MLE list if bigger.
@@ -44,13 +60,15 @@ LKrig.MLE <- function(x, y, ..., LKinfo, par.grid = NULL,
        if (verbose) { print( c(k,out[k,])) }
     }
     return(list(
-                summary = out,
+                 summary = out,
                 par.grid = par.grid,
-                LKinfo = LKinfo, 
-                LKinfo.MLE = LKinfo.MLE,
-                lnLike.eval = lnLike.eval,
-                lambda.MLE = lambda.MLE,
-                call = match.call() )
+                  LKinfo = LKinfo, 
+              LKinfo.MLE = LKinfo.MLE,
+             lnLike.eval = lnLike.eval,
+              lambda.MLE = lambda.MLE,
+                    call = match.call(),
+                  taskID = taskID
+                )
            )
 }
 

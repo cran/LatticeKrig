@@ -1,4 +1,4 @@
-LKrig.make.alpha<- function( alpha, nu, nlevel){
+LKrig.make.alpha<- function( alpha=NA, nu=NULL, nlevel){
 
     if( is.na(alpha[1]) ) {
         alpha<- rep( NA, nlevel)

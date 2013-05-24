@@ -18,25 +18,21 @@
 # along with the R software environment if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
+predictLKrigFixedFunction <- function(object, xnew=NULL, Znew = NULL, drop.Z = FALSE){
+     if( is.null(xnew)){
+       xnew<- object$x
+     }
+# predictions for fixed part of the model
+# and can be with or without the additional covariates, Znew.
+     T.matrix<- do.call(object$fixedFunction, c(
+                                  list(x=xnew, Z=Znew, distance.type = object$LKinfo$distance.type),
+                                  object$fixedFunctionArgs))
+    if( !drop.Z){
+     temp1<- T.matrix%*%object$d.coef}
+    else{
+     temp1<- T.matrix%*%object$d.coef[object$ind.drift, ]
+    }
+    return( temp1)
+  }
 
-LKrig.fixed.component <- function(x, Z = NULL, m, 
-    distance.type = "Euclidean") {
-    # default function to create matrix for fixed part of model
-    #  x, Z, and drop.Z are required
-    #  Note that the degree of the polynomial is by convention (m-1)
-    #  returned matrix must have the columns from Z last.
-    #  currently LKrig defaults m to 2.
-    #
-    # NOTE: if Z is NULL the effect of cbind( A, Z)
-    # is to return A 
-    #
-    if (distance.type == "Euclidean") {
-        return(cbind(fields.mkpoly(x, m = m), Z))
-    }
-    if (distance.type == "cylinder") {
-        # spatial polynomial only in latitude
-        return(cbind(fields.mkpoly(x[, 2], m = m), Z))
-    }
-    # should not get here
-    stop("distance type not recognized in LKrig.fixed.component")
-}
+

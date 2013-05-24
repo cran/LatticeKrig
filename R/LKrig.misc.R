@@ -89,3 +89,48 @@ LKrig.shift.matrix <- function(A, shift.row = 0, shift.col = 0,
     return(A)
 }
 
+repMatrix<- function(A, times=1, each=1, byrow=TRUE){
+   A<- as.matrix(A)
+   if( !byrow){ A<- t(A) }
+   nSize<- nrow(A)*each*times
+   nColumn<- ncol(A)
+   B<- matrix(NA, nSize, ncol=nColumn)
+   for( k in 1:nColumn){
+      B[,k] <- rep( A[,k], times=times, each=each)
+    }
+  if( !byrow){ B<- t(B)}
+   B
+ }
+
+expandMatrix0<- function( A, B){
+   A<- as.matrix(A)
+   B<- as.matrix(B)
+   m1<- nrow( A)
+   m2<- nrow( B)
+   cbind(repMatrix( A,times=m2, each=1), repMatrix( B, times=1, each=m1))
+ }
+
+expandMatrix<- function( ...){
+  matrices<- list(...)
+  N<- length( matrices)
+  tempM<- matrices[[1]]
+  for( k in 2:N){
+    tempM<- expandMatrix0(tempM, matrices[[k]])
+  } 
+  tempM
+}
+    
+ expandMList <- function( Mlist, byrow=TRUE){
+   N<- length( Mlist)
+   
+   for( k in 2:N){
+     mtimes<- nrow( as.matrix(Mlist[[k]]))
+     each<- nrow( as.matrix( Mlist[[1]]))
+     for( l in 1:(k-1)){
+      Mlist[[l]] <- repMatrix(Mlist[[l]], byrow=byrow,times=mtimes)
+    }
+     Mlist[[k]]<- repMatrix( Mlist[[k]], byrow=byrow, each =each)
+   }
+     Mlist
+   }
+  

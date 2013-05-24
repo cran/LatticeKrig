@@ -10,8 +10,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 
-LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
-    
+LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {    
     # if par.grid is missing find all the information for the LKinfo list
     if (is.null(par.grid)) {
         par.grid <- list()
@@ -21,8 +20,19 @@ LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
         return(par.grid)
     }
     if (is.null(par.grid$llambda)) {
-        par.grid$llambda <- 0
+        par.grid$llambda <- NA
     }
+   # if needed create alpha from nu
+    if( !is.null(par.grid$nu)){
+        nlevel<- LKinfo$nlevel
+        M<- length( par.grid$nu)
+        alpha<- matrix( NA,nrow=M, ncol=LKinfo$nlevel)
+        for ( k in 1:M){
+          alphaTemp <- exp(-2 * (1:nlevel) * par.grid$nu[k])
+          alpha[k,] <- alphaTemp/sum(alphaTemp)
+        }
+        par.grid$alpha<- alpha
+     } 
     # if needed create alpha from gamma
     if (!is.null(par.grid$gamma)) {
         if (!is.matrix(par.grid$gamma)) {
@@ -34,7 +44,7 @@ LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
                 ])
         }
     }
-    #
+    #convert alpha to a list format 
     if (is.matrix(par.grid$alpha)) {
         M <- nrow(par.grid$alpha)
         temp.list <- list()
@@ -44,6 +54,7 @@ LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
         }
         par.grid$alpha <- temp.list
     }
+    #convert a.wght to list format
     if (is.matrix(par.grid$a.wght)) {
         M <- nrow(par.grid$a.wght)
         temp.list <- list()
@@ -53,6 +64,7 @@ LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
         }
         par.grid$a.wght <- temp.list
     }
+    # some checks
     NG <- length(par.grid$alpha)
     if (length(par.grid$llambda) != NG) {
         stop("llambda values not same length as alpha")

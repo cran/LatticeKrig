@@ -20,6 +20,7 @@
 
 \alias{LKrig.sim}
 \alias{LKrig.sim.conditional}
+\alias{simConditionalDraw}
 \title{
 Functions for simulating a multiresolution process following the
 Lattice Krig covariance model.
@@ -32,8 +33,10 @@ conditional on the field values and a set of irregular locations.  }
 \usage{
 #
 LKrig.sim(x1, LKinfo, M=1,just.coefficients = FALSE)
-LKrig.sim.conditional( obj, M=1, x.grid= NULL, grid.list=NULL,
-                           nx=80, ny=80,...,Z.grid=NULL)
+LKrig.sim.conditional( LKrigObj, M=1, x.grid= NULL, grid.list=NULL,
+                           nx=80, ny=80,...,Z.grid=NULL, seed=42)
+simConditionalDraw(index=1,  LKrigObj, ghat, x.grid, Z.grid, PHIGrid, PHIObs,
+                             seeds= 123, ...)
 }
 \arguments{
 
@@ -60,8 +63,10 @@ returned Value below for this list's description.)}
 
 \item{ny}{Number of grid points in y coordinate for output grid.}
 
-\item{obj}{An \code{LKrig} object, i.e. the output list returned by
+\item{LKrigObj}{An \code{LKrig} object, i.e. the output list returned by
 \code{LKrig}.}
+
+\item{seed}{Seed to set random number generator}
 
 \item{x1}{ A two column matrix of 2-dimension locations to evaluate
 basis functions or the first set of locations to evaluate the
@@ -81,6 +86,13 @@ covariates and rows indexed by the x.grid locations.}
 \item{\dots}{Arguments to be passed to the LKrig function to specify
 the spatial estimate. These are components in addition to what is in
 the LKinfo list returned by LKrig.}
+
+\item{ghat}{The predicted surface at the grid}
+\item{index}{The index for the random seed to use in the vector \code{seeds}}
+\item{PHIGrid}{Basis function matrix at grid points.}
+\item{PHIObs}{Basis function matrix at observation locations.}
+\item{seeds}{A vector of random seeds.}
+
 
 } 
 
@@ -114,6 +126,14 @@ the bootstrap to determine the estimator uncertainty. The fixed part
 of the model is also handled correctly in this algorithm.  See the
 commented source for \code{LKrig.sim.conditional} for the details of
 this algorithm.
+
+\code{simConditionalDraw} is low level function that is called to generate each
+ensemble member i.e. each draw from the conditional distribution. The large number of 
+arguments is to avoid recomputing many common elements during the loop in generating these
+draws. In particular passing the  basis function matrices avoid having to recompute the 
+normalization at each step, often an intensive computation for a large grid. 
+
+
 }
 
 \value{
@@ -130,6 +150,9 @@ evaluated.}
 \item{g.draw}{A matrix with dimensions of \code{nrow(x.grid)} by
 \code{M} with each column being an independent draw from the
 conditional distribution.}
+
+
+
 
 }
 }

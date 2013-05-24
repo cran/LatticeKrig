@@ -2,7 +2,8 @@ LKrigFindLambda <- function(x, y, ..., LKinfo,
                             use.cholesky=NULL, 
                             verbose = FALSE,
                             lambda.profile=TRUE,
-                            lowerBoundLogLambda=-16) {
+                            lowerBoundLogLambda=-16,
+                            tol=.005) {
     LKrigArgs <- c(list(x = x, y = y),
                    list(...),
                    list( LKinfo=LKinfo, NtrA=ifelse( lambda.profile, 0, 20) ))
@@ -10,13 +11,15 @@ LKrigFindLambda <- function(x, y, ..., LKinfo,
     names( out) <-  c("EffDf", "lnProfLike", "GCV", 
         "sigma.MLE", "rho.MLE", "llambda.opt", "lnLike", "counts value", "grad")
     capture.evaluations <- matrix(NA, ncol = 4, nrow = 1, 
-                dimnames = list(NULL, c("lambda", "rho.MLE", "sigma.MLE", "lnProfileLike.FULL")))
+                dimnames = list(NULL, c("lambda", "rho.MLE",
+                                         "sigma.MLE", "lnProfileLike.FULL")))
     optim.counts<-  NA
     llambda.start<- log( LKinfo$lambda )
+    if( is.na(llambda.start)){ llambda.start<- -1 }
+#    
 # first fit to get cholesky symbolic decomposition  and wPHI matrix
 # Note that if use.cholesky != NULL then the symbolic decomposition information is
 # used from the passed object.
-    if( is.na(llambda.start)){ llambda.start<- -1 }
     LKrigObject <- do.call("LKrig", c(
                              LKrigArgs,
                              list( lambda = exp( llambda.start),
@@ -24,7 +27,8 @@ LKrigFindLambda <- function(x, y, ..., LKinfo,
                                    return.cholesky = TRUE,
                                    return.wPHI=TRUE,
                                    verbose=FALSE)))
-    capture.evaluations[1,] <-  unlist(LKrigObject [c("lambda", "rho.MLE", "sigma.MLE", "lnProfileLike.FULL")])
+    capture.evaluations[1,] <-  unlist(LKrigObject [c("lambda", "rho.MLE",
+                                                      "sigma.MLE", "lnProfileLike.FULL")])
     llambda.opt<- llambda.start
     Mc.save<- LKrigObject$Mc
     wPHI.save<- LKrigObject$wPHI
@@ -44,7 +48,7 @@ LKrigFindLambda <- function(x, y, ..., LKinfo,
 #    
 # the try wrapper captures case when optim fails.   
             capture.env <- environment()
-            look<- try(optimize( temp.fn, interval = llambda.start+c(-8,5), maximum= TRUE, tol=1e-3))
+            look<- try(optimize( temp.fn, interval = llambda.start+c(-8,5), maximum= TRUE, tol=tol))
             evalSummary <- !(class( look)== "try-error")
             llambda.opt <- look$maximum
             optim.counts <- nrow( capture.evaluations) + 2

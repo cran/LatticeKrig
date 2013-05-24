@@ -35,9 +35,7 @@ print.LKrig <- function(x, digits = 4, ...) {
         c1 <- c(c1, "Number of data sets fit:")
         c2 <- c(c2, NData)
     }
-    c1 <- c(c1, "Degree of polynomial null space (spatial drift)")
-    c2 <- c(c2, x$spatialdriftorder - 1)
-    c1 <- c(c1, "Number of parameters in the null space")
+    c1 <- c(c1, "Number of parameters in the fixed component")
     c2 <- c(c2, x$nt)
     if (x$nZ > 0) {
         c1 <- c(c1, "Number of covariates")
@@ -65,9 +63,24 @@ print.LKrig <- function(x, digits = 4, ...) {
     dput(x$call)
     print(sum, quote = FALSE)
     cat(" ", fill = TRUE)
-    cat("Covariance Model: Radial Basis/Lattice", fill = TRUE)
-    cat(" Radial Basis R function: ", LKinfo$RadialBasisFunction, 
+#    
+    if( is.null( x$fixedFunction)){  
+        cat("No fixed part of model", fill = TRUE)
+    }
+    else{
+        if( x$fixedFunction=="LKrigDefaultFixedFunction"){
+            cat("Fixed part of model is a polynomial of degree", x$fixedFunctionArgs$m - 1, "(m-1)", fill=TRUE)
+        }  
+        else{  
+          cat("Fixed part of model uses the function:", x$fixedFunction, fill = TRUE)
+          cat("with the argument list:", fill = TRUE)
+          print( x$fixedFunctionArgs)
+        }
+    }
+    cat("Radial basis function used: ", LKinfo$RadialBasisFunction, 
         fill = TRUE)
+    cat(" ", fill = TRUE)
+    
     cat(LKinfo$nlevel, "level(s)", LKinfo$m, " basis functions", 
         fill = TRUE)
     for (k in 1:LKinfo$nlevel) {
@@ -76,8 +89,12 @@ print.LKrig <- function(x, digits = 4, ...) {
     }
     cat("Total number of basis functions: ", x$m, "  with overlap of ", 
         LKinfo$overlap, fill = TRUE)
+    cat(" ", fill = TRUE)
+#
     cat("Type of distance metric used: ", LKinfo$distance.type, 
         fill = TRUE)
+#
+    cat(" ", fill = TRUE)
     if (length(LKinfo$alpha[[1]]) == 1) {
         cat("Value(s) for weighting (alpha): ", unlist(LKinfo$alpha), 
             fill = TRUE)
@@ -86,25 +103,27 @@ print.LKrig <- function(x, digits = 4, ...) {
         cat("alpha values passed as a vector for each level", 
             fill = TRUE)
     }
+#    
+    cat(" ", fill = TRUE)
     if (length(LKinfo$a.wght[[1]]) == 1) {
         a.wght <- unlist(LKinfo$a.wght)
         cat("Value(s) for lattice dependence (a): ", a.wght, 
             fill = TRUE)
-        cat("Equivalent range based on MRF (delta/sqrt(a-4)):", 
-            LKinfo$delta/sqrt(a.wght - 4), fill = TRUE)
     }
     else {
         cat("Value(s) for weighting in GMRF (a.wght): ", unlist(LKinfo$alpha), 
             fill = TRUE)
     }
+#    
+    cat(" ", fill = TRUE)
     if (LKinfo$normalize) {
         cat("Basis functions normalized so marginal process variance is stationary", 
             fill = TRUE)
     }
-    if (LKinfo$edge) {
-        cat("Precision matrix at each level is adjusted at edges", 
-            fill = TRUE)
-    }
+    
+    cat("Number of  lattice buffer points added in the x and y coordinates:",
+        LKinfo$NC.buffer.x,",",LKinfo$NC.buffer.y, fill = TRUE)
+    
     invisible(x)
 }
 

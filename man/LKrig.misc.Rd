@@ -23,6 +23,10 @@
 \alias{LKrig.rowshift}
 \alias{which.max.matrix}
 \alias{which.max.image}
+\alias{expandMList}
+\alias{expandMatrix0}
+\alias{expandMatrix}
+\alias{repMatrix}
 \title{
 Miscellaneous internal functions for LatticeKrig package. 
 }
@@ -37,12 +41,21 @@ LKrig.rowshift.periodic( A, shift.row)
 LKrig.rowshift( A,shift.row,shift.col)
 which.max.matrix(z)
 which.max.image(obj)
+expandMatrix0( A, B)
+expandMatrix( ...)
+expandMList( Mlist, byrow=TRUE)
 }
 
 \arguments{
 
 \item{A}{A matrix.}
 
+\item{byrow}{If TRUE matrices will be repeated row by row. If FALSE
+this will be done column by column.}
+
+\item{B}{Another matrix.}
+
+\item{Mlist}{A list where each component is a matrix.}
 
 \item{obj}{An image list with the usual components x, y, and z.}
 
@@ -59,14 +72,23 @@ side.}
 
 \item{z}{A matrix.}
 
+\item{\dots}{Matrices to be expanded.}
 } \details{
 
+\strong{Shift related:}
 These functions are used to create the nearest neighbor indices for
 the precision matrices.
+
+\strong{Expand related:}
+These functions are useful for creating a sets of covariance parametes that 
+follow a factorial pattern. For example repeating the rows of the "alpha" paramters
+as the "a.wght" parameters are varied. \code{expandMList} is particularly useful for creating
+a factorial design of parameters to pass to LKrig.MLE for searching the likelihood.
 
 }
 \value{
 
+\strong{Shift:}
 A matrix of shifted values. Entries that are not defined due to
 the shift are set to NA.  A column shift is done by a combination of
 transpose operations and a row shift.
@@ -94,14 +116,56 @@ LKrig.rowshift.periodic( A, 2)
 [3,]    1    4    7   10
 }
 
+\strong{Expand:}
+\code{ExpandMList}{Returns a list of matrices where the original matrices are repeated so that are
+combinations of rows are represented. The example below illustrates.  \code{byrow=FALSE} does the repetition
+by columns instead of rows.
+}
+\preformatted{
+> A
+     [,1] [,2]
+[1,]    1    3
+[2,]    2    4
+> B
+     [,1]
+[1,]   11
+[2,]   12
+[3,]   13
+> C
+[1] 100
+> expandMList( list( A=A, B=B, C=C))
+$A
+     [,1] [,2]
+[1,]    1    3
+[2,]    2    4
+[3,]    1    3
+[4,]    2    4
+[5,]    1    3
+[6,]    2    4
+
+$B
+     [,1]
+[1,]   11
+[2,]   11
+[3,]   12
+[4,]   12
+[5,]   13
+[6,]   13
+
+$C
+     [,1]
+[1,]  100
+[2,]  100
+[3,]  100
+[4,]  100
+[5,]  100
+[6,]  100
+}
 }
 
 \author{
 Doug Nychka
 }
 
-\seealso{
-LKrig.MRF.precision
-}
 
 \keyword{spatial}

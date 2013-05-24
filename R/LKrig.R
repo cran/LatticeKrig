@@ -20,9 +20,11 @@
 # or see http://www.r-project.org/Licenses/GPL-2
 
 LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)), 
-    Z = NULL, LKinfo = NULL, iseed = 123, NtrA = 20,
+    Z = NULL,
+    fixedFunction="LKrigDefaultFixedFunction", fixedFunctionArgs=NULL, m=2,
+    LKinfo = NULL, iseed = 123, NtrA = 20,
     use.cholesky = NULL, return.cholesky = TRUE, wPHI=NULL, return.wPHI=TRUE,
-    NC, nlevel, a.wght, alpha, nu = NULL, 
+    NC, nlevel, a.wght, alpha=NA, nu = NULL, 
     lambda = NA, sigma = NA, rho = NA, rho.object = NULL, overlap = 2.5, 
     normalize = TRUE, edge = FALSE, RadialBasisFunction = "WendlandFunction", 
     V = diag(c(1, 1)), distance.type = "Euclidean", verbose = FALSE) {
@@ -31,23 +33,8 @@ LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)),
     y <- as.matrix(y)
     n <- nrow(x)
     if (any(duplicated(cat.matrix(x)))) 
-        stop("locations are not unique see help(LKrig) ") 
- # if LKinfo is missing create it from passed arguments
-    if (is.null(LKinfo)) {
-        LKinfo <- LKrig.setup(x, NC, nlevel = nlevel, lambda = lambda, 
-            sigma = sigma, rho = rho, alpha = alpha, nu = nu, 
-            a.wght = a.wght, overlap = overlap, normalize = normalize, 
-            edge = edge, RadialBasisFunction = RadialBasisFunction, 
-            V = V, distance.type = distance.type, rho.object = rho.object)
-    }
-    if (!is.na(rho) & !is.na(sigma)) {
-        lambda <- sigma^2/rho
-    }
- # older code can pass LKinfo but leave out lambda here is a fix for that.
-    if (!is.na(lambda)) {
-        LKinfo$lambda <- lambda
-    }
- # make sure covariate is a matrix
+        stop("locations are not unique see help(LKrig) ")
+    # make sure covariate is a matrix
     if (!is.null(Z)) {
         Z <- as.matrix(Z)
     }
@@ -56,23 +43,74 @@ LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)),
         if (any(is.na(y))) 
             stop("Missing values in y not allowed ")
     }
+ # hard wire m argument if the default fixed function
+ # is used (a low order polynomial of degree m-1 ).
+    
+    if( !is.null(fixedFunction)){
+        if(fixedFunction == "LKrigDefaultFixedFunction" ){
+            fixedFunctionArgs<- c( fixedFunctionArgs, list(m=m))
+        }
+    }    
+ # if LKinfo is missing create it from passed arguments   
+    if (is.null(LKinfo)) {
+        LKinfo <- LKrig.setup(x, NC, nlevel = nlevel, lambda = lambda, 
+            sigma = sigma, rho = rho, alpha = alpha, nu = nu, 
+            a.wght = a.wght, overlap = overlap, normalize = normalize, 
+            edge = edge, RadialBasisFunction = RadialBasisFunction, 
+            V = V, distance.type = distance.type, rho.object = rho.object)
+    }
+    else{
+       if( !is.na(lambda)){
+        LKinfo$lambda <- lambda
+       }
+ 
+ # Possibly set lambda from the "noise to signal" variances.
+       if (!is.na(rho) & !is.na(sigma)) {
+        LKinfo$lambda<- sigma^2/rho
+       }
+    }
+#   At this point the LKinfo object should have the right lambda value. 
     lambda = LKinfo$lambda
-    if( verbose){ cat("number of basis functions", LKinfo$m, fill=TRUE)}
+    if( is.na(lambda)){
+      stop("lambda must be specified")
+    }
+#    
+    if( verbose) {
+         print( LKinfo)
+    }
+ # Begin computations ....
  # weighted observation vector
     wy <- sqrt(weights) * y
- # Spatial drift matrix -- assumed to be linear in coordinates. (m=2)
- # and includes Z covariate(s)
-    wT.matrix <- sqrt(weights) * LKrig.fixed.component(x, Z, 
-        m = 2, distance.type = LKinfo$distance.type)
-    nt <- ncol(wT.matrix)
-    nZ <- ifelse(is.null(Z), 0, ncol(Z))
-    ind.drift <- c(rep(TRUE, (nt - nZ)), rep(FALSE, nZ))
+ # Spatial drift matrix -- default is assumed to be linear in coordinates. (m=2)
+ # and includes possible covariate(s) -- the Z matrix.
+    if( !is.null(fixedFunction)){
+       wT.matrix <- sqrt(weights) *
+       do.call(fixedFunction, c(
+                                  list(x=x, Z=Z, distance.type = LKinfo$distance.type),
+                                  fixedFunctionArgs))
+       nt <- ncol(wT.matrix)
+       nZ <- ifelse(is.null(Z), 0, ncol(Z))
+       ind.drift <- c(rep(TRUE, (nt - nZ)), rep(FALSE, nZ))
+       if( verbose){
+         cat("dim wT", dim( wT.matrix), fill=TRUE)
+       }
+     }
+   else{
+       nt<- 0
+       ind.drift<- NULL
+       nZ<- 0
+       wT.matrix<- NULL
+   } 
  # Matrix of sum( N1*N2) basis function (columns) evaluated at the N locations (rows)
  # and multiplied by square root of diagonal weight matrix
  # this can be a large matrix if not encoded in sparse format.
     if( is.null(wPHI) ){
+       if( verbose){
+         cat("Finding new wPHI", fill=TRUE)
+       }
        wPHI <- diag.spam(sqrt(weights)) %*% LKrig.basis(x, LKinfo, verbose = verbose)
-        if( verbose){ cat("compute new wPHI", fill=TRUE)}
+        if( verbose){ cat("Computed new wPHI", fill=TRUE)
+                    print( dim( wPHI) )}
     }
     else{
        if( verbose){ cat("reuse wPHI", fill=TRUE)}}
@@ -108,7 +146,9 @@ LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)),
 #           stop('use.cholesky@coloindices not the same length as current model')}
 #       if( any( M@colindices != use.cholesky@colindices ) ){
 #           stop('use.cholesky not the same sparse pattern as current model')}
-       if( verbose){ cat("reuse symbolic decomposition", fill=TRUE)}
+       if( verbose){
+         cat("reuse symbolic decomposition", fill=TRUE)
+       }
        Mc <- update.spam.chol.NgPeyton( use.cholesky, M)        
     }
 #--#  )
@@ -118,9 +158,17 @@ LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)),
         ind.drift = ind.drift, LKinfo = LKinfo, lambda = lambda, sigma = sigma, rho = rho)
 # use Mc to find coefficients of estimate
     out1 <- LKrig.coef(Mc, wPHI, wT.matrix, wy, lambda, weights)
+       if( verbose){
+         cat(" d.coef", out1$d.coef, fill=TRUE)
+       }
 # add in components from coefficient estimates
     object <- c(object, out1)
-    fitted.values<- (wT.matrix%*%out1$d.coef + wPHI%*%out1$c.coef)/sqrt(weights)
+# compute predicted values    
+    fitted.values<-  (wPHI%*%out1$c.coef)/sqrt(weights)    
+    if(!is.null(fixedFunction)){
+        fitted.values.fixed<- (wT.matrix%*%out1$d.coef)/sqrt(weights)
+        fitted.values <-  fitted.values.fixed + fitted.values
+    }     
 # For reference: fitted.values <- predict.LKrig(object, x, Znew = object$Z)
     residuals <- y - fitted.values
     out2 <- LKrig.lnPlike(Mc, Q, y, lambda, residuals, weights, 
@@ -137,13 +185,13 @@ LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)),
         out3 <- list(trA.est = NA, trA.SE = NA, GCV = NA)
     }
     object <- c(object, out3)  
- #
  # the output object
  # note the ifelse switch whether to return the big cholesky decomposition
  # and/or the wiehted basis matrix wPHI
     object <- c(object, list(fitted.values = fitted.values, residuals = residuals, 
         m = LKinfo$m, lambda.fixed = lambda, nonzero.entries = nzero, 
-        spatialdriftorder = 2, nt = nt, eff.df = out3$trA.est, 
+        spatialdriftorder = 2, nt = nt, eff.df = out3$trA.est,
+        fixedFunction= fixedFunction, fixedFunctionArgs= fixedFunctionArgs,
         call = match.call()))
     if (return.cholesky) {
         object$Mc <- Mc

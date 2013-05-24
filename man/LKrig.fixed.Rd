@@ -17,9 +17,9 @@
 % # Modified DH Dec 2013
 % Earlier modifications DH 2/06/2012
 
-\name{LKrig.fixed.component}
-\alias{LKrig.fixed.component}
-
+\name{LKrigDefaultFixedFunction}
+\alias{LKrigDefaultFixedFunction}
+\alias{predictLKrigFixedFunction}
 \title{
 Creates fixed part of spatial model.
 }
@@ -27,26 +27,47 @@ Creates fixed part of spatial model.
 coordinates and adds any other spatial covariates that are part of
 the linear model.}
 
-\usage{ LKrig.fixed.component(x, Z = NULL, m,
-distance.type="Euclidean") }
+\usage{
+ LKrigDefaultFixedFunction(x, Z = NULL, m=2,distance.type="Euclidean") 
+ 
+predictLKrigFixedFunction(object, xnew, Znew = NULL, drop.Z = FALSE)
+}
 
 \arguments{
+\item{drop.Z}{If TRUE only spatial drift is evaluated the comtribution for covariates
+is omitted.}
 
-\item{x}{ A 2 column matrix of 2-d locations to evaluate the
-   polynomial.}
-
-\item{Z}{ A matrix specifying additional spatial covariates.} 
-
+\item{distance.type}{The distance metric. See the entry in
+\code{LKrig} for details.}
+ 
 \item{m}{The order of the polynomial. Following the convention for
 splines the polynomial will have maximum order (m-1). Throughout LKrig
 m==2 is the default giving a linear polynomial.}
 
-\item{distance.type}{The distance metric. See the entry in
-\code{LKrig} for details.}
+\item{object}{An LKrig object.}
 
- 
+\item{x}{ A 2 column matrix of 2-d locations to evaluate the
+   polynomial.}
+
+\item{xnew}{Locations for predictions.}
+
+\item{Z}{ A matrix specifying additional spatial covariates.} 
+
+\item{Znew}{Same as Z.}
+
 }
 \details{
+
+\strong{LKrigDefaultFixedFunction} This function creates the regression matrix for the 
+fixed part of the spatial model. The default is a low order polynomial regression matrix 
+of degree m-1. To this matrix are bound as columns any covaraites passed as Z. 
+Typically one would not need to modify this function. 
+For more exotic fixed part models one can specify create and then specify a different 
+function. See LKrig.setup and LKrig. NOTE: If the argument for this function is passed as NULL
+then the subsquent computations do not include a fixed part in the model.
+
+
+\strong{predictLKrigFixedFunction}
 This function is simple, but is introduced to make the code modular and
 to handle the case for cylindrical geometry where only latitude should
 have a spatial term (to preserve periodicity in longitude).
@@ -67,9 +88,9 @@ LKrig.basis, LKrig
 \examples{
 x<- matrix( runif(100), nrow=50)
 # linear polynomial 
-T.matrix<- LKrig.fixed.component(x, m=2)
+T.matrix<- LKrigDefaultFixedFunction(x, m=2)
 # quadratic polynomial 
-T.matrix<- LKrig.fixed.component(x, m=3)
+T.matrix<- LKrigDefaultFixedFunction(x, m=3)
 }
 
 \keyword{spatial}

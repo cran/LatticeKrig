@@ -19,7 +19,30 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-predictSurface.LKrig <- function(object, ...) {
-    predictSurface(object, ...)
-}
+LKrigDefaultFixedFunction <- function(x, Z = NULL, m=2,  distance.type = "Euclidean") {
+    # default function to create matrix for fixed part of model
+    #  x, Z, and drop.Z are required
+    #  Note that the degree of the polynomial is by convention (m-1)
+    #  returned matrix must have the columns from Z last.
+    #  currently LKrig defaults m to 2.
+    #
+    # NOTE: if Z is NULL the effect of cbind( A, Z)
+    # is to return A 
+    #
+
+    if( !is.null(Z)){
+      if( nrow(Z)!=nrow(x)){
+          stop(" x (locations) and Z (covariates) have different numbers of rows")
+        }
+    }
+    if (distance.type == "Euclidean") {
+        T.matrix<- cbind(fields.mkpoly(x, m = m), Z)
+     
+    }
+    if (distance.type == "cylinder") {
+        # spatial polynomial only in latitude
+       T.matrix <-  cbind(fields.mkpoly(x[, 2], m = m), Z)
+    }
+      return( T.matrix)
+    }
 

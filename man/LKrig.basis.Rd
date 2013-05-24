@@ -23,6 +23,7 @@
 \alias{LKrig.cov}
 \alias{LKrig.normalize.basis}
 \alias{LKrig.normalize.basis.fast}
+\alias{LKrig.normalize.basis.slow}
 \alias{LKrig.cov.plot}
 \alias{LKrig.quadraticform}
 \alias{LKrig.spind2spam}
@@ -53,6 +54,7 @@ LKrig.MRF.precision(mx,my, a.wght, stationary=TRUE, edge=FALSE,
                         distance.type="Euclidean")
 LKrig.normalize.basis(Level, LKinfo, PHI)
 LKrig.normalize.basis.fast(Level, LKinfo, x )
+LKrig.normalize.basis.slow(Level, LKinfo, PHItemp )
 LKrig.quadraticform( Q, PHI) 
 LKrig.spind2spam(obj, add.zero.rows=TRUE)
 }
@@ -116,6 +118,10 @@ row/column format passed to \code{LKrig.spind2spam}.}
 
 \item{PHI}{ A sparse matrix of basis functions (rows index points for
 evaluation, columns index basis functions).}
+\item{PHItemp}{ A sparse matrix of basis functions (rows index points for
+evaluation, columns index basis functions). This is to be passed to the 
+more general normalization function.}
+
 
 \item{return.B}{ If TRUE B is returned instead of the precision matrix
 t(B)\%*\%B.}
@@ -203,14 +209,14 @@ PHI.normalized <-  diag(1/sqrt(process.variance)) \%*\% PHI
 where \code{Omega} is the unnormalized covariance matrix of the basis
 function coefficients.
 
-Although accurate, the code above is not an efficient algorithm to
+Although correct, the code above is not an efficient algorithm to
 compute the unnormalized process variance.  First the normalization
 can be done level by level rather than dealing with the entire
 multiresolution process at once. Also it is important to work with the
 precision matrix rather than the covariance.  The function
-\code{LKrig.normalize.basis} takes advantage of the sparsity of the
-precision matrix for the coefficients and
-\code{LKrig.normalize.basis.fast} is a more efficient version when
+\code{LKrig.normalize.basis.slow} takes advantage of the sparsity of the
+precision matrix for the coefficients.
+\code{LKrig.normalize.basis.fast} is even a more efficient version when
 a.wght is constant for a given level and takes advantage of the
 Kronecker structure on the precision matrix at each level.
 
@@ -218,7 +224,7 @@ The precision matrix for the basis coefficients at each resolution has
  the form \code{t(B)\%*\% B}. These matrices for the individual levels
  are assembled by \code{LKrig.precision} as the block diagonals of a
  larger precision matrix for the entire vector of coefficients. Note
- these matrices are also created in a sparse format.  The specific
+ these matrices are created in a sparse format.  The specific
  entries in B, the object created by \code{LKrig.MRF.precision}, are a
  first order Markov random field: without edge adjustments the
  diagonal elements have the value \code{a.wght} and the first order
@@ -232,11 +238,11 @@ lattice with a period indicating zero weights).
 
 \preformatted{
                                                  __________ 
-   .   -1    .          |  -1    .             |  4+k2  -1
-                        |                      |
-  -1  4+k2  -1          | 4+k2  -1             | -1      .
-                        |                      |
-   .  -1     .          |  -1    .             |  .      .
+   .   -1     .         |  -1      .            |  a.wght  -1
+                        |                       |
+  -1  a.wght  -1        | a.wght   -1           |   -1      .
+                        |                       |
+   .  -1      .         |  -1      .            |    .      .
 
 Interior point        Left edge              Upper left corner
 }
@@ -301,7 +307,7 @@ functions.  To plot the returned list use
  variance of the process.
 
 \strong{ \code{LKrig.normalize.basis},
-\code{LKrig.normalize.basis.fast}:} A vector of variances
+\code{LKrig.normalize.basis.fast}, \code{LKrig.normalize.basis.slow}:} A vector of variances
 corresponding to the unnormalized process at the locations.
 }
 \author{
@@ -360,6 +366,10 @@ LKrig, mKrig, Krig, fastTps, Wendland
 # Note nearly circular contours.
 # of  course  plot(look[,80/2]) should look like plot above.
 #
+}
+
+\dontrun{
+#Some correlation functions from different models
 set.panel(2,1)
 # a selection of ranges:
   hold<- matrix( NA, nrow=150, ncol=4)
@@ -374,12 +384,7 @@ set.panel(2,1)
     hold[,k]<-  LKrig.cov( x1,x2, LKinfo=LKtemp)
   }
   matplot( x1[,1], hold, type="l", lty=1, col=rainbow(5), pch=16 )
- set.panel()
-}
-
 # a selection of smoothness parameters
-\dontrun{
-set.panel(2,1)
   ktemp<- .5 # fix range
   alpha.power<- seq( 1,4,,4)
   LKtemp<- LKinfo2
@@ -398,7 +403,7 @@ set.panel(2,1)
 # generating a basis on the domain [-1,1] by [-1,1] with 1 level
 # Default number of buffer points are added to each side. 
   LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)), NC=6,
-                                 nlevel=1, a.wght=4.5,alpha=1 )
+                                 nlevel=1, a.wght=4.5,alpha=1, NC.buffer=0 )
 # evaluate the basis functions on a grid to look at them
   xg<- make.surface.grid( list(x=seq(-1,1,,50), y= seq(-1,1,,50)))
   PHI<- LKrig.basis( xg,LKinfo)

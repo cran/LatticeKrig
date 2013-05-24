@@ -39,6 +39,8 @@ of standard covariance functions.  }
 \usage{
 
 LKrig(x, y = NULL, weights = rep(1, nrow(x)), Z = NULL,
+                 fixedFunction = "LKrigDefaultFixedFunction",
+                 fixedFunctionArgs = NULL, m = 2,
                  LKinfo = NULL, iseed = 123, NtrA = 20, use.cholesky =
                  NULL, return.cholesky = TRUE, wPHI = NULL, return.wPHI
                  = TRUE, NC, nlevel, a.wght, alpha, nu = NULL, lambda =
@@ -47,15 +49,18 @@ LKrig(x, y = NULL, weights = rep(1, nrow(x)), Z = NULL,
                  RadialBasisFunction = "WendlandFunction", V =
                  diag(c(1, 1)), distance.type = "Euclidean", verbose =
                  FALSE)
-\method{predict}{LKrig}( object, xnew=NULL,Znew = NULL, drop.Z=FALSE,
-return.levels = FALSE, ...)
 
-\method{predictSE}{LKrig}( object, xnew=NULL, Znew = NULL, drop.Z =
-FALSE, verbose = FALSE, ...)
+\method{predict}{LKrig}(object, xnew = object$x, Znew = NULL, drop.Z = FALSE,
+                 return.levels = FALSE, ...)
+
+\method{predictSE}{LKrig}(object, xnew = object$x, Znew = object$Z, verbose =
+                 FALSE, ...)
 
 \method{surface}{LKrig}( object, ...)
 
-\method{predictSurface}{LKrig}( object, ...)
+\method{predictSurface}{LKrig}(object, grid.list = NULL, extrap = FALSE, chull.mask =
+                 NA, nx = 80, ny = 80, xy = c(1, 2), verbose = FALSE,
+                 ZGrid = NULL, drop.Z = FALSE, ...)
 
 \method{print}{LKrig}( x, digits=4, ...)
 
@@ -74,6 +79,8 @@ FALSE, verbose = FALSE, ...)
  should be FALSE.  If there are multiple levels this can be a
  vector. See Details.}
 
+  \item{chull.mask}{An additional constraint for evaluating predictions see
+\code{help(in.poly)}. Usually this is not needed. }
 
   \item{distance.type}{The type of distance metric (as a text string)
      used in determining the radial basis functions.  The current
@@ -87,6 +94,15 @@ from the other, Z, covariates in the fixed component will be omitted.}
 
   \item{edge}{If TRUE an adjustment is made in the GMRF weights for
   edge effects.}
+
+  \item{extrap}{If TRUE will extrapolate predictions beyond convex hull of locations.}
+
+  \item{fixedFunction}{Function used to define the fixed part of the model in terms of 
+spatial locations. Default is an m-1 degree polynomial. }
+
+ \item{fixedFunctionArgs}{Additional arguments in list form to pass to the fixed function.}
+
+ \item{grid.list}{ A list with components x and y specifying the grid ( see \code{help( grid.list)} ). }
 
  \item{iseed}{Random seed used in the Monte Carlo technique for
   approximating the effective degrees of freedom (trace of the
@@ -103,7 +119,13 @@ from the other, Z, covariates in the fixed component will be omitted.}
   \code{LKrig.setup}. If NULL, this object is created and returned as
   a component of the LKrig object. }
 
-   \item{NC}{Controls the maximum number of grid points. For the first
+  \item{m}{If the fixed is the default the polynomial will have degree m-1}
+
+\item{nx}{Number of grids in x for prediction grid.}
+
+\item{ny}{ Number of grids in y for prediction grid.}
+
+ \item{NC}{Controls the maximum number of grid points. For the first
  level there will be NC grid points in the larger dimension of the
  rectangular spatial domain. If the domain is square there will be
  NC*NC basis functions/lattice points in the coarsest level of
@@ -194,7 +216,10 @@ call to this function.}
   with variances sigma^2/weights. }
 
   \item{xnew}{Matrix of locations for prediction.}
- 
+
+  \item{xy}{Order of evaluating surface coordinates. This would be used if for example
+ a lon-lat surface needed to be transposed as a "lat-lon" object. Usually not needed.}
+
   \item{x}{Spatial locations of observations. Or the \code{LKrig}
   object for printing. }
  
@@ -206,6 +231,14 @@ call to this function.}
 
   \item{Znew}{Values of covariates, distinct from the spatial drift
   for predictions of data locations.}
+
+  \item{ZGrid}{ An array  or list form of covariates to use for prediction. This must match the
+\code{grid.list} argument. e.g. ZGrid and grid.list describe same grid. 
+If ZGrid is an array then the first two indices are the x and y locations in the 
+grid. The third index, if present, indexes the covariates. e.g. For evaluation on 
+a 10X15 grid and with 2 covariates. \code{ dim( ZGrid) == c(10,15, 2)}.
+If ZGrid is a list then the components x and y shold match those of grid.list and
+the z component follows the shape described above for the no list case.   }
 
   \item{\dots}{Additional arguments to pass to generic methods or from
  LatticeKrig to LKrig.  See help(predictSurface) for the details in
@@ -582,7 +615,7 @@ of the image and contour plotting functions.
 Doug Nychka
 }
 
-\seealso{ LatticeKrig,
+\seealso{ LatticeKrig, LKrig.sim.conditional,
 mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
  LKrig.precision
 }
@@ -596,6 +629,10 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]
+
+# fairly arbitrary choices for covariance parameters and lambda
+# just to show a basic level call
+  obj1<- LKrig( x,y, a.wght=5, nlevel=3, nu=1.0, NC=4, lambda=.1)
 
 # thin plate spline-like model with the lambda parameter estimated by
 # maximum likelihood. Default choices are made for a.wght, nlevel, NC
@@ -613,7 +650,7 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 
 
 # breaking down the LatticeKrig function into several steps. 
-# also use a different covariance model that has fewer absis fucntions
+# also use a different covariance model that has fewer basis fucntions
 # (to make the example run more quickly)
  
   LKinfo<- LKrig.setup( x, nlevel=1, alpha=1, NC=15, a.wght=5,
@@ -689,9 +726,8 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 # pull off CO elevations at same locations on grid as the surface
   data( RMelevation) # a superset of elevations at 4km resolution
   elev.surface<- interp.surface.grid( RMelevation, CO.surface2)
-# linear adjustment for elevation 
-  CO.surface.elev<- elev.surface$z*obj.CO.elev$d.coef[4]
-  CO.full<- CO.surface2$z + CO.surface.elev
+   CO.full<- predictSurface( obj.CO.elev, ZGrid= elev.surface, nx=50, ny=50)
+   
 # for comparison fit without elevation as a linear covariate:
   CO.MLE2<- LKrig.MLE( x.CO,y.CO, LKinfo=LKinfo)
   obj.CO<- LKrig( x.CO,y.CO, LKinfo= CO.MLE2$LKinfo.MLE)
@@ -699,11 +735,11 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
   CO.surface<- predictSurface( obj.CO, nx=50, ny=50)
   set.panel( 2,1)
   coltab<- topo.colors(256)
-  zr<- range( c( CO.full), na.rm=TRUE)
+  zr<- range( c( CO.full$z), na.rm=TRUE)
   image.plot( CO.surface,  col=coltab, zlim =zr)
     US( add=TRUE,lwd=2)
     title( "MAM min temperatures without elevation")
-  image.plot( CO.surface$x, CO.surface$y, CO.full, col=coltab, zlim=zr)
+  image.plot( CO.full, col=coltab, zlim=zr)
     title( "Including elevation")
     US( add=TRUE,lwd=2)
 }

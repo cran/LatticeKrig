@@ -38,13 +38,15 @@ LKrigFindLambda(x, y, ..., LKinfo,
                             use.cholesky=NULL, 
                             verbose = FALSE,
                             lambda.profile=TRUE,
-                            lowerBoundLogLambda=-16)
+                            lowerBoundLogLambda=-16,tol = 0.005)
 
-LKrig.MLE( x,y,..., LKinfo,
+LKrig.MLE( x,y,..., LKinfo, use.cholesky = NULL,
                     par.grid=NULL,
                     lambda.profile=TRUE,
                     verbose=FALSE,
-                    lowerBoundLogLambda = -16)
+                    lowerBoundLogLambda = -16,
+                    nTasks = 1, taskID = 1,
+                    tol = 0.005)
 LKrig.make.par.grid(par.grid=NULL, LKinfo = NULL) 
 }
 
@@ -94,7 +96,13 @@ over lambda.  }
 
 \item{lowerBoundLogLambda}{Lower limit for lambda in searching for
 MLE.}
- 
+
+\item{nTasks}{If using Rmpi the number of slaves available.}
+
+\item{tol}{tolerance on log likelihood use to determine convergence}
+
+\item{taskID}{If using Rmpi the slave id.}
+
 \item{verbose}{If TRUE prints out intermediate results.}
 
 \item{use.cholesky}{If not NULL then this object is used as the
@@ -358,6 +366,19 @@ set.panel(1,2)
  tps.out<- Tps(  xtemp,search.results$summary[,2], lambda=0)
  contour( predictSurface(tps.out), lwd=3,add=TRUE)
  set.panel()
+}
+\dontrun{
+# searching over nu 
+data(ozone2)
+x<- ozone2$lon.lat
+y<- ozone2$y[16,]
+good<- !is.na(y)
+y<- y[good]
+x<- x[good,]
+par.grid<- expand.grid( nu=seq(.5,1.5,,4), a.wght=c(4.01,4.1, 4.2,4.5,5))
+par.grid$llambda<- rep( NA, length(par.grid$nu))
+LKinfo<- LKrig.setup(x,  nlevel=3,NC=5)
+out<- LKrig.MLE( x,y, LKinfo=LKinfo, par.grid=par.grid, verbose=TRUE)
 }
 
 }

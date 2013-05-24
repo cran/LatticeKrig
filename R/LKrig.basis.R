@@ -50,6 +50,10 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE,
     #
     # accumulate matrix column by column in PHI
     PHI <- NULL
+    x1Transformed<- x1 %*% t(solve(V))
+         if( verbose){
+          cat(" Dim x1Transformed",  dim( x1Transformed ), fill=TRUE)
+        }
     for (l in 1:nlevel) {
         # Loop over levels and evaluate basis functions in that level.
         # Note that all the center information based on the regualr grids is
@@ -60,35 +64,37 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE,
         #  set the range of basis functions, they are assumed to be zero outside
         #  the radius basis.delta
         basis.delta <- delta * overlap
-        #
-        x1Transformed<- x1 %*% t(solve(V))
+        #     
         PHItemp <- Radial.basis(x1Transformed, centers, 
             basis.delta, max.points = NULL, mean.neighbor = 50, 
             just.distance = FALSE, RadialBasisFunction = get(LKinfo$RadialBasisFunction), 
             distance.type = LKinfo$distance.type)
-normtime<-  system.time(
+        if( verbose){
+          cat(" Dim PHI level", l, dim( PHItemp), fill=TRUE)
+        }
+
         if (normalize) {
+          normtime<-  system.time(
             if( LKinfo$fastNormalization){
                wght <- LKrig.normalize.basis.fast(l, LKinfo, x1Transformed)
              }
             else{
-               tempB <- LKrig.MRF.precision(LKinfo$mx[l], LKinfo$my[l], 
-                     a.wght = (LKinfo$a.wght)[[l]], edge = LKinfo$edge, 
-                     distance.type = LKinfo$distance.type)
-               tempB <- LKrig.spind2spam(tempB)
-               wght <- LKrig.quadraticform(  t(tempB) %*% tempB, PHItemp)
+               wght <- LKrig.normalize.basis.slow(l, LKinfo, x1Transformed)
              }
-# now normalize the basis functions by the weights            
-# awkwardness of handling the 1 row case separately.
-            if (nrow(x1) > 1) {
-                PHItemp <- diag.spam(1/sqrt(wght)) %*% PHItemp
-            }
-            else {
-                PHItemp@entries <- PHItemp@entries/sqrt(wght)
+           )
+           if( verbose ){
+                cat( "Level",l, normtime, fill=TRUE)
+              }
+# now normalize the basis functions by the weights treat the case with one point separately
+          if( nrow( x1)>1){
+           PHItemp <- diag.spam( 1/sqrt(wght) ) %*% PHItemp
+           }
+          else{
+              PHItemp@entries <- PHItemp@entries/sqrt(wght)
             }
         }
- )
-# cat( "Level",l, normtime, fill=TRUE)
+         
+
         # accumulate new level of basis function.
         PHI <- cbind(PHI, PHItemp)
     }
@@ -96,44 +102,12 @@ normtime<-  system.time(
     # wght are in scale of inverse marginal variance of process
     if (scale.basis) {
         wght <- c(predict(LKinfo$rho.object, x1))
-        if (nrow(x1) > 1) {
-            PHI <- diag.spam(sqrt(wght)) %*% PHI
+        PHI <- diag.spam(sqrt(wght)) %*% PHI
         }
-        else {
-            PHI@entries <- PHI@entries * sqrt(wght)
-        }
-    }
     # attach  LKinfo list to the matrix to help identify how the basis functions
     # are organized.
     attr(PHI, which = "LKinfo") <- LKinfo
     return(PHI)
 }
-
-LKrig.quadraticform <- function(Q, PHI) {
-    #   finds     the quadratic forms    PHI_j^T Q.inverse PHI_j  where PHI_j is the jth row of
-    #   PHI.
-    #   The loop is to avoid using memory for the entire problem if more than 2000 elements.
-    nrow <- dim(PHI)[1]
-    if (nrow > 1) {
-        BLOCKSIZE <- 2000
-        wght <- rep(NA, nrow)
-        counter <- 1
-        while (counter < nrow) {
-            ind <- counter:min((counter + BLOCKSIZE), nrow)
-            A <- forwardsolve(l = chol(Q), transpose = TRUE, 
-                x = t(PHI[ind, ]), upper.tri = TRUE)
-            wght[ind] <- c(colSums(A^2))
-            counter <- counter + BLOCKSIZE
-        }
-    }
-    else {
-        # Unfortunately the case when there is one row needs to be handled separately.
-        A <- forwardsolve(l = chol(Q), transpose = TRUE, x = t(PHI), upper.tri = TRUE)
-        wght <- sum(A^2)
-    }
-    return(wght)
-}
-
-
 
 

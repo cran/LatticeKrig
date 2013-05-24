@@ -39,8 +39,11 @@ LKrig.traceA <- function(Mc, wPHI, wT.matrix, lambda,
         assign(".Random.seed", save.seed, pos = 1)
     }
     #
-    out3 <- LKrig.coef(Mc, wPHI, wT.matrix, wEy, lambda, weights)
-    wEyhat <- (wT.matrix %*% out3$d.coef + wPHI %*% out3$c.coef)
+    out3 <- LKrig.coef(Mc, wPHI, wT.matrix, wEy, lambda, weights) 
+    wEyhat <- (wPHI %*% out3$c.coef)
+    if( !is.null(wT.matrix) ){
+        wEyhat <- wEyhat + wT.matrix %*% out3$d.coef
+    }
     trA.info <- colSums((wEy * wEyhat)/weights)
     trA.est <- mean(trA.info)
     trA.SE <- sqrt(var(trA.info)/length(trA.info))

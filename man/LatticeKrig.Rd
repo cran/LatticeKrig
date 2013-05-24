@@ -22,20 +22,22 @@
 \title{User-friendly spatial prediction and inference using a compactly supported
 multi-resolution basis and a lattice model for the basis coefficients.
 }
-\description{ This is a simple version of the \code{LKrig} function
-that creates a a complete \code{LKrig} object that can then used for
-spatial prediction and inference. It uses the defaults from
-\code{LKrig} and also uses \code{LKrigFindLambda} to choose a lambda
-through likelihood maximization. Despite the simple syntax,
+\description{ This is a simple wrapper (or high level)  function for the more basic \code{LKrig} function.
+Several default choices are made for the multi-resolution spatial covariance but the 
+returned object from this function can 
+ then used for
+spatial prediction and inference. It uses the defaults that are based on 
+a "thin-plate spline" like model for the spatial estimator  
+ and also uses \code{LKrigFindLambda} to estimate  some covariance parameters 
+through likelihood maximization (i.e. estimates the measurement and process
+variances.) Despite the simple syntax,
 LatticeKrig still takes advantage of the multi-resolution feature of
 \code{LKrig} and any \code{LKrig} parameter can be passed through the
-function call.}
+function call. See the example below for varying the range parameter.}
 
 \usage{
-LatticeKrig(x, y, Z=NULL, nu=1, nlevel=4, a.wght=4.01, ...)
-
-
-
+LatticeKrig(x, y, Z = NULL, nu = 1, nlevel = 4, a.wght = 4.01, NC
+                 = NULL, LKinfo = NULL, na.rm = TRUE, tol = 0.005, ...)
 }
 
 \arguments{
@@ -44,14 +46,25 @@ LatticeKrig(x, y, Z=NULL, nu=1, nlevel=4, a.wght=4.01, ...)
  must be greater than or equal to 4. Default is a large spatial
  similar to thin plate spline type model. See Details.}
 
+  \item{LKinfo}{An optional list giving the full specification of the
+   covaraince. If missing will be created internally and
+   returned. If passed this parametrization will be used
+   except lambda will will be reestimated by maximum likelihood.}
+
   \item{nlevel}{Number of levels for the multi-resolution basis. Each
-level increases the number of basis functions by roughly a factor of
-4.}
- 
+   level increases the number of basis functions by roughly a factor of
+    4.}
+
+  \item{NC}{Sets the size of the initial lattice to be NC by NC if the domain is square}
+
+  \item{na.rm}{If TRUE NA's are removed from \code{y} and \code{x} is subsetted.}
+
   \item{nu}{Smoothness of the multi-resolution process. If passed,
   alpha vector is proportional to \code{exp(-(1:nlevel)*nu)} and
   normalized to sum to one. Default is similar to a Whittle covariance
   (Matern with smoothness of 1).}
+
+ \item{tol}{Tolerance for the log likelihood used to judge convergence.}
 
   \item{x}{Spatial locations of observations. Or the \code{LKrig}
   object for printing. }
@@ -66,29 +79,37 @@ level increases the number of basis functions by roughly a factor of
 
 }
 \details{
+Keep in mind that overall LatticeKrig is just a specific type of
+spatial estimate that is designed to handle larger size data sets. But
+it incorporates a specific covariance function and the estimator is
+the Kriging/Multivariate Gaussian Conditional Expectation/BLUE that is
+standard in this field.  The basic function LKrig has a very flexible
+covariance and at least specifying all the relevant parameters may be
+discouraging to a new user.  LatticeKrig is a "wrapper" that generates
+some simplified, default model choices to call the more general
+function \code{LKrig}. It is useful for users not fully familiar with
+the LatticeKrig methodology or those that wish to try a default
+approach to get a quick look at a spatial analysis. The default values
+are set to give about 4 times as many basis functions as observations
+and to use four levels of multi-resolution. The spatial correlation
+range is nearly stationary and set large to mimic a thin-plate
+spline. The smoothness mimics the Whittle covariance function (
+smoothness = 1 for the Matern).  (see LKrig.cov.plot to get a plot of
+the implied covariance function.) LatticeKrig also provides maximum likelihood estimates
+of the measurement error and process varaince parameters that are perhaps the 
+parameters that most effect the shape of the estimated spatail field. 
 
-This function is a wrapper that simples the model choices and calling
-sequence to the more general function LKrig. It is useful for users
-not fully familiar with the Lattice Krig methodology or those that
-wish to try a default approach to get a quick look at a spatial
-analysis. The default values are set to give about 4 times as many
-basis functions as observations and to use four levels of
-multi-resolution. The spatial correlation range is nearly stationatry
-and set large to mimic a thin-plate spline. The smoothness mimic the
-Whittle covariance function ( smoothness =1 for the Matern).  (see
-LKrig.cov.plot to get a plot of the implied covariance function.)
-
-Of course this function is pitched with all the caveats that
+Of course this top level function is pitched with all the caveats that
 statistical model assumptions should always be checked and applying
 generic methods to a specific problems without checking the
 appropriateness can lead to misleading results. Details on the full
 computations can be found in the \code{LKrig} man page.
 
-The \code{lambda} parameter in \code{LKrig} is essential to the
+The \code{lambda = sigma2/ rho} parameter in \code{LKrig} is essential to the
 Lattice Krig computation and an inappropriate value will result in
 over or under fitting and incorrect interpolated values. The function
 \code{LKrigFindLambda} is used within \code{LatticeKrig} to estimate a
-lambda value from the data using maximum likelihood.
+lambda value from the data using maximum likelihood. 
 
 The main call inside \code{LatticeKrig} is to \code{LKrig} and so a
 \code{LKrig} object is returned. Thus all of the functionality that
@@ -105,24 +126,19 @@ Doug Nychka
 }
 
 \seealso{
-LKrig, LKrig.setup, LKrigFindLambda, LKinfo
+LKrig, LKrig.setup, LKrigFindLambda, LKinfo, LKrig.sim.conditional
 }
 \examples{
 # Load ozone data set
   data(ozone2)  
   x<-ozone2$lon.lat
   y<- ozone2$y[16,]
-# Omit locations that are not 'NA'.
-# (LKrig is not set up to handle missing observations.)
-  good <-  !is.na( y)
-  x<- x[good,]
-  y<- y[good]
 
 # thin plate spline-like model with the lambda parameter estimated by
 # maximum likelihood. Default choices are made for a.wght, nlevel, NC
 # and alpha.
-\dontrun{
   obj<- LatticeKrig( x, y)
+\dontrun{
 # summary of fit and a plot of fitted surface
   print( obj)
   surface( obj )
@@ -134,18 +150,12 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo
 
 ###########################################################################
 # Including a covariate (linear fixed part in spatial model)
-##########################################################################
-
-  data(COmonthlyMet)
-  y.CO<- CO.tmin.MAM.climate
-  good<- !is.na( y.CO)
-  y.CO<-y.CO[good]
-  x.CO<- as.matrix(CO.loc[good,])
-  Z.CO<- CO.elev[good]
-
+########################################################################## 
 \dontrun{
-  obj  <- LatticeKrig(x.CO,y.CO,Z=Z.CO)
-  obj2 <- LatticeKrig(x.CO,y.CO)
+  data(COmonthlyMet)
+
+  obj  <- LatticeKrig(CO.loc,  CO.tmin.MAM.climate, Z=CO.elev)
+  obj2 <- LatticeKrig(CO.loc, CO.tmin.MAM.climate)
 
 # compare with and without linear covariates
   set.panel(1,2)
@@ -158,6 +168,25 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo
   title("Without Elevation Covariate")
 
 }
+\dontrun{
+ data(COmonthlyMet)
+# Examining a few different "range" parameters
+a.wghtGrid<-  4  +  c( .1,.5, .8, 1, 2)^2
+
+#NOTE smallest is "spline like" the largest is essentially independent
+# coefficients at each level.  In this case the "independent" end is
+# favored but the eff df. of the surface is very similar across models
+# indicating about the same separate of the estimates into spatial
+# signal and noise
+#
+for( k in 1:5 ){
+obj  <- LatticeKrig(CO.loc,  CO.tmin.MAM.climate, Z=CO.elev, 
+                      a.wght=a.wghtGrid[k])
+cat( "a.wght:", a.wghtGrid[k], "ln Profile Like:",
+            obj$lnProfileLike, "Eff df:", obj$trA.est, fill=TRUE)
+}
+}
+
 }
 \keyword{spatial}
 
