@@ -1,4 +1,4 @@
-08916d0cc55a5f953156e84afe840fb4 *DESCRIPTION
+4e595641a573a16e54968b4306bc0f33 *DESCRIPTION
 2b4d0fcca2325ed76d3a041de4ee32aa *NAMESPACE
 1e0c02ed92137242c4c6fe7c28257a7b *R/LKinfoUpdate.R
 e90b7d3f0adf1c3b3b5c7ed98963ab17 *R/LKrig.MLE.R
@@ -17,7 +17,7 @@ ee71409712204727a4a39533be34501e *R/LKrig.lnPlike.R
 96995282d59561fd8a0c03078f35ad75 *R/LKrig.make.par.grid.R
 6f1bac4e308dfba949e2f84efa7948b9 *R/LKrig.misc.R
 c864190bf9e1e0f00427fc75641d110a *R/LKrig.normalize.basis.R
-b7273aac5c148efa038c59f58f714bec *R/LKrig.precision.R
+aa754e4278f76b4edfee7f0b434ea26e *R/LKrig.precision.R
 9b53b45d8f6cd673ae8dfbb36149c0ae *R/LKrig.setup.R
 5b4b417d154597072f572ca225e7a9fe *R/LKrig.sim.R
 45b1d6237ac59849cddd9327a4135e79 *R/LKrig.sim.conditional.R
@@ -44,7 +44,7 @@ c319461c946d09925b8b43a17bed5259 *man/LKrig.fixed.Rd
 194104f57df895261c413a76a9a5a04e *man/LKrig.internal.Rd
 6b461b9435ac33761ff5668c45cd6bd2 *man/LKrig.misc.Rd
 b8b318f503f16dc143fc96bca3bd75f7 *man/LKrig.sim.Rd
-6fbf9d98e1426c23f5e913ed67d4e8e3 *man/LatticeKrig.Rd
+e1dfb9bfe55e8517fcbd8418cf020cad *man/LatticeKrig.Rd
 6ee242d92a82ab89c3d9dd2d5afe3440 *man/Radial.Basis.Rd
 4478605ec30a7610f664c261ab9e5518 *src/dfind2d.f
 c3b7d05fb3fc2dcded5596d9db1fb8bd *src/findNorm.f
@@ -59,5 +59,6 @@ b2eea27a33b17c6718301a3e8a5dac57 *tests/LKrig.lnPlike.test.Rout.save
 86e656c5d8380917393d8c5021bafe6f *tests/LKrig.precision.test.Rout.save
 3f74b08e2a5b6d4ce0a4c4b86a24b730 *tests/LKrig.se.test.R
 2115b9492c3eadbb0b17ea872ca4183d *tests/LKrig.se.test.Rout.save
+886ab132d6595ebdc9c02853ac8aa9fd *tests/LKrig.test.NonStationary.R
 f92e37c152c3b12930c10890e63e8bfb *tests/LKrig.test.R
 09b9d51d4e6a5b0cbce54ed17796cf51 *tests/LKrig.test.Rout.save

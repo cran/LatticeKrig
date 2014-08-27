@@ -26,8 +26,8 @@ LKrig.precision <- function(LKinfo, return.B = FALSE, level.index = NA,
     
     grid.info <- LKinfo$grid.info
     L <- LKinfo$nlevel
-    if( any(unlist(LKinfo$a.wght)<4)){
-        stop("a.wght less than 4")}
+   # if( any(unlist(LKinfo$a.wght)<4)){
+   #     stop("a.wght less than 4")}
     if (L != length(my)) {
         stop("number of levels and mx and my are not consistent")
     }

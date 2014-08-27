@@ -121,6 +121,13 @@ fitted spatial model. The component \code{LKinfo} has all the details
 that specfiy the basis functions and covariance model.
 
 }
+\references{
+ Nychka, D.,  S. Bandyopadhyay, D. Hammerling, F. Lindgren, and S. Sain
+ A Multi-resolution Gaussian process model for the analysis of large spatial data sets. (2014). Journal of Computational and Graphical Statistics.
+
+See also the more detailed technote at:
+\url{https://opensky.library.ucar.edu/collections/TECH-NOTE-000-000-000-875}
+}
 \author{
 Doug Nychka
 }
