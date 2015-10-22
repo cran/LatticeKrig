@@ -19,40 +19,44 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.coef <- function(Mc, wPHI, wT.matrix, wy, lambda, weights) {
+LKrig.coef <- function(Mc, wX, wU, wy, lambda, verbose=FALSE) {
     if (length(lambda) > 1) {
         stop("lambda must be a scalar")
     }
-    if( !is.null(wT.matrix) ){
-        A <- forwardsolve(Mc, transpose = TRUE, t(wPHI) %*% wT.matrix, 
+    if( !is.null(wU) ){
+        A <- forwardsolve(Mc, transpose = TRUE, t(wX) %*% wU, 
                               upper.tri = TRUE)
         A <- backsolve(Mc, A)
-        A <- t(wT.matrix) %*% (wT.matrix - wPHI %*% A)/lambda
+        A <- t(wU) %*% (wU - wX %*% A)/lambda
 #   A is  (T^t M^{-1} T)
-        b <- forwardsolve(Mc, transpose = TRUE, t(wPHI) %*% wy, upper.tri = TRUE)
+        b <- forwardsolve(Mc, transpose = TRUE, t(wX) %*% wy, upper.tri = TRUE)
         b <- backsolve(Mc, b)
-        b <- t(wT.matrix) %*% (wy - wPHI %*% b)/lambda
+        b <- t(wU) %*% (wy - wX %*% b)/lambda
 # b is   (T^t M^{-1} y)
 # Save the intermediate matrix   (T^t M^{-1} T) ^{-1}
 # this the GLS covariance matrix of estimated coefficients
-# should be small for this to be efficient code -- the default is 3X3
+# should be small for this to be efficient code --  e.g the default is 3X3
         Omega <- solve(A)
 # GLS estimates
         d.coef <- Omega %*% b
-        residual<- wy - wT.matrix %*% d.coef
+        residualFixed<- wy - wU %*% d.coef
    }
    else{
        Omega<- NULL
        d.coef<- NULL
-       residual<- wy
+       residualFixed<- wy
    }     
 # coefficients of basis functions.
     c.coef <- forwardsolve(Mc, transpose = TRUE,
-                       t(wPHI) %*% (residual), upper.tri = TRUE)
+                       t(wX) %*% (residualFixed), upper.tri = TRUE)
     c.coef <- backsolve(Mc, c.coef)
-    c.mKrig <- sqrt(weights) * (residual - wPHI %*% c.coef)/lambda
+#    c.mKrig <- sqrt(weights) * (residualFixed - wX %*% c.coef)/lambda
+    if( verbose){
+    	cat("d.coef: ", d.coef, fill=TRUE)
+    	cat( fill=TRUE)
+    	cat("c.coef: ", c.coef, fill=TRUE)
+    }
     
-    return(list(c.coef = c.coef, d.coef = d.coef, Omega = Omega, 
-        c.mKrig = c.mKrig))
+    return( list(c.coef = c.coef, d.coef = d.coef, Omega = Omega) )
 }
 

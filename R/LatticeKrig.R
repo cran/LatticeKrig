@@ -14,31 +14,54 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-LatticeKrig<- function(x, y, Z=NULL, nu=1, nlevel=4, a.wght=4.01, NC=NULL,
-                        LKinfo=NULL, na.rm=TRUE, tol=.005,  ...){
+LatticeKrig<- function(x, y, Z=NULL,  nlevel=3,  
+                        LKinfo=NULL, X=NULL, U=NULL, na.rm=TRUE,
+                        tol=.005, verbose=FALSE, ...){
   # a crisp wrapper where many default values are exercised.
+              x<- as.matrix(x)
               ind<- is.na(y)
               if( any(ind)){
-                      x<- x[!ind,]
-                      y<- y[!ind]
-                      warning("NAs removed")
-                      if( !is.null(Z)){
-                        Z<- as.matrix( Z)[!ind,]
-                      }
-                    }
-              if( is.null(NC)){
-              N<- length( y)
-              Nbasis<- 4^(nlevel)/ 3
-              NCtest<- 2*sqrt( N/(Nbasis))
-  # NCtest chosen so that   NCtest^2 * ( 1 + 4 + 16 + 64) ~~ number of basis functions
-  # will be about 4*N. 
-              NC<- round(max(5, NCtest ))
-            }
+                if( na.rm){
+                  x<- x[!ind,]
+                  y<- y[!ind]
+                  warning("NAs removed")
+                  if( !is.null(Z)){
+                    Z<- as.matrix( Z)[!ind,]
+                  }
+                 }
+                 else{
+                   stop("NAs in y")
+                 }
+              }
+#      	                     
             if( is.null(LKinfo) ){
-              LKinfo<- LKrig.setup( x=x, NC=NC, nu=1, nlevel=4,
-                                    a.wght=a.wght,...)
-            }    
- # find lambda              
-              obj<- LKrigFindLambda( x=x,y=y, Z=Z, LKinfo=LKinfo, tol=tol)
-              LKrig( x,y,Z=Z, LKinfo=LKinfo, lambda=obj$lambda.MLE) 
+            argList<-list( ...)
+# determine the geometry/dimension if not specified
+# set up some thin plate spline like default models for just Euclidean spatial domains
+# in 1,2 and 3 dimensions.              
+            argList<- LatticeKrigEasyDefaults(argList,nlevel,x)
+            if(verbose){
+              cat("extra args:", fill=TRUE)
+              print( names(argList))
             }
+              LKinfo<- do.call( "LKrigSetup", c( list( x=x,  nlevel=nlevel,
+                                     verbose=FALSE), argList ) )
+            }  
+            if( verbose){
+            	print(LKinfo)
+            } 
+ # find lambda   
+              obj<- LKrigFindLambda( x=x,y=y, X=X, U=U, Z=Z, LKinfo=LKinfo, tol=tol,
+              verbose=verbose)
+              if( verbose){
+                print( obj$summary)
+              }
+              LKinfo <- LKinfoUpdate( LKinfo, lambda= obj$lambda.MLE)
+              obj2<- c(  LKrig( x, y, Z=Z, X=X, U=U, LKinfo=LKinfo), list(MLE= obj) )             
+              class( obj2)<- c(  "LatticeKrig", "LKrig")
+              obj2$call<- match.call()
+              return( obj2)
+            }
+
+
+

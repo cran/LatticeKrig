@@ -34,9 +34,11 @@ conditional on the field values and a set of irregular locations.  }
 #
 LKrig.sim(x1, LKinfo, M=1,just.coefficients = FALSE)
 LKrig.sim.conditional( LKrigObj, M=1, x.grid= NULL, grid.list=NULL,
-                           nx=80, ny=80,...,Z.grid=NULL, seed=42)
-simConditionalDraw(index=1,  LKrigObj, ghat, x.grid, Z.grid, PHIGrid, PHIObs,
-                             seeds= 123, ...)
+                           nx=80, ny=80,...,Z.grid=NULL, seed=42, verbose=FALSE)
+
+simConditionalDraw(index = 1, LKrigObj, ghat, x.grid, Z.grid, PHIGrid,
+                 seeds = 123, verbose = FALSE)
+
 }
 \arguments{
 
@@ -53,7 +55,7 @@ coefficients from the Markov Random field.}
 describing a multiresolution basis with a Markov random field used for
 the covariance of the basis coefficients. This list is created in
 \code{LKrig} and is returned as part of the output object or in a more
-hands on manner directly using \code{LKrig.setup} (See section on
+hands on manner directly using \code{LKrigSetup} (See section on
 returned Value below for this list's description.)}
 
 
@@ -76,7 +78,7 @@ index the different locations: to be precise \code{x1[i,1:2]} are the
 
 \item{x.grid}{Locations to evaluate conditional fields. This is in the
 form of a two column matrix where each row is a spatial location.}
-
+	
 \item{Z.grid}{The covariates that are assoicated with the x.grid
 values. This is useful for conditional simulation where the fields are
 evaluated at x.grid locations and using covariate values
@@ -87,12 +89,15 @@ covariates and rows indexed by the x.grid locations.}
 the spatial estimate. These are components in addition to what is in
 the LKinfo list returned by LKrig.}
 
-\item{ghat}{The predicted surface at the grid}
-\item{index}{The index for the random seed to use in the vector \code{seeds}}
-\item{PHIGrid}{Basis function matrix at grid points.}
-\item{PHIObs}{Basis function matrix at observation locations.}
-\item{seeds}{A vector of random seeds.}
+\item{verbose}{If TRUE prints out debugging information.}
 
+\item{ghat}{The predicted surface at the grid}
+
+\item{index}{The index for the random seed to use in the vector \code{seeds}}
+
+\item{PHIGrid}{Basis function matrix at grid points.}
+
+\item{seeds}{A vector of random seeds.}
 
 } 
 
@@ -173,7 +178,7 @@ LKrig, mKrig, Krig, fastTps, Wendland
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]
-  LKinfo<- LKrig.setup( x,NC=20,nlevel=1, alpha=1, lambda= .3 , a.wght=5)
+  LKinfo<- LKrigSetup( x,NC=20,nlevel=1, alpha=1, lambda= .3 , a.wght=5)
 # BTW lambda is close to MLE 
 # Simulating this  LKrig process
 # simulate 4 realizations of process and plot them

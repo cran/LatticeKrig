@@ -1,7 +1,7 @@
 
-R version 3.1.0 (2014-04-10) -- "Spring Dance"
-Copyright (C) 2014 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin10.8.0 (64-bit)
+R Under development (unstable) (2015-10-05 r69468) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 > library( LatticeKrig)
 Loading required package: spam
 Loading required package: grid
-Spam version 0.41-0 (2014-02-26) is loaded.
+Spam version 1.2-1 (2015-09-30) is loaded.
 Type 'help( Spam)' or 'demo( spam)' for a short introduction 
 and overview of this package.
 Help for individual functions is also obtained by adding the
@@ -37,6 +37,12 @@ The following objects are masked from 'package:base':
 
 Loading required package: fields
 Loading required package: maps
+
+ # ATTENTION: maps v3.0 has an updated 'world' map.        #
+ # Many country borders and names have changed since 1990. #
+ # Type '?world' or 'news(package="maps")'. See README_v3. #
+
+
 > options( echo=FALSE)
 testing:  d from LKrig and by hand
     PASSED test at tolerance  1e-08
@@ -49,9 +55,6 @@ testing:  Monte Carlo traces
     PASSED test at tolerance  1e-08
     PASSED test at tolerance  1e-08
 testing:  d from Lattice Krig and mKrig
-    PASSED test at tolerance  1e-08
-    PASSED test at tolerance  1e-08
-testing:  marginal variance
     PASSED test at tolerance  1e-08
 testing:  spatial alpha cov
     PASSED test at tolerance  1e-08
@@ -79,14 +82,16 @@ testing:  Det with weights1=2
     PASSED test at tolerance  1e-08
 testing:  Det with weights3
     PASSED test at tolerance  1e-08
-Warning message:
-In rm(obj, obj0) : object 'obj0' not found
 testing:  lnDetCov for mKrig and LatticeKrig
     PASSED test at tolerance  1e-08
 testing:  quadratic forms for rho hat
     PASSED test at tolerance  1e-08
 testing:  Profile Likelihood concentrated on lambda
     PASSED test at tolerance  1e-08
+Warning: 
+Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
+  (REML) Restricted maximum likelihood 
+   minimum at  right endpoint  lambda  =  29404.51 (eff. df= 3.000986 )
     PASSED test at tolerance  1e-08
 testing:  predicted  values mKrig/Krig  w/weights
     PASSED test at tolerance  1e-08
@@ -103,4 +108,4 @@ testing:  test of LatticeKrig.coef d
 Done testing LatticeKrig
 > proc.time()
    user  system elapsed 
- 34.846   0.362  34.564 
+ 25.938   0.293  26.222 

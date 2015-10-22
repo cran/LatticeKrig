@@ -35,10 +35,10 @@ parameter space.
 }
 \usage{
 LKrigFindLambda(x, y, ..., LKinfo,
-                            use.cholesky=NULL, 
-                            verbose = FALSE,
+                            use.cholesky=NULL,                          
                             lambda.profile=TRUE,
-                            lowerBoundLogLambda=-16,tol = 0.005)
+                            lowerBoundLogLambda=-16,tol = 0.005,
+                            verbose=FALSE)
 
 LKrig.MLE( x,y,..., LKinfo, use.cholesky = NULL,
                     par.grid=NULL,
@@ -85,7 +85,7 @@ of the par.grid arguments.  }
  list including lambda.}
 
 \item{LKinfo}{ An LKinfo object that specifies the LatticeKrig
-covariance. Usually this is obtained by a call to \code{LKrig.setup}
+covariance. Usually this is obtained by a call to \code{LKrigSetup}
 or as the component LKinfo from the LKrig object.  The search
 sequentially replaces the alpha and a.wght arguments in this list by
 the values in par.grid but leaves everything else the same. If
@@ -177,7 +177,7 @@ over different parameters combinations simple.
 }
 \value{
 
-\strong{ {LKrigFindLambda}} 
+\strong{LKrigFindLambda} 
 
 \item{summary}{Giving information on the optimzation over lambda.}
 
@@ -191,7 +191,7 @@ over different parameters combinations simple.
 
 \item{Mc}{Cholesky decomposition.}
 
-\strong{ {LKrig.MLE}}  
+\strong{LKrig.MLE}  
 
 \item{summary}{A matrix with columns: effective degrees of freedom, ln
 Profile likelihood, Generalized cross-validation function, MLE sigma,
@@ -218,14 +218,14 @@ likelihood.}
 
 \item{call}{Calling sequence for this function.}
 
-\strong{ {which.max.matrix}} Returns a 2 column matrix with row and column
+\strong{which.max.matrix} Returns a 2 column matrix with row and column
 index of maximum. 
 
-\strong{ {which.max.image}} Returns components x,y,z locating maximum value
+\strong{which.max.image} Returns components x,y,z locating maximum value
 and component in giving the row and column of maximum in the image
 matrix. 
 
-\strong{ {LKrig.make.par.grid}} Returns a list with components, alpha,
+\strong{LKrig.make.par.grid} Returns a list with components, alpha,
 a.wght. Each component is a list where each component of the list is a
 separate set of parameters. This more general format is useful for the
 nonstationary case when the parameters alpha might be a list of nlevel
@@ -241,7 +241,6 @@ matrices.
 }
 \examples{
 # 
-
 # fitting summer precip for  sub region of North America
   data(NorthAmericanRainfall)
 # rename for less typing
@@ -256,15 +255,16 @@ matrices.
   y<- y[ind]
 
 # This is a single level smoother
-  LKinfo<- LKrig.setup(x,NC=12,nlevel=1, a.wght=4.05, alpha=1.0)
+  LKinfo<- LKrigSetup(x,NC=12,nlevel=1, a.wght=4.05, alpha=1.0)
   lambdaFit<- LKrigFindLambda( x,y,LKinfo=LKinfo)
   lambdaFit$summary
 
-  NG<-5
- #NOTE: make this larger ( e.g. 15) for a better grid search on log lambda
+  NG<-3
+ #NOTE: make this larger ( e.g. 15) for a better (real!) grid search on log lambda
+ # values
   par.grid<- list( a.wght= rep( 4.05,NG),alpha= rep(1, NG),
                       llambda=  seq(-8,-2,,NG))
-  LKinfo<- LKrig.setup(x,NC=12,nlevel=1, a.wght=5, alpha=1.0)
+  LKinfo<- LKrigSetup(x,NC=12,nlevel=1, a.wght=5, alpha=1.0)
   lambda.search.results<-LKrig.MLE( x,y,LKinfo=LKinfo,
                                     par.grid=par.grid,
                                     lambda.profile=FALSE)
@@ -276,6 +276,7 @@ matrices.
 # fit at largest likelihood value:
     lambda.MLE.fit<- LKrig( x,y,
                     LKinfo=lambda.search.results$LKinfo.MLE)
+\dontrun{                    
 # optimizing  Profile likelihood over lambda using optim
 # consider 3 values for a.wght (range parameter)
 # in this case the log lambdas passed are the starting values for optim.
@@ -284,22 +285,33 @@ matrices.
                       llambda= c(-5,NA,NA))
 # NOTE: NAs in llambda mean use the previous MLE for llambda as the
 # current starting value. 
-  LKinfo<- LKrig.setup(x,NC=12,nlevel=1, a.wght=5, alpha=1.0) 
+  LKinfo<- LKrigSetup(x,NC=12,nlevel=1, a.wght=5, alpha=1.0) 
   lambda.search.results<-LKrig.MLE(
                               x,y,LKinfo=LKinfo, par.grid=par.grid,
                               lambda.profile=TRUE, verbose=TRUE)
   print(lambda.search.results$summary)
 # note first result a.wght = 4.05 is the optimized result for the grid
 # search given above.
-
+}
 ########################################################################    
 # search over two multi-resolution levels varying the  levels of alpha's
 ########################################################################
-
+\dontrun{
 # NOTE: search ranges found largely by trial and error to make this
 # example work also the grid is quite coarse ( and NC is small) to
 # be quick as a help file example
-
+  data(NorthAmericanRainfall)
+# rename for less typing
+  x<- cbind( NorthAmericanRainfall$longitude, NorthAmericanRainfall$latitude)
+# total precip in 1/10 mm for JJA 
+ y<- log10(NorthAmericanRainfall$precip)
+# cut down the size of this data set so examples run quickly
+# examples also work with  the full data set. Also try NC= 100 for a
+# nontrivial model.
+  ind<- x[,1] > -90 & x[,2] < 35 #
+  x<- x[ind,]
+  y<- y[ind]
+  
   Ndes<- 10  # NOTE: this is set very small just to make example run fast
   set.seed(124)
   par.grid<- list()
@@ -311,7 +323,7 @@ matrices.
   par.grid$a.wght<- matrix( 4.5, nrow=Ndes, ncol=3)
 # log lambda grid search values
   par.grid$llambda<- runif( Ndes,-5,-3)  
-   LKinfo1<- LKrig.setup( x, NC=5, nlevel=3, a.wght=5, alpha=c(1.0,.5,.25))
+   LKinfo1<- LKrigSetup( x, NC=5, nlevel=3, a.wght=5, alpha=c(1.0,.5,.25))
 # NOTE: a.wght in call is not used. Also a better search is to profile over
 #  llambda
 
@@ -328,8 +340,10 @@ matrices.
          xlab="effective degrees freedom",
          ylab="ln profile likelihood")
 #
+}
+
 \dontrun{
-# a more defensible two level model search 
+# a two level model search 
 # with profiling over lambda.
 #  This takes a few minutes
   Ndes<- 40 
@@ -345,8 +359,9 @@ matrices.
   par.grid$a.wght<- cbind( a.wght, a.wght)
 # log lambda grid search values (these are the starting values)
   par.grid$llambda<- rep(-4, Ndes)
-  LKinfo1<- LKrig.setup( x, NC=15, nlevel=nlevel, 
-                          a.wght=5, alpha=c(1.0,.5,.25) )
+
+  LKinfo1<- LKrigSetup( x, NC=15, nlevel=nlevel, 
+                          a.wght=5, alpha=rep( NA,2) ) 
 ##
 ## the search over the parameter list in par.grid  maximizing over lambda 
   search.results<- LKrig.MLE( x,y,LKinfo=LKinfo1, par.grid=par.grid,
@@ -377,8 +392,23 @@ y<- y[good]
 x<- x[good,]
 par.grid<- expand.grid( nu=seq(.5,1.5,,4), a.wght=c(4.01,4.1, 4.2,4.5,5))
 par.grid$llambda<- rep( NA, length(par.grid$nu))
-LKinfo<- LKrig.setup(x,  nlevel=3,NC=5)
+LKinfo<- LKrigSetup(x,  nlevel=3,NC=5)
 out<- LKrig.MLE( x,y, LKinfo=LKinfo, par.grid=par.grid, verbose=TRUE)
+}
+\dontrun{
+# an MLE fit taking advantage of replicated fields
+set.seed(222)
+N<- 500
+M<-100
+sigma<- .1
+x<- matrix( runif(N*2), N,2)
+LKinfo<- LKrigSetup( x, NC=5, nlevel=4,nu=1.0, a.wght=4.2 )
+# the replicate fields
+y<- LKrig.sim(x,LKinfo=LKinfo, M=M ) + sigma*matrix( rnorm(N*M), N,M)
+# with correct lambda
+obj<- LKrig( x,y, LKinfo=LKinfo, lambda=.1)
+print( obj$sigma.MLE)
+print( obj$rho.MLE)
 }
 
 }

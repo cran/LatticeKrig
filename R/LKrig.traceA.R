@@ -19,8 +19,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.traceA <- function(Mc, wPHI, wT.matrix, lambda, 
-    weights, NtrA, iseed = NA) {
+LKrig.traceA <- function(Mc, wX, wU, lambda, weights, NtrA, iseed = NA) {
+# do not disrupt an external use of the random number generator    	
     if (exists(".Random.seed", 1)) {
         save.seed <- .Random.seed
     }
@@ -39,13 +39,13 @@ LKrig.traceA <- function(Mc, wPHI, wT.matrix, lambda,
         assign(".Random.seed", save.seed, pos = 1)
     }
     #
-    out3 <- LKrig.coef(Mc, wPHI, wT.matrix, wEy, lambda, weights) 
-    wEyhat <- (wPHI %*% out3$c.coef)
-    if( !is.null(wT.matrix) ){
-        wEyhat <- wEyhat + wT.matrix %*% out3$d.coef
+    out3 <- LKrig.coef(Mc, wX, wU, wEy, lambda) 
+    wEyhat <- (wX %*% out3$c.coef)
+    if( !is.null(wU) ){
+        wEyhat <- wEyhat + wU %*% out3$d.coef
     }
     trA.info <- colSums((wEy * wEyhat)/weights)
     trA.est <- mean(trA.info)
     trA.SE <- sqrt(var(trA.info)/length(trA.info))
-    list(trA.est = trA.est, trA.SE = trA.SE)
+    list(trA.est = trA.est, eff.df = trA.est,  trA.SE = trA.SE)
 }

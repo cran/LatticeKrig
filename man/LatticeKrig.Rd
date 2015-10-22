@@ -19,55 +19,68 @@
 
 \name{LatticeKrig}
 \alias{LatticeKrig}
+\alias{print.LatticeKrig}
 \title{User-friendly spatial prediction and inference using a compactly supported
 multi-resolution basis and a lattice model for the basis coefficients.
 }
-\description{ This is a simple wrapper (or high level)  function for the more basic \code{LKrig} function.
-Several default choices are made for the multi-resolution spatial covariance but the 
-returned object from this function can 
- then used for
-spatial prediction and inference. It uses the defaults that are based on 
+\description{ This is a simple wrapper (or high level)  function for the more basic \code{\link{LKrig}} function. The help file for LKrig also contains the detailed description of the LatticeKrig spatial model and many examples. 
+	
+Several default choices are made for the multi-resolution spatial covariance 
+in this top level function. It uses the defaults that are based on 
 a "thin-plate spline" like model for the spatial estimator  
  and also uses \code{LKrigFindLambda} to estimate  some covariance parameters 
 through likelihood maximization (i.e. estimates the measurement and process
 variances.) Despite the simple syntax,
 LatticeKrig still takes advantage of the multi-resolution feature of
 \code{LKrig} and any \code{LKrig} parameter can be passed through the
-function call. See the example below for varying the range parameter.}
+function call. See the example below for varying the range parameter.
+Also see \code{\link{LKinfo}} for documentation on the complete object that describes the LatticeKrig model and \code{\link{LKGeometry}} for documentation on extending or adding other spatial models to this package. 
+
+The returned value from this function can be used subsequently for prediction, 
+conditional simulation, and other parts of the spatial analysis. See 
+\code{\link{predict.LKrig}} and \code{\link{LKrig.sim.conditional}} 
+}
+
 
 \usage{
-LatticeKrig(x, y, Z = NULL, nu = 1, nlevel = 4, a.wght = 4.01, NC
-                 = NULL, LKinfo = NULL, na.rm = TRUE, tol = 0.005, ...)
+LatticeKrig(x, y, Z = NULL, nlevel = 3, LKinfo = NULL,
+ X=NULL, U=NULL, na.rm =
+                 TRUE, tol = 0.005, verbose = FALSE, ...)
+\method{print}{LatticeKrig}( x, digits=4, ...)
 }
 
 \arguments{
-  \item{a.wght}{The "a" spatial autoregressive parameter for a first
- order Markov Random field. This controls the spatial dependence and
- must be greater than or equal to 4. Default is a large spatial
- similar to thin plate spline type model. See Details.}
+ 
 
   \item{LKinfo}{An optional list giving the full specification of the
    covaraince. If missing will be created internally and
    returned. If passed this parametrization will be used
    except lambda will will be reestimated by maximum likelihood.}
-
+   
+  \item{digits}{Number of significant digits in printed summary.}
+  
   \item{nlevel}{Number of levels for the multi-resolution basis. Each
    level increases the number of basis functions by roughly a factor of
     4.}
 
-  \item{NC}{Sets the size of the initial lattice to be NC by NC if the domain is square}
-
   \item{na.rm}{If TRUE NA's are removed from \code{y} and \code{x} is subsetted.}
-
-  \item{nu}{Smoothness of the multi-resolution process. If passed,
-  alpha vector is proportional to \code{exp(-(1:nlevel)*nu)} and
-  normalized to sum to one. Default is similar to a Whittle covariance
-  (Matern with smoothness of 1).}
 
  \item{tol}{Tolerance for the log likelihood used to judge convergence.}
 
-  \item{x}{Spatial locations of observations. Or the \code{LKrig}
-  object for printing. }
+ \item{verbose}{ If TRUE print out intermediate results. }
+
+ \item{x}{Spatial locations of observations. This should be a matrix
+   where the columns are the number of dimensions and rows index the observations.
+    Or for the \code{print.LatticeKrig} the returned object from LatticeKrig for a print summary. }
+    
+      \item{X}{For linear inverse problems the matrix that maps coefficients of the basis to the   
+  	 predicted values of observations. X must be in spam format. To convert to 
+  	 spam format see \code{full2spam} and \code{\link{spind2spam}}.
+  	 	}
+  	 
+  	 \item{U}{For linear inverse problems the matrix that maps coefficients of the   fixed part of model to the predicted
+	values of observations.}
+  
  
   \item{y}{Spatial observations. No missing values are allowed.}
  
@@ -75,34 +88,40 @@ LatticeKrig(x, y, Z = NULL, nu = 1, nlevel = 4, a.wght = 4.01, NC
   that are distinct from the default first order polynomial in
   \code{x} (i.e. the spatial drift).}
 
-  \item{\dots}{Additional arguments to pass to LKrig. }
+  \item{\dots}{Additional arguments to pass to LKrig. See help(LKrig) }
 
 }
 \details{
 Keep in mind that overall LatticeKrig is just a specific type of
-spatial estimate that is designed to handle larger size data sets. But
-it incorporates a specific covariance function and the estimator is
-the Kriging/Multivariate Gaussian Conditional Expectation/BLUE that is
-standard in this field.  The basic function LKrig has a very flexible
+spatial estimate that is designed to handle larger size data sets.
+It focuses on a specific form of covariance function, but the estimator is
+still the Kriging/Multivariate Gaussian Conditional Expectation/BLUE that is
+standard in this field. In fact one can use the Krig or mKrig function from fields to reproduce the LatticeKrig estimate for smaller data sets. 
+The basic function \code{\link{LKrig}} supports a very flexible
 covariance and at least specifying all the relevant parameters may be
-discouraging to a new user.  LatticeKrig is a "wrapper" that generates
-some simplified, default model choices to call the more general
+discouraging to a new (or impatient!) user.  LatticeKrig is a "wrapper" that generates some simplified, default model choices to call the more general
 function \code{LKrig}. It is useful for users not fully familiar with
 the LatticeKrig methodology or those that wish to try a default
-approach to get a quick look at a spatial analysis. The default values
-are set to give about 4 times as many basis functions as observations
-and to use four levels of multi-resolution. The spatial correlation
+approach to get a quick look at a spatial analysis. You always go back and add some specific nondefault choices to the LatticeKrig call (e.g. changing \code{a.wght}). 
+For the 2-d case the  default values
+are set to give about 4 times as many basis functions as observations, use 5 extra lattice points on the edge to minimize boundary effects, 
+and to use four levels of multi-resolution. 
+An important default is that a linear spatial drift is include in the model and so the model will relax to a linear prediction based on the x values in the absence of a spatial component. In other words the model includes by default a fixed part that is linear in x.
+The spatial correlation
 range is nearly stationary and set large to mimic a thin-plate
 spline. The smoothness mimics the Whittle covariance function (
-smoothness = 1 for the Matern).  (see LKrig.cov.plot to get a plot of
-the implied covariance function.) LatticeKrig also provides maximum likelihood estimates
-of the measurement error and process varaince parameters that are perhaps the 
-parameters that most effect the shape of the estimated spatail field. 
+smoothness = 1 for the Matern).  (see \link{LKrig.cov.plot} to get a plot of
+the implied covariance function.) LatticeKrig also provides maximum likelihood 
+estimates
+of the measurement error standard deviation ("sigma") and process varaince parameter ("rho") that are perhaps the 
+parameters that most effect the shape of the estimated spatial field. The ubiquitous
+parameter lambda thorugh out LatticeKrig is just the reparametrization lambda == sigma^2 / rho.
 
-Of course this top level function is pitched with all the caveats that
+This top level function is pitched with all the caveats that
 statistical model assumptions should always be checked and applying
 generic methods to a specific problems without checking the
-appropriateness can lead to misleading results. Details on the full
+appropriateness can lead to misleading results. So plot your data and
+try several models. Details on the full
 computations can be found in the \code{LKrig} man page.
 
 The \code{lambda = sigma2/ rho} parameter in \code{LKrig} is essential to the
@@ -120,13 +139,12 @@ and \code{fitted.values} in the returned object for these parts of the
 fitted spatial model. The component \code{LKinfo} has all the details
 that specfiy the basis functions and covariance model.
 
-}
-\references{
- Nychka, D.,  S. Bandyopadhyay, D. Hammerling, F. Lindgren, and S. Sain
- A Multi-resolution Gaussian process model for the analysis of large spatial data sets. (2014). Journal of Computational and Graphical Statistics.
+This function also supports a model where the observations are simply
+expressed as linear combinations of the coeffients. Typically these 
+linear maps represent observing integrals or weighted combinations of the 
+fields. See help(LKrig) for an example of how this model is set up at the end of the
+Examples section.  
 
-See also the more detailed technote at:
-\url{https://opensky.library.ucar.edu/collections/TECH-NOTE-000-000-000-875}
 }
 \author{
 Doug Nychka
@@ -155,6 +173,51 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo, LKrig.sim.conditional
   out.se<- predictSE( obj, xnew= x)
 }
 
+\dontrun{
+# Refit using the tensor product type of basis functions
+# (default is "Radial"). An example how an additional argument that is 
+# passed to the LKrigsetup function to create the LKinfo object.
+  obj2<- LatticeKrig( x, y, BasisType="Tensor")
+}
+#
+# A 1-d example with 3 levels of basis functions
+# See LKrig for an explanation if nlevel, NC,  alpha and a.wght 
+# covariance parameters.
+
+
+\dontrun{
+ x<- matrix(rat.diet$t)
+ y<- rat.diet$trt
+ fitObj<- LatticeKrig( x, y)
+# NOTE lots of defaults are set for the model! See print( fitObj)
+ plot( x,y)
+ xg<- matrix(seq( 0,105,,100))
+ lines( xg, predict(fitObj, xg) )
+}
+
+\dontrun{
+#  a 3D example
+set.seed( 123)
+N<- 1000
+x<-  matrix( runif(3* N,-1,1), ncol=3, nrow=N)
+y<-   10*exp( -rdist( x, rbind( c(.5,.5,.6) ) )/.5)
+
+# NOTE setting of memory size for Cholesky. This avoids some warnings and
+# extra computation by the spam package
+LKinfo<- LKrigSetup( x,  nlevel=1,  a.wght= 6.01, NC=6, NC.buffer=2,
+                    LKGeometry="LKBox", normalize=FALSE, mean.neighbor=200,
+                    choleskyMemory=list(nnzR= 2E6) )                                      
+out1<- LatticeKrig( x,y, LKinfo=LKinfo)
+
+glist<- list( x1=seq( -1,1,,30), x2=seq( -1,1,,30), x3 = 0)
+xgrid<- make.surface.grid( glist)
+
+yhat<- predict( out1, xgrid)
+# compare yhat to true function created above
+image.plot( as.surface( glist, yhat))
+
+}
+#
 ###########################################################################
 # Including a covariate (linear fixed part in spatial model)
 ########################################################################## 
@@ -178,7 +241,7 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo, LKrig.sim.conditional
 \dontrun{
  data(COmonthlyMet)
 # Examining a few different "range" parameters
-a.wghtGrid<-  4  +  c( .1,.5, .8, 1, 2)^2
+a.wghtGrid<-  4  +  c( .1, .5, .8, 1, 2)^2
 
 #NOTE smallest is "spline like" the largest is essentially independent
 # coefficients at each level.  In this case the "independent" end is
@@ -192,6 +255,33 @@ obj  <- LatticeKrig(CO.loc,  CO.tmin.MAM.climate, Z=CO.elev,
 cat( "a.wght:", a.wghtGrid[k], "ln Profile Like:",
             obj$lnProfileLike, "Eff df:", obj$trA.est, fill=TRUE)
 }
+}
+
+#########################################################################
+# Reproducing some of the analysis for the example in the
+# JCGS LatticeKrig paper.
+#########################################################################
+
+\dontrun{
+data(NorthAmericanRainfall)
+library(mapproj)
+x<- cbind(NorthAmericanRainfall$longitude, NorthAmericanRainfall$latitude)
+y<- NorthAmericanRainfall$precip
+log.y<- log(y)
+elev<- NorthAmericanRainfall$elevation
+x.s<- mapproject( x[,1], x[,2], projection="stereographic")
+x.s<- cbind( x.s$x, x.s$y)
+
+obj0<- LatticeKrig(x.s, log.y, Z=elev )
+
+fitSurface<- predictSurface( obj0, drop.Z=TRUE)
+fitSurface$z<-  exp(fitSurface$z)/100
+colorTable<- designer.colors( 256, c("red4", "orange", "yellow","green1", "green4", "blue"))
+image.plot( fitSurface, col=colorTable)
+map( "world", add=TRUE, col="grey30", lwd=3, proj="") 
+
+
+		
 }
 
 }

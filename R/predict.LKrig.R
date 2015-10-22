@@ -19,37 +19,48 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-predict.LKrig <- function(object, xnew = object$x, Znew = NULL, 
-    drop.Z = FALSE,return.levels=FALSE, ...) {
-  #
-    if( !drop.Z & is.null(Znew)){
-      Znew<- object$Z
-    }
-    if( !is.null( object$fixedFunction)){
-        temp1<- predictLKrigFixedFunction(object, xnew = xnew, Znew = Znew, 
-                   drop.Z = drop.Z)
-      }
-    else{
-       temp1<-rep(0, nrow(xnew))
-    }
-    PHIg <- LKrig.basis(xnew, object$LKinfo)
-# the nonparametric component from the spatial process
-# described by the multiresolution basis
-  if( !return.levels){
-    temp2 <- PHIg %*% object$c.coef
-    return(temp1 + temp2)
-  }  
-  else{
-    nLevels<- object$LKinfo$nlevel
-    temp2<- matrix( NA, ncol=nLevels, nrow= nrow( xnew))
-    for( level in 1:nLevels){
-# indices for each multiresolution level      
-       startLevel<- object$LKinfo$offset[level] +1
-       endLevel<-  object$LKinfo$offset[level+1]
-       indexLevel<- startLevel : endLevel
-       temp2[,level]<- PHIg[,indexLevel] %*% object$c.coef[indexLevel,]
-    }
-    return( cbind(temp1,temp2))
-  }
+predict.LKrig <- function(object, xnew = object$x, Znew = NULL, drop.Z = FALSE,
+       just.fixed=FALSE, 
+	return.levels = FALSE, ...) {
+	#
+	if (!drop.Z & is.null(Znew)) {
+		Znew <- object$Z
+	}
+	findFixedPart <- !is.null(object$LKinfo$fixedFunction)
+	if (findFixedPart) {	
+		temp1 <-
+		predictLKrigFixedFunction(object, xnew = xnew, 
+            Znew = Znew, drop.Z = drop.Z)	}
+	if( just.fixed){
+		return( temp1)
+	}
+	
+	# the nonparametric component from the spatial process
+	# described by the multiresolution basis
+	PHIg <- LKrig.basis(xnew, object$LKinfo)
+if (!return.levels) {
+		temp2 <- PHIg %*% object$c.coef
+		if (findFixedPart) {
+			return(temp1 + temp2)
+		} else {
+			return(temp2)
+		}
+	} else {
+		nLevels <- object$LKinfo$nlevel
+		temp2 <- matrix(NA, ncol = nLevels, nrow = nrow(xnew))
+		for (level in 1:nLevels) {
+			# indices for each multiresolution level      
+			startLevel <- object$LKinfo$offset[level] + 1
+			endLevel <- object$LKinfo$offset[level + 1]
+			indexLevel <- startLevel:endLevel
+			temp2[, level] <- PHIg[, indexLevel] %*% object$c.coef[indexLevel, 
+				]
+		}
+		if (findFixedPart) {
+			return(cbind(temp1, temp2))
+		} else {
+			return(temp2)
+		}
+	}
 }
 

@@ -21,6 +21,7 @@
 
 print.LKrig <- function(x, digits = 4, ...) {
     LKinfo <- x$LKinfo
+    
     if (is.matrix(x$residuals)) {
         n <- nrow(x$residuals)
         NData <- ncol(x$residuals)
@@ -57,40 +58,46 @@ print.LKrig <- function(x, digits = 4, ...) {
     }
     c1 <- c(c1, "Nonzero entries in Ridge regression matrix")
     c2 <- c(c2, x$nonzero.entries)
-    sum <- cbind(c1, c2)
-    dimnames(sum) <- list(rep("", dim(sum)[1]), rep("", dim(sum)[2]))
+    summary <- cbind(c1, c2)
+    dimnames(summary) <- list(rep("", dim(summary)[1]), rep("", dim(summary)[2]))
     cat("Call:\n")
     dput(x$call)
-    print(sum, quote = FALSE)
+    if( x$inverseModel){
+    	 cat("NOTE: This is an 'inverse' model because an X matrix was supplied", fill=TRUE)}
+    print(summary, quote = FALSE)
     cat(" ", fill = TRUE)
 #    
-    if( is.null( x$fixedFunction)){  
+    if( is.null( x$LKinfo$fixedFunction)){  
         cat("No fixed part of model", fill = TRUE)
     }
     else{
-        if( x$fixedFunction=="LKrigDefaultFixedFunction"){
-            cat("Fixed part of model is a polynomial of degree", x$fixedFunctionArgs$m - 1, "(m-1)", fill=TRUE)
+      
+        if( x$LKinfo$fixedFunction == "LKrigDefaultFixedFunction"){
+            cat("Fixed part of model is a polynomial of degree",
+                x$LKinfo$fixedFunctionArgs$m - 1, "(m-1)", fill=TRUE)
         }  
         else{  
-          cat("Fixed part of model uses the function:", x$fixedFunction, fill = TRUE)
+          cat("Fixed part of model uses the function:",
+                      x$LKinfo$fixedFunction, fill = TRUE)
           cat("with the argument list:", fill = TRUE)
-          print( x$fixedFunctionArgs)
+          print( x$LKinfo$fixedFunctionArgs)
         }
     }
-    cat("Radial basis function used: ", LKinfo$RadialBasisFunction, 
+    cat("Basis function type: ", LKinfo$basisInfo$BasisType, 
+        fill = TRUE)
+    cat("Basis function used: ", LKinfo$basisInfo$BasisFunction, 
         fill = TRUE)
     cat(" ", fill = TRUE)
-    
-    cat(LKinfo$nlevel, "level(s)", LKinfo$m, " basis functions", 
-        fill = TRUE)
-    for (k in 1:LKinfo$nlevel) {
-        cat("Lattice level", k, "is ", LKinfo$mx[k], "X", LKinfo$my[k], 
-            "spacing", LKinfo$delta[k], fill = TRUE)
-    }
-    cat("Total number of basis functions: ", x$m, "  with overlap of ", 
-        LKinfo$overlap, fill = TRUE)
+
+      cat( LKinfo$nlevel, " Levels" , LKinfo$latticeInfo$m, "basis functions",
+          "with overlap of ", 
+        LKinfo$basisInfo$overlap, "(lattice units)", fill = TRUE)
     cat(" ", fill = TRUE)
 #
+  temp<- cbind(  1:LKinfo$nlevel, LKinfo$latticeInfo$mLevel,  LKinfo$latticeInfo$delta)
+    dimnames(temp)<- list( rep("", LKinfo$nlevel), c("Level", "Lattice points", "Spacing") )
+   print( temp)
+    
     cat("Type of distance metric used: ", LKinfo$distance.type, 
         fill = TRUE)
 #
@@ -120,10 +127,6 @@ print.LKrig <- function(x, digits = 4, ...) {
         cat("Basis functions normalized so marginal process variance is stationary", 
             fill = TRUE)
     }
-    
-    cat("Number of  lattice buffer points added in the x and y coordinates:",
-        LKinfo$NC.buffer.x,",",LKinfo$NC.buffer.y, fill = TRUE)
-    
-    invisible(x)
+  invisible(x)
 }
 

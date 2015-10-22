@@ -21,14 +21,14 @@
 
 LKrig.cov.plot <- function(LKinfo, NP = 200, center = NULL, 
     xlim = NULL, ylim = NULL) {
-    grid.info <- LKinfo$grid.info
+    grid.info <- LKinfo$latticeInfo$rangeLocations
     if (is.null(xlim)) {
-        xlim <- c(grid.info$xmin, grid.info$xmax)
+        xlim <-grid.info[,1]
     }
     ux <- seq(xlim[1], xlim[2], , NP)
     
     if (is.null(ylim)) {
-        ylim <- c(grid.info$ymin, grid.info$ymax)
+        ylim <- grid.info[,2]
     }
     uy <- seq(ylim[1], ylim[2], , NP)
     

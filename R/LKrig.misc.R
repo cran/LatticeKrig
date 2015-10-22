@@ -1,3 +1,9 @@
+# LatticeKrig  is a package for analysis of spatial data written for
+# the R software environment .
+# Copyright (C) 2012
+# University Corporation for Atmospheric Research (UCAR)
+# Contact: Douglas Nychka, nychka@ucar.edu,
+# National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -7,11 +13,6 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with the R software environment if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# or see http://www.r-project.org/Licenses/GPL-2
 
 which.max.matrix <- function(z) {
     if (!is.matrix(z)) {
@@ -33,6 +34,38 @@ which.max.image <- function(obj) {
         z = obj$z[ind.z], ind = ind.z))
 }
 
+LKArrayShift<-  function (A, shift, periodic=FALSE) 
+{
+    L <- dim(A)
+    B<- array( NA, L)
+    N<- prod(L)
+    if (any(abs(shift) > L) ) {
+        stop("shift exceeds array dimensions")
+    }
+    dimension<- length(L)
+    indexListSource<- indexListTarget<- NULL
+     for( k in 1:dimension) {
+     	  indexListSource<- c( indexListSource, list( c(1:L[k]) ) ) 
+        if( periodic){
+          tempIndex <-  (0:(L[k]-1) + shift[k]) %% L[k] +1
+        }
+        else{
+     	  tempIndex <-  1:L[k] + shift[k]
+        } 
+# set indices beyond range (i.e. boundaries of lattice to NAs)
+          tempIndex[  (tempIndex<1) | (tempIndex > L[k]) ] <- NA     	   
+ 	      indexListTarget <- c( indexListTarget, list( tempIndex ) )
+     	  }  
+# indices are organized as matrices with each column representing a dimension     	  
+    indexSource <- as.matrix( expand.grid( indexListSource) )
+    indexTarget <- as.matrix( expand.grid( indexListTarget) )
+# identify NAs  not sure if this code is too cute 
+    inRange <-  rowSums( is.na(indexTarget) ) == 0
+    B[ indexTarget[inRange,]] <- A[ indexSource[inRange,]] 
+    return( B)
+}
+
+# A<- array( 1:(2*4*3), c( 3,4,2)); shift<- c( 1,0,0); LKArrayShift( A, shift=c( 0,1,0))
 
 LKrig.rowshift <- function(A, shift.row, shift.col) {
     mx <- dim(A)[1]
@@ -133,4 +166,15 @@ expandMatrix<- function( ...){
    }
      Mlist
    }
-  
+      
+grid2Index<- function( I, grid){
+	I<- rbind( I)
+	gridP<- cumprod( c( 1, c(grid)))
+	nDim<- ncol( I)
+	J<- rep( 0, nrow( I) )
+	for( k in 1:nDim){
+		J<- J + (I[,k]-1)*gridP[k] 
+		}
+	return( J+1)
+}
+   

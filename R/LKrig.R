@@ -19,188 +19,192 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig <- function(x, y = NULL, weights = rep(1, nrow(x)), 
-    Z = NULL,
-    fixedFunction="LKrigDefaultFixedFunction", fixedFunctionArgs=NULL, m=2,
-    LKinfo = NULL, iseed = 123, NtrA = 20,
-    use.cholesky = NULL, return.cholesky = TRUE, wPHI=NULL, return.wPHI=TRUE,
-    NC, nlevel, a.wght, alpha=NA, nu = NULL, 
-    lambda = NA, sigma = NA, rho = NA, rho.object = NULL, overlap = 2.5, 
-    normalize = TRUE, edge = FALSE, RadialBasisFunction = "WendlandFunction", 
-    V = diag(c(1, 1)), distance.type = "Euclidean", verbose = FALSE) {
- # make sure locations are a matrix and get the rows
-    x <- as.matrix(x)
-    y <- as.matrix(y)
-    n <- nrow(x)
-    if (any(duplicated(cat.matrix(x)))) 
-        stop("locations are not unique see help(LKrig) ")
-    # make sure covariate is a matrix
-    if (!is.null(Z)) {
-        Z <- as.matrix(Z)
-    }
- # check for missing values
-    if (!is.null(y)) {
-        if (any(is.na(y))) 
-            stop("Missing values in y not allowed ")
-    }
- # hard wire m argument if the default fixed function
- # is used (a low order polynomial of degree m-1 ).
-    
-    if( !is.null(fixedFunction)){
-        if(fixedFunction == "LKrigDefaultFixedFunction" ){
-            fixedFunctionArgs<- c( fixedFunctionArgs, list(m=m))
-        }
-    }    
- # if LKinfo is missing create it from passed arguments   
-    if (is.null(LKinfo)) {
-        LKinfo <- LKrig.setup(x, NC, nlevel = nlevel, lambda = lambda, 
-            sigma = sigma, rho = rho, alpha = alpha, nu = nu, 
-            a.wght = a.wght, overlap = overlap, normalize = normalize, 
-            edge = edge, RadialBasisFunction = RadialBasisFunction, 
-            V = V, distance.type = distance.type, rho.object = rho.object)
-    }
-    else{
-       if( !is.na(lambda)){
-        LKinfo$lambda <- lambda
-       }
- 
- # Possibly set lambda from the "noise to signal" variances.
-       if (!is.na(rho) & !is.na(sigma)) {
-        LKinfo$lambda<- sigma^2/rho
-       }
-    }
-#   At this point the LKinfo object should have the right lambda value. 
-    lambda = LKinfo$lambda
-    if( is.na(lambda)){
-      stop("lambda must be specified")
-    }
-#    
-    if( verbose) {
-         print( LKinfo)
-    }
- # Begin computations ....
- # weighted observation vector
-    wy <- sqrt(weights) * y
- # Spatial drift matrix -- default is assumed to be linear in coordinates. (m=2)
- # and includes possible covariate(s) -- the Z matrix.
-    if( !is.null(fixedFunction)){
-       wT.matrix <- sqrt(weights) *
-       do.call(fixedFunction, c(
-                                  list(x=x, Z=Z, distance.type = LKinfo$distance.type),
-                                  fixedFunctionArgs))
-       nt <- ncol(wT.matrix)
-       nZ <- ifelse(is.null(Z), 0, ncol(Z))
-       ind.drift <- c(rep(TRUE, (nt - nZ)), rep(FALSE, nZ))
-       if( verbose){
-         cat("dim wT", dim( wT.matrix), fill=TRUE)
-       }
+LKrig <- function(x, y,
+                 weights = NULL,
+                       Z = NULL,
+                  LKinfo = NULL, 
+                   iseed = NA, 
+	                NtrA = 20, 
+            use.cholesky = NULL,
+         return.cholesky = TRUE,
+                	   X = NULL, 
+                	   U = NULL,
+                	  wX = NULL,
+                	  wU = NULL,
+          return.wXandwU = TRUE,
+               	            ...,
+               	 verbose = FALSE) {
+    	 	
+# if LKinfo is missing create it from passed arguments 
+# if it is passed update this object with the ... arguments
+# for example a new lambda value can be passed in this part.
+# LKinfo is a list that describes the LatticeKrig model.
+#   the list(...) only pertains to LKinfo arguments  
+	if ( is.null(LKinfo) ) {
+		LKinfo <- do.call("LKrigSetup", c(list(x = x ), list(...),
+		 list(verbose = verbose)))
+	}
+	else{
+#		cat("LKrig: lambda passed",  list(...)$lambda, fill=TRUE)
+#		cat("LKrig: lambda in LKinfo",  LKinfo$lambda, fill=TRUE)
+		LKinfo<- do.call("LKinfoUpdate", c(list(LKinfo=LKinfo), list(...)) )	
+	}
+#	cat("LKrig: LKinfo after update",  LKinfo$lambda, fill=TRUE)	
+	if( verbose){
+		cat(" ", fill=TRUE)
+		cat("LKrig: updated LKinfo object", fill=TRUE)
+		print(LKinfo)
+		
+	}		
+# create the initial parts of LKrig object
+# this list is added to as the computation proceeds 
+# using the device  object<- list( object, newStuff)
+# and the full object is only obtained at the end 
+# NOTE default for weights are just 1's and filled in by 
+# the next call
+
+    object<- createLKrigObject( x, y, weights, Z,
+                                    X, U,  LKinfo, verbose=verbose)
+                                   
+# for readablity make a local copy of LKinfo
+# but don't change it in this function! 
+    LKinfo<- object$LKinfo                                              	 	
+	# Begin computations ....
+	# weighted observation vector
+    wy <- sqrt(object$weights) * object$y    
+# create matrix for fixed part of model    
+# Spatial drift matrix -- default is assumed to be linear in coordinates (m=2)
+# and includes possible covariate(s) -- the Z matrix.
+# the choice of fixed part of the model is controlled in LKinfo
+# (see also LKrigSetup)
+if (is.null(wU)) {
+	wU<- LKrigMakewU( object,  verbose=verbose)
+	}
+# some column indices to keep track of fixed part of the model	
+# NOTE nZ <= nt because Z is a subset of U
+    object$nt <- ifelse( is.null(ncol(wU)), 0, ncol(wU))
+# create matrix for random part of model (basis functions)
+#  wX is the matrix of sum( N1*N2) basis function (columns) evaluated at the N locations (rows)
+# and multiplied by square root of diagonal weight matrix
+# this can be a large matrix if not encoded in sparse format.
+if (is.null(wX)) {
+      timewX<- system.time(
+          wX<- LKrigMakewX( object, verbose=verbose)
+          )	
+	}
+else{
+	timewX<- rep(0,5)
+	}		
+ #   Precision matrix of the lattice process
+#   inverse of Q is proportional to the covariance matrix of the Markov Random Field
+timeQ<-system.time(
+        Q <- LKrig.precision(LKinfo, verbose=verbose)
+        )
+        if( verbose){
+		cat("LKrig: Nonzero entries in Q:", length(Q@entries), fill=TRUE)		
+	}
+# M is the regularized (ridge) regression matrix that is 
+# the key to the entire algorithm:
+timeM<- system.time(	
+	M <- t(wX) %*% wX + LKinfo$lambda * (Q)
+	)
+	if( verbose){
+		cat("LKrig: Nonzero entries in M:", length(M@entries), fill=TRUE)		
+	}	
+#  Find Cholesky square root of M
+#  This is where the heavy lifting happens!  M is in sparse, spam format so
+#  by the overloading this is a sparse cholesky decomposition.
+#  if this function has been coded efficiently this step should dominate
+#  all other computations ...
+#  If a previous sparse cholesky decoposition is passed then the
+#  pattern of sparseness is used for the decoposition.
+#  This can speed the computation as the symbolic decomposition part of the
+#  sparse Cholesky is a nontrivial step. The condition is that
+#  the current 'M' matrix  has the same sparse pattern as that
+#  which resulted in the factorization  cholesky as 'use.cholesky'
+if (is.null(use.cholesky)) {
+	timeChol<- system.time(
+		Mc <- chol(M, memory = LKinfo$choleskyMemory)
+		)
+	} else {	
+			timeChol<- system.time(
+		Mc <- update.spam.chol.NgPeyton(use.cholesky, M)
+		)
+	}
+     if( verbose){
+     	cat("LKrig: nonzero entries of Mc:",length(Mc@entries), fill=TRUE)
      }
-   else{
-       nt<- 0
-       ind.drift<- NULL
-       nZ<- 0
-       wT.matrix<- NULL
-   } 
- # Matrix of sum( N1*N2) basis function (columns) evaluated at the N locations (rows)
- # and multiplied by square root of diagonal weight matrix
- # this can be a large matrix if not encoded in sparse format.
-    if( is.null(wPHI) ){
-       if( verbose){
-         cat("Finding new wPHI", fill=TRUE)
-       }
-       wPHI <- diag.spam(sqrt(weights)) %*% LKrig.basis(x, LKinfo, verbose = verbose)
-        if( verbose){ cat("Computed new wPHI", fill=TRUE)
-                    print( dim( wPHI) )}
-    }
-    else{
-       if( verbose){ cat("reuse wPHI", fill=TRUE)}}
- #   square root of precision matrix of the lattice process
- #   solve(t(H)%*%H) is proportional to the covariance matrix of the Markov Random Field
-    Q <- LKrig.precision(LKinfo)
- # M is the regularized regression matrix that is the key to the entire algorithm:
-    M <- t(wPHI) %*% wPHI + lambda * (Q)
-    nzero <- length(M@entries)
-    if (verbose) {
-        cat("Number of nonzero elements:", nzero, fill = TRUE)
-    }
- # find Cholesky square root of M
- #  This is where the heavy lifting happens!  M is in sparse format so
- #   by the overloading is a sparse cholesky decomposition.
- #  if this function has been coded efficiently this step should dominate
- #  all other computations.
- #  If  a previous sparse cholesky decoposition is passed then the
- #  pattern of sparseness is used for the decoposition.
- #  This can speed the computation as the symbolic decomposition part of the
- #  sparse Cholesky is a nontrivial step. The condition is that
- #  the current 'M' matrix  has the same sparse pattern as that
- #  which resulted in the factorization  cholesky as 'use.cholesky'
-# Timing wrapper - uncomment #--#
-#--# cholTime<- system.time(
-    if (is.null(use.cholesky)) {
-        if( verbose){ cat("new Cholesky", fill=TRUE)}
-        Mc <- chol(M)       
-    }
-    else {
-    # check that reuse object is bad
-#       if( length(M@colindices) != length(use.cholesky@colindices)){
-#           stop('use.cholesky@coloindices not the same length as current model')}
-#       if( any( M@colindices != use.cholesky@colindices ) ){
-#           stop('use.cholesky not the same sparse pattern as current model')}
-       if( verbose){
-         cat("reuse symbolic decomposition", fill=TRUE)
-       }
-       Mc <- update.spam.chol.NgPeyton( use.cholesky, M)        
-    }
-#--#  )
-#--#  cat( "Cholesky decomp time", cholTime,  fill=TRUE)    
-# partially fill object list with some components
-    object <- list(x = x, y = y, weights = weights, Z = Z, nZ = nZ, 
-        ind.drift = ind.drift, LKinfo = LKinfo, lambda = lambda, sigma = sigma, rho = rho)
 # use Mc to find coefficients of estimate
-    out1 <- LKrig.coef(Mc, wPHI, wT.matrix, wy, lambda, weights)
-       if( verbose){
-         cat(" d.coef", out1$d.coef, fill=TRUE)
-       }
-# add in components from coefficient estimates
-    object <- c(object, out1)
-# compute predicted values    
-    fitted.values<-  (wPHI%*%out1$c.coef)/sqrt(weights)    
-    if(!is.null(fixedFunction)){
-        fitted.values.fixed<- (wT.matrix%*%out1$d.coef)/sqrt(weights)
-        fitted.values <-  fitted.values.fixed + fitted.values
-    }     
+	timeCoef<- system.time(
+	out1 <- LKrig.coef(Mc, wX, wU, wy,
+	               LKinfo$lambda,
+	               verbose=verbose)
+	)
+	object <- c(object, out1)
+	
+# compute predicted values  and residuals
+	wfitted.values <- (wX %*% out1$c.coef)
+	if ( !is.null(wU) ) {
+		wfitted.values.fixed <- (wU %*% out1$d.coef)
+		wfitted.values <- wfitted.values.fixed + wfitted.values
+	}
+# X and U actully include the weights so need to divide these
+# out to get fitted values	
+	object$fitted.values<- wfitted.values/sqrt(object$weights)		
 # For reference: fitted.values <- predict.LKrig(object, x, Znew = object$Z)
-    residuals <- y - fitted.values
-    out2 <- LKrig.lnPlike(Mc, Q, y, lambda, residuals, weights, 
-                          sigma, rho)
-    object <- c(object, out2)
-# estimate trace by Monte Carlo if NtrA greater than zero
-    if (NtrA > 0) {
-        out3 <- LKrig.traceA(Mc, wPHI, wT.matrix, lambda, weights, 
-                             NtrA, iseed)
-     # find GCV using this trace estimate
-        out3$GCV = (sum(weights * (residuals)^2)/n)/(1 - out3$trA.est/n)^2
-    }
-    else {
-        out3 <- list(trA.est = NA, trA.SE = NA, GCV = NA)
-    }
-    object <- c(object, out3)  
- # the output object
- # note the ifelse switch whether to return the big cholesky decomposition
- # and/or the wiehted basis matrix wPHI
-    object <- c(object, list(fitted.values = fitted.values, residuals = residuals, 
-        m = LKinfo$m, lambda.fixed = lambda, nonzero.entries = nzero, 
-        spatialdriftorder = 2, nt = nt, eff.df = out3$trA.est,
-        fixedFunction= fixedFunction, fixedFunctionArgs= fixedFunctionArgs,
-        call = match.call()))
-    if (return.cholesky) {
-        object$Mc <- Mc
-    }
-    if (return.wPHI) {
-        object$wPHI <- wPHI
-    }
- # set the class and return.
+# but at this point it is less efficient because X will be recomputed.
+	object$residuals <- object$y - object$fitted.values	
+# find likelihood
+timeLike<- system.time(	
+	out2 <- LKrig.lnPlike(Mc, Q, wy,
+	             object$residuals, object$weights,
+	             LKinfo)
+	   )
+	if( verbose){
+		cat("Likelihood/MLE list:",  fill=TRUE)
+		print( out2)
+	}   
+	object <- c(object, out2)
+	
+# estimate trace of hat matrix (effective degrees of freedom)
+# by Monte Carlo if NtrA greater than zero
+timeTrA<- system.time(
+	if (NtrA > 0) {
+		out3 <- LKrig.traceA(Mc, wX, wU, LKinfo$lambda, object$weights, NtrA, iseed = iseed)
+		# find GCV using this trace estimate
+		n<- length( object$weights)
+		out3$GCV = (sum(object$weights * (object$residuals)^2)/n)/(1 - out3$trA.est/n)^2
+	} else {
+		out3 <- list(trA.est = NA, trA.SE = NA, GCV = NA)
+	}
+	)
+	object <- c(object, out3)
+	
+# create the table of times for individual function calls
+timingTable<- rbind(timewX, timeQ, timeM, timeChol, timeCoef, timeLike,  timeTrA)
+timingTable<- timingTable[,1:3]
+timingTable <- rbind( timingTable, colSums(timingTable))
+
+# last of required arguments to LKrig object
+object <- c(object,
+ list( 
+        lambda.fixed = LKinfo$lambda, 
+     nonzero.entries = length(M@entries),                   
+                call = match.call(), 
+         timingLKrig = timingTable )
+    )
+# finally add in some large matrices that can be reused if only 
+# lambda is varied    
+if (return.cholesky) {
+		object$Mc <- Mc
+	}
+if (return.wXandwU) {
+		object$wX <- wX
+		object$wU <- wU
+	}
+# refresh the class 
     class(object) <- "LKrig"
-    return(object)
+# all done!  
+	return(object)
 }
 

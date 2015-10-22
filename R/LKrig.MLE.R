@@ -1,3 +1,18 @@
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with the R software environment if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# or see http://www.r-project.org/Licenses/GPL-2
+
 LKrig.MLE <- function(x, y, ..., LKinfo, use.cholesky=NULL, par.grid = NULL, 
     lambda.profile = TRUE, verbose = FALSE, lowerBoundLogLambda=-16,
                       nTasks=1, taskID=1, tol=.005) {
@@ -29,11 +44,17 @@ LKrig.MLE <- function(x, y, ..., LKinfo, use.cholesky=NULL, par.grid = NULL,
     # this only really makes sense if other parameters have some sort of continuity from k-1 to k.
         llambda.start<- ifelse (is.na( par.grid$llambda[k]), llambda.opt,  par.grid$llambda[k] )  
      # first fit to get cholesky symbolic decomposition
-        LKinfo.temp<- LKinfoUpdate( LKinfo,
+        LKinfo.temp<- do.call("LKinfoUpdate",c( list(LKinfo=LKinfo),list(
                                    a.wght = (par.grid$a.wght[[k]]),
                                     alpha =  (par.grid$alpha[[k]]),
                                        nu = par.grid$nu[k],
-                                   lambda = exp(llambda.start) )
+                                   lambda = exp(llambda.start)
+                                    ) )
+                              )      
+      if( verbose){
+      	cat("LKrig.MLE: initial LKinfo object:", fill=TRUE)
+      	print( LKinfo.temp)
+      }                             
     # for first pass save symbolic decomposition for M
         if( k == NG1 ){ use.cholesky <- NULL}
            obj <- do.call("LKrigFindLambda",
@@ -41,10 +62,15 @@ LKrig.MLE <- function(x, y, ..., LKinfo, use.cholesky=NULL, par.grid = NULL,
                         list(       LKinfo = LKinfo.temp,
                             lambda.profile = lambda.profile,
                               use.cholesky = use.cholesky,
-                                        tol=tol
+                                       tol = tol,
+                                   verbose = verbose
                             )
                         )
                         )
+          if( verbose){
+          	cat("LKrig.MLE: find lambda grid value", k,  fill=TRUE)
+          	print( obj)
+          }              
      # Note: if lambda.profile == FALSE the starting lambda is passed through as the "optimal" one
         llambda.opt<- obj$summary["llambda.opt"]
      # compare to current largest likelihood and update the LKinfo.MLE list if bigger.

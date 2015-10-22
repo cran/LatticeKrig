@@ -19,14 +19,11 @@
 \name{LKrig.basis}
 \alias{LKrig.basis}
 \alias{LKrig.precision}
-\alias{LKrig.MRF.precision}
 \alias{LKrig.cov}
-\alias{LKrig.normalize.basis}
-\alias{LKrig.normalize.basis.fast}
-\alias{LKrig.normalize.basis.slow}
 \alias{LKrig.cov.plot}
 \alias{LKrig.quadraticform}
 \alias{LKrig.spind2spam}
+\alias{LKrigCovWeightedObs}
 \title{
 Functions for generating a multiresolution, compactly supported basis,  
 multiresolution covariance functions and simulating from these processes.
@@ -48,14 +45,10 @@ specification.}
 #
 LKrig.cov(x1, x2 = NULL, LKinfo, C = NA, marginal = FALSE) 
 LKrig.cov.plot( LKinfo, NP=200, center = NULL, xlim = NULL, ylim = NULL)
-LKrig.basis(x1, LKinfo, verbose = FALSE, spam.format = TRUE)
-LKrig.precision(LKinfo, return.B = FALSE, level.index=NA, verbose=FALSE)  
-LKrig.MRF.precision(mx,my, a.wght, stationary=TRUE, edge=FALSE,
-                        distance.type="Euclidean")
-LKrig.normalize.basis(Level, LKinfo, PHI)
-LKrig.normalize.basis.fast(Level, LKinfo, x )
-LKrig.normalize.basis.slow(Level, LKinfo, PHItemp )
-LKrig.quadraticform( Q, PHI) 
+LKrigCovWeightedObs(x1, wX, LKinfo) 
+LKrig.basis(x1, LKinfo, verbose = FALSE)
+LKrig.precision(LKinfo, return.B = FALSE, verbose=FALSE)  
+LKrig.quadraticform( Q, PHI, choleskyMemory = NULL) 
 LKrig.spind2spam(obj, add.zero.rows=TRUE)
 }
 
@@ -67,12 +60,6 @@ no elements explicitly given in \code{obj} then a element with value
 zero is added. This technical detail is needed to accomodate the spam
 format for sparse matrices.}
 
-\item{a.wght}{A scalar, vector or list that specifies the weights of
-the center points and possibly the neighbor weights in the spatial
-autoregression. In the simplest model a.wght is a scalar and is used
-at all levels and at all lattice points. For this case the weights for
-four nearest neighbors have weight -1 and so a.wght should be greater
-than 4 for the fields to be stationary.}
 
 \item{C}{If passed the covariance matrix will be multiplied by this
 vector or matrix.}
@@ -83,32 +70,20 @@ through the spatial domain intersecting at \code{center} and finding
 the covariance with respect to this point. If NULL defaults to the
 center of the spatial domain.}
 
-\item{distance.type}{The distance metric used. See doc entry under
-\code{LKrig}. }
-
-\item{edge}{If FALSE no adjustments are made to weights on
-edges. edge==TRUE at this time will generate an error because edge
-corrections are not supported.}
-
-\item{Level}{The level of multiresolution.}
-
-\item{level.index}{If \code{NA} then the full precision matrix is
-found at all levels. Otherwise the precision matrix is found just for
-the level specified by level.index.}
+\item{choleskyMemory}{An list giving the memory requirements for 
+	a sparse cholesky decomposition. See \code{chol.spam} for details and
+	also \code{LKrig}. }
+	
 
 \item{LKinfo}{A list with components that give the information
 describing a multiresolution basis with a Markov random field used for
 the covariance of the basis coefficients. This list is created in
-\code{LKrig} or by \code{LKrig.setup} and returned in the output
+\code{LKrig} or by \code{LKrigSetup} and returned in the output
 object.  (See section on returned Value below for this list's
 description.)}
 
 \item{marginal}{If TRUE returns the marginal variance. Currently not
 implemented!}
-
-\item{mx}{Number of grid/lattice points in x dimension.}
-
-\item{my}{Number of grid/lattice points in the y dimension.}
 
 \item{NP}{Number of points to evaluate the covariance function along
 each transect of the spatial domain.}
@@ -118,24 +93,13 @@ row/column format passed to \code{LKrig.spind2spam}.}
 
 \item{PHI}{ A sparse matrix of basis functions (rows index points for
 evaluation, columns index basis functions).}
-\item{PHItemp}{ A sparse matrix of basis functions (rows index points for
-evaluation, columns index basis functions). This is to be passed to the 
-more general normalization function.}
-
 
 \item{return.B}{ If TRUE B is returned instead of the precision matrix
 t(B)\%*\%B.}
 
-\item{Q}{A sparse precision matrix.}
+\item{Q}{A sparse (spam format) precision matrix.}
 
-\item{spam.format}{ If TRUE matrix is returned in sparse matrix
-format.}
-
-\item{stationary}{ If TRUE the precision matrix uses the same values
-of a.wght for each lattice point and its neighbors.}
-
-\item{x}{A two column matrix of 2-dimension locations to evaluate
-basis functions.}
+\item{wX}{The wX matrix constructed in the \code{\link{LKrig}} function.}
 
 \item{x1}{A two column matrix of 2-dimension locations to evaluate
 basis functions or the first set of locations to evaluate the
@@ -171,7 +135,7 @@ used in both directions.  The unnormalized basis functions are
 evaluated at locations \code{x1} by finding the pairwise, radial
 distances among \code{centers} and \code{x1}, scaling by
 \code{grid.info$delta * overlap} and then evaluating with the function
-passed as \code{RadialBasisFunction}. By default this is the 2-d
+name passed as \code{BasisFunction}. By default this is the 2-d
 Wendland covariance of order 2.  Perhaps the most important point
 about the \code{LKrig.basis} is that it is designed to return a matrix
 of all basis functions as a sequence of points. There is no need to
@@ -270,13 +234,6 @@ matrix with dimensions of the number of basis functions. For
 for checking this function.
 
 
-\code{LKrig.MRF.precision} A sparse square matrix with dimension
-(mx*my by mx*my) with a.wght on the diagonal and -1 in the positions
-for the 4 nearest neighboring points. Note that this matrix has
-dimensions of the number of grid points/basis functions (mx*my by
-mx*my) -- not mx x my.  So the indexing of nearest neighbors is a
-little more complicated that in 1-dimensional grids.
-
 \strong{\code{LKrig.cov}: } If \code{C=NA} a cross covariance matrix
 with dimensions \code{nrow(x1)} and \code{nrow(x2)} is used. If \code{C} is
 passed the result of multiplying the cross covariance matrix times
@@ -315,7 +272,7 @@ Doug Nychka
 }
 
 \seealso{
-LKrig, mKrig, Krig, fastTps, Wendland
+LKrig, mKrig, Krig, fastTps, Wendland, LKrigSAR
 }
 \examples{
 # Load ozone data set
@@ -327,7 +284,7 @@ LKrig, mKrig, Krig, fastTps, Wendland
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]
-  LKinfo<- LKrig.setup( x,NC=20,nlevel=1, alpha=1, lambda= .3 , a.wght=5)
+  LKinfo<- LKrigSetup( x,NC=20,nlevel=1, alpha=1, lambda= .3 , a.wght=5)
 # BTW lambda is close to MLE 
 
 # What does the  LatticeKrig covariance function look like?
@@ -342,7 +299,7 @@ LKrig, mKrig, Krig, fastTps, Wendland
     nlevel<- 4
     a.wght<- rep(  4 + 1/(.5)^2, nlevel)
     alpha<-  1/2^(0:(nlevel-1)) 
-    LKinfo2<- LKrig.setup( cbind( c( -1,1), c(-1,1)), NC=NC,
+    LKinfo2<- LKrigSetup( cbind( c( -1,1), c(-1,1)), NC=NC,
                    nlevel=nlevel, a.wght=a.wght,alpha=alpha)
 # evaluate covariance  along the  horizontal line through
 # midpoint of region -- (0,0) in this case. 
@@ -377,7 +334,7 @@ set.panel(2,1)
   x2<- cbind( 0,0)
   x1<-  cbind( seq(-1,1,,150), rep( 0,150))
   for( k in 1:4){
-    LKtemp<-  LKrig.setup( cbind( c( -1,1), c(-1,1)), NC=NC,
+    LKtemp<-  LKrigSetup( cbind( c( -1,1), c(-1,1)), NC=NC,
                    nlevel=nlevel,
                    a.wght= 4  + 1/(kappa[k]^2),
                    alpha=alpha)
@@ -389,7 +346,7 @@ set.panel(2,1)
   alpha.power<- seq( 1,4,,4)
   LKtemp<- LKinfo2
   for( k in 1:4){
-   LKtemp<-  LKrig.setup( cbind( c( -1,1), c(-1,1)), NC=NC,
+   LKtemp<-  LKrigSetup( cbind( c( -1,1), c(-1,1)), NC=NC,
                    nlevel=nlevel,
                    a.wght= 4  + 1/(ktemp^2),
                    alpha=alpha^alpha.power[k])
@@ -402,7 +359,7 @@ set.panel(2,1)
 \dontrun{
 # generating a basis on the domain [-1,1] by [-1,1] with 1 level
 # Default number of buffer points are added to each side. 
-  LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)), NC=6,
+  LKinfo<- LKrigSetup(cbind( c(-1,1), c(-1,1)), NC=6,
                                  nlevel=1, a.wght=4.5,alpha=1, NC.buffer=0 )
 # evaluate the basis functions on a grid to look at them
   xg<- make.surface.grid( list(x=seq(-1,1,,50), y= seq(-1,1,,50)))
@@ -410,10 +367,23 @@ set.panel(2,1)
   dim(PHI) # should be  2500=50^2  by  36=6^2
 # plot the 9th basis function  as.surface is a handy function to
 # reformat the vector as an image object
-# using the grid information in an attribute of the grid points 
+# using the grid information in an attribute of the grid points
+  set.panel(1,3) 
   image.plot(as.surface(xg, PHI[,9]))
-  points(  make.surface.grid( LKinfo$grid[[1]]), col="grey", cex=.5)
-
+  points(  make.surface.grid( LKrigLatticeCenters(LKinfo, 1)) , col="grey", cex=.5)
+  title("A radial basis function")
+# compare to the tensor product basis type
+  LKinfo2<- LKrigSetup(cbind( c(-1,1), c(-1,1)), NC=6,
+                                 nlevel=1, a.wght=4.5,alpha=1, NC.buffer=0,
+                                 BasisType="Tensor" )
+  PHI2<- LKrig.basis( xg,LKinfo2)
+  image.plot(as.surface(xg, PHI2[,9]))
+  points(  make.surface.grid( LKrigLatticeCenters(LKinfo, 1)), col="grey", cex=.5)
+  title("Tensor product basis function")
+  
+  image.plot(as.surface(xg, PHI[,9] - PHI2[,9]))
+  points(  make.surface.grid( LKrigLatticeCenters(LKinfo, 1)), col="grey", cex=.5)
+  title(" Radial - Tensor for 9th basis function")                       
 set.panel()
 }
 #
@@ -423,7 +393,7 @@ set.panel()
 # generating a basis on the domain [-1,1]X[-1,1] with 3 levels
 # note that there are no buffering grid points.
   set.panel(3,2)
-  LKinfo<-LKrig.setup(cbind( c(-1,1), c(-1,1)), NC=6,
+  LKinfo<-LKrigSetup(cbind( c(-1,1), c(-1,1)), NC=6,
                     a.wght=rep(5,3), alpha=c(1,.5,.25), nlevel=3,
                     NC.buffer=0)
 # evaluate the basis functions on a grid to look at them
@@ -434,29 +404,31 @@ set.panel()
   PHI<- spam2full(PHI)
 # first tenth, and last basis function in each resolution level
 # basis functions centers are added
-  set.panel(3,3)
-  grid.info<- LKinfo$grid.info
-  for(  j in 1:3){
-    id1<- LKinfo$offset[j]+ 1
-    id2<-  LKinfo$offset[j]+ 10
-    idlast<- LKinfo$offset[j]+ LKinfo$mx[j]*LKinfo$my[j]
- 
-    centers<-  make.surface.grid( LKinfo$grid[[j]] )
-    image.plot( as.surface(xg, PHI[,id1]))
-    points( centers, cex=.2, col="grey")
-    image.plot(as.surface(xg, PHI[,id2]))
-    points( centers, cex=.2, col="grey")
-    image.plot( as.surface(xg, PHI[,idlast]))
-    points( centers, cex=.2, col="grey")}
-
+ set.panel(3,3)
+    for(  j in 1:3){
+      id1<- LKinfo$latticeInfo$offset[j]+ 1
+      id2<-  LKinfo$latticeInfo$offset[j]+ 10
+      idlast<- LKinfo$latticeInfo$offset[j] +
+                  LKinfo$latticeInfo$mx[j,1]*LKinfo$latticeInfo$mx[j,2]
+   
+      centers<-  make.surface.grid(LKrigLatticeCenters(LKinfo, j) )
+      image.plot( as.surface(xg, PHI[,id1]))
+      points( centers, cex=.2, col="grey")
+      image.plot(as.surface(xg, PHI[,id2]))
+      points( centers, cex=.2, col="grey")
+      image.plot( as.surface(xg, PHI[,idlast]))
+      points( centers, cex=.2, col="grey")
+}
   set.panel()
 }
 \dontrun{
 # examining the stationarity of covariance model
   temp.fun<- 
      function( NC.buffer=0, NC=4,  a.wght=4.01){
-        LKinfo<- LKrig.setup(cbind( c(-1,1), c(-1,1)),nlevel=1, alpha=1,
-                                 a.wght=a.wght, NC=NC,  NC.buffer=NC.buffer)
+        LKinfo<- LKrigSetup(cbind( c(-1,1), c(-1,1)),nlevel=1, alpha=1,
+                                 a.wght=a.wght, NC=NC,   
+                                 NC.buffer=NC.buffer,
+                                  choleskyMemory=list(nnzR=2e6))
         cov1y<- cov1x<- cov0x<- cov0y<-  matrix( NA, nrow=200, ncol=20)
         cov1dx<- cov1dy<- cov0dx<- cov0dy<- matrix( NA, nrow=200, ncol=20)
         cgrid<- seq( 0,1,,20)

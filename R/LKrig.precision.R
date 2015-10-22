@@ -19,41 +19,30 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.precision <- function(LKinfo, return.B = FALSE, level.index = NA,
-                                   verbose=FALSE) {
-    mx <- LKinfo$mx
-    my <- LKinfo$my
-    
-    grid.info <- LKinfo$grid.info
+LKrig.precision <- function(LKinfo, return.B = FALSE,
+                                   verbose=FALSE) { 
     L <- LKinfo$nlevel
-   # if( any(unlist(LKinfo$a.wght)<4)){
-   #     stop("a.wght less than 4")}
-    if (L != length(my)) {
-        stop("number of levels and mx and my are not consistent")
-    }
-    offset <- LKinfo$offset
-    distance.type = LKinfo$distance.type
-    
+    offset <- LKinfo$latticeInfo$offset
     # some checks on arguments
-    if ((length(LKinfo$alpha) != L) | (length(LKinfo$a.wght) != 
-        L)) {
-        stop("number of levels for alpha or a.wght not right length")
-    }
+    LKinfoCheck(LKinfo)
     # ind holds non-zero indices and ra holds the values
     ind <- NULL
     ra <- NULL
     da <- rep(0, 2)
-    if (is.na(level.index)) {
         # loop over levels
         for (j in 1:L) {
-            # evaluate the H matrix at level j.
-            # each row of this matrix has an 'a.wght[j]'  on diagonal and
-            # -1  for the nearest neighbor basis functions.
-            tempB <- LKrig.MRF.precision(mx[j], my[j], a.wght = (LKinfo$a.wght)[[j]], 
-                stationary = LKinfo$stationary, edge = LKinfo$edge, 
-                distance.type = distance.type)
+            # evaluate the SAR matrix at level j.
+            tempB<- LKrigSAR( LKinfo, Level=j)
+            if( verbose){
+            	cat("dim indices in spind of B:",dim( tempB$ind) , fill=TRUE)            	
+            }
             # multiply this block by 1/ sqrt(diag( alpha[[j]]))
             alpha.level <- (LKinfo$alpha)[[j]]
+            if( verbose){
+                cat("length alpha parameter", length( alpha.level), fill=TRUE)
+            }
+            if( any( is.na(c(alpha.level)) ) ){
+                	stop("NAs in alpha list")}             	
             if (length(alpha.level) == 1) {
                 tempra <- 1/sqrt(alpha.level[1]) * tempB$ra
             }
@@ -73,35 +62,25 @@ LKrig.precision <- function(LKinfo, return.B = FALSE, level.index = NA,
         # should be da after loop
         # check this against indices in LKinfo
         #
-        if ((da[1] != LKinfo$offset[L + 1]) | (da[2] != LKinfo$offset[L + 
+        if ((da[1] != offset[L + 1]) | (da[2] != offset[L + 
             1])) {
             stop("Mismatch of dimension with size in LKinfo")
         }
         # convert to spam format:
-        temp <- LKrig.spind2spam(list(ind = ind, ra = ra, da = da))
-    }
-    else {
-        # case to find precision at just one arbitrary level
-        tempB <- LKrig.MRF.precision(mx[level.index], my[level.index], 
-            a.wght = (LKinfo$a.wght)[[level.index]], stationary = LKinfo$stationary, 
-            edge = LKinfo$edge, distance.type = distance.type)
-        alpha.level <- (LKinfo$alpha)[[level.index]]
-        if (length(alpha.level) == 1) {
-            tempra <- 1/sqrt(alpha.level[1]) * tempB$ra
+        tempB <- list(ind = ind, ra = ra, da = da) 
+        if( verbose){
+        	cat("dim of ind (fullB):", dim( ind), fill=TRUE)
         }
-        else {
-            rowindices <- tempB$ind[, 1]
-            tempra <- 1/sqrt(alpha.level[rowindices]) * tempB$ra
+        tempB <- LKrig.spind2spam(tempB)
+         if( verbose){
+        	cat("dim after spind to spam in precision:", dim( tempB), fill=TRUE)
         }
-        temp <- LKrig.spind2spam(list(ind = tempB$ind, ra = tempra, 
-            da = tempB$da))
-    }
     if (return.B) {
-        return(temp)
+        return(tempB)
     }
     else {
         # find precision matrix Q = t(B)%*%B and return
-        return(t(temp) %*% (temp))
+        return(t(tempB) %*% (tempB))
     }
 }
 

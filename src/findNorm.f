@@ -62,7 +62,7 @@ c* be zero.
 	   	              ZUsum = ZUsum + Ux(k,i) * Uy(l,j) * Z(k,l)
 	   	          enddo
 	   	      enddo
-	   	      normSum = normSum + (ZUsum / (Dx(i) +Dy(j)))**2
+	   	      normSum = normSum + (ZUsum / (Dx(i) + Dy(j)))**2
 	   	  enddo
 	  enddo
 
@@ -80,3 +80,4 @@ c* be zero.
 	  endif
 	  return
 	  end
+ 	

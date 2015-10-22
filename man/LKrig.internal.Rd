@@ -24,19 +24,24 @@
 \alias{dfind2d}
 \alias{dfind3d}
 \alias{LKrigUnrollZGrid}
+\alias{LKrigMakewU}
+\alias{LKrigMakewX}
+\alias{createLKrigObject}
 
 \title{
 Internal functions for LatticeKrig package. 
 }
 \description{
-Some internal functions for \code{LKrig} that estimate  the 
+Some internal functions for \code{\link{LKrig}} that estimate  the 
 coefficients of the basis functions and compute the likelihood.
 }
 \usage{
-LKrig.coef(Mc, wPHI, wT.matrix, wy, lambda, weights)
-LKrig.lnPlike(Mc, Q, y, lambda, residuals, weights,
- sigma = NA, rho = NA)
-LKrig.traceA( Mc, wPHI, wT.matrix, lambda, weights,NtrA, iseed=NA)
+createLKrigObject(x, y, weights = NULL, Z, X, U, LKinfo, verbose = FALSE)
+LKrigMakewU(object, verbose = FALSE)
+LKrigMakewX(object, verbose = FALSE)
+LKrig.coef( Mc, wX, wU, wy, lambda, verbose = FALSE)
+LKrig.lnPlike(Mc, Q, wy, residuals, weights, LKinfo)
+LKrig.traceA(Mc, wX, wU, lambda, weights, NtrA, iseed = NA)
 LKrigUnrollZGrid( grid.list, ZGrid=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -44,6 +49,7 @@ LKrigUnrollZGrid( grid.list, ZGrid=NULL)
 
 %  \item{distance.type}{Distance (and geometry) for coordinates.}
 
+  
   \item{grid.list}{The grid for evaluting surface}
 
   \item{iseed}{Random seed used to generate the Monte Carlo
@@ -53,48 +59,60 @@ LKrigUnrollZGrid( grid.list, ZGrid=NULL)
  \item{lambda}{The ratio of the nugget variance (sigma squared) to the
   parameter controlling the marginal variance of the process (called
   rho in fields).}
-
+ \item{LKinfo}{The LKinfo object. See help(LKinfo)}
 %  \item{m}{Parameter specifying the degree of polynomial is (m-1).}
 
   \item{Mc}{Cholesky decomposition of regression matrix.}
 
   \item{NtrA}{Number of Monte Carlo samples to estimate trace. Default
   is 20 in LKrig.}
+  
+  \item{object}{The LKrig object.}
 
   \item{Q}{Precision matrix for coefficients.}
 
    \item{residuals}{Residuals from fitting spatial process.}
-
-  \item{rho}{If lambda is not specified then the value of the marginal
-  variance of the process.}
-
-  \item{sigma}{If lambda is not specified then the values of the
-  measurement error standard deviation.}
-
-
-
-  \item{wPHI}{Weighted matrix of basis functions. See \code{LKrig}
-  source for construction.}
-  
-  \item{wT.matrix}{Weighted matrix of fixed part of estimate.}
-
-  \item{weights}{A vector that is proportional to the reciprocal
+   
+\item{U}{The matrix that maps the d.coef coefficents of the fixed component
+  	(typically a low order polynomial) part of the observation model.}
+  	
+ 	
+\item{verbose}{If TRUE intermediate debugging information is printed.}
+   
+\item{weights}{A vector that is proportional to the reciprocal
   variances of the errors. I.e. errors are assumed to be uncorrelated
   with variances sigma^2/weights. }
-
+  
+\item{wU}{Weighted U matrix the fixed part of the model}
+\item{wX}{Weighted X matrix (in spam format) related to nonparametric (stochastic) part of 
+	model. Here weights refer to the sqrt(wieghts).
+	
+	NOTE: predicted values are  U\%*\%d.coef + X\%*\%c.coef
+	
+	}
+	
   \item{wy}{Weighted observations.}
+  
+  
+  \item{X}{The matrix that maps the c.coef coefficents into the nonparametric component
+  	(spatial process) part of the observation model.}
 
- % \item{x}{Matrix of spatial locations}
-
-  \item{y}{Spatial observation.}
-
-%  \item{Z}{A matrix of covariates}
+ \item{x}{Matrix of spatial locations passed to LKrig.}
+ \item{y}{Vector or matrix of observations passed to LKrig.}
+ \item{Z}{A matrix of covariates}
 
   \item{ZGrid}{A list or array with the covariates on the same grid as that specified by 
 the  grid.list argument. }
 
 }
 \details{
+
+\code{createLKrigObject} Based on the arguments passed into LKrig forms the 
+prototype LKrig object. This object is added to as one computes additional steps in the LKrig function. 
+	
+\code{LKrigMakewU} and \code{LKrigMakewX}  construct the weighted U and X matrices from what is passed. In the case of observations that are point locations wU is found the weights and using the fixedFunction and wX is found from the weights and the multiresolution basis functions. Note that X and wX are assumed to be in spam 
+sparse matrix format. 
+
 \code{LKrig.coef} and \code{LKrig.lnPlike} are two low level functions
 to find the basis function coefficients and to evaluate the
 likelihood. The coefficents (\code{c.mKrig}) are also found because
@@ -151,8 +169,8 @@ and a.wght}
 
 }
 
-\code{LKrigDefaultFixedFunction}{A matrix with dimension nrow(x) and columns
-of the number of polynomial terms  and the number of columns of Z if given.}
+\code{LKrigDefaultFixedFunction} A matrix with dimension nrow(x) and columns
+of the number of polynomial terms  and the number of columns of Z if given.
 
 }
 \author{

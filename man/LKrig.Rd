@@ -18,6 +18,7 @@
 
 \name{LKrig}
 \alias{LKrig}
+\alias{choleskyMemory}
 \alias{predict.LKrig}
 \alias{predictSE.LKrig}
 \alias{print.LKrig}
@@ -34,128 +35,78 @@ modeled as a Gaussian Markov random field (GMRF). Although the
 precision matrix of the GMRF will be sparse the model can still
 exhibit longer ranges of spatial dependence. The multi-resolution
 feature of this model allows for the approximation of a wide variety
-of standard covariance functions.  }
+of standard covariance functions. There are also some simple extensions where this
+function can be used to solve a linear inverse type problem (See X and U below.) }
 
 \usage{
-
-LKrig(x, y = NULL, weights = rep(1, nrow(x)), Z = NULL,
-                 fixedFunction = "LKrigDefaultFixedFunction",
-                 fixedFunctionArgs = NULL, m = 2,
-                 LKinfo = NULL, iseed = 123, NtrA = 20, use.cholesky =
-                 NULL, return.cholesky = TRUE, wPHI = NULL, return.wPHI
-                 = TRUE, NC, nlevel, a.wght, alpha, nu = NULL, lambda =
-                 NA, sigma = NA, rho = NA, rho.object = NULL, overlap =
-                 2.5, normalize = TRUE, edge = FALSE,
-                 RadialBasisFunction = "WendlandFunction", V =
-                 diag(c(1, 1)), distance.type = "Euclidean", verbose =
-                 FALSE)
+	LKrig( x, y, weights = NULL, Z = NULL, LKinfo = NULL, iseed =
+                 NA, NtrA = 20, use.cholesky = NULL, return.cholesky =
+                 TRUE, X = NULL, U = NULL, wX = NULL, wU = NULL,
+                 return.wXandwU = TRUE, ..., verbose = FALSE)
 
 \method{predict}{LKrig}(object, xnew = object$x, Znew = NULL, drop.Z = FALSE,
-                 return.levels = FALSE, ...)
-
-\method{predictSE}{LKrig}(object, xnew = object$x, Znew = object$Z, verbose =
-                 FALSE, ...)
+                 just.fixed = FALSE, return.levels = FALSE, ...)
+                 
+\method{predictSE}{LKrig}(object, xnew = NULL, Znew = object$Z, verbose = FALSE,
+                 ...)
 
 \method{surface}{LKrig}( object, ...)
 
-\method{predictSurface}{LKrig}(object, grid.list = NULL, extrap = FALSE, chull.mask =
-                 NA, nx = 80, ny = 80, xy = c(1, 2), verbose = FALSE,
+\method{predictSurface}{LKrig}(object, grid.list = NULL, extrap = FALSE,
+ chull.mask = NA, nx = 80, ny = 80, xy = c(1, 2), verbose = FALSE,
                  ZGrid = NULL, drop.Z = FALSE, ...)
 
 \method{print}{LKrig}( x, digits=4, ...)
 
 }
-
 \arguments{
-  
-  \item{alpha}{ Variance weights for each level of resolution. This
-     can be a vector or a list with \code{nlevel} components. As a
-     list each component is a matrix specifying a weight for each
-     coefficient.  See Details.}
+ 
+  \item{x}{Spatial locations of observations. Or the \code{LKrig}
+  object for printing. }
+ 
+  \item{y}{Spatial observations.}
+ 
+  \item{weights}{A vector that is proportional to the reciprocal
+  variances of the errors. I.e. errors are assumed to be uncorrelated
+  with variances sigma^2/weights. }
 
-  \item{a.wght}{The "a" spatial autoregressive parameter for a first
- order Markov Random field. This controls the spatial dependence and
- must be greater than or equal to 4. For \code{a.wght} = 4 normalize
- should be FALSE.  If there are multiple levels this can be a
- vector. See Details.}
+  \item{Z}{Linear covariates to be included in fixed part of the model
+  that are distinct from the default first order polynomial in
+  \code{x} (i.e. the spatial drift).}
 
-  \item{chull.mask}{An additional constraint for evaluating predictions see
+
+	
+\item{chull.mask}{An additional constraint for evaluating predictions see
 \code{help(in.poly)}. Usually this is not needed. }
-
-  \item{distance.type}{The type of distance metric (as a text string)
-     used in determining the radial basis functions.  The current
-     choices are "Euclidean" and "cylinder" with cylinder being used
-     to have a periodic boundary condition in the x (horizontal)
-     coordinate.}  \item{digits}{Number of digits in printed output.}
+     
+\item{digits}{Number of digits in printed output.}
    
-  \item{drop.Z}{If true the fixed part will only be evaluated at the
+\item{drop.Z}{If true the fixed part will only be evaluated at the
 spatial drift polynomial part of the fixed model. The contribution
 from the other, Z, covariates in the fixed component will be omitted.}
+ 
+\item{extrap}{If TRUE will extrapolate predictions beyond convex hull of locations.}
 
-  \item{edge}{If TRUE an adjustment is made in the GMRF weights for
-  edge effects.}
+\item{grid.list}{ A list with components x and y specifying the grid ( see \code{help( grid.list)} ). }
 
-  \item{extrap}{If TRUE will extrapolate predictions beyond convex hull of locations.}
-
-  \item{fixedFunction}{Function used to define the fixed part of the model in terms of 
-spatial locations. Default is an m-1 degree polynomial. }
-
- \item{fixedFunctionArgs}{Additional arguments in list form to pass to the fixed function.}
-
- \item{grid.list}{ A list with components x and y specifying the grid ( see \code{help( grid.list)} ). }
-
- \item{iseed}{Random seed used in the Monte Carlo technique for
+\item{iseed}{Random seed used in the Monte Carlo technique for
   approximating the effective degrees of freedom (trace of the
   smoothing matrix). If NA, no seed is set. }
+  \item{just.fixed}{If TRUE just the fixed part of the model is evaluated.}
 
- \item{lambda}{The ratio of the nugget variance (called sigma squared
-  in \code{fields} and \code{LatticeKrig}) to the parameter
-  controlling the marginal variance of the process (called rho in
-  \code{fields} and \code{LatticeKrig}). If sigma and rho are both
-  specified then \code{lambda == sigma^2/rho}.}
-
- \item{LKinfo}{An object whose components specify the LatticeKrig
+\item{LKinfo}{An object whose components specify the LatticeKrig
   spatial model.  This is usually created by the function
-  \code{LKrig.setup}. If NULL, this object is created and returned as
-  a component of the LKrig object. }
-
-  \item{m}{If the fixed is the default the polynomial will have degree m-1}
+  \code{LKrigSetup}. If NULL, this object is created and returned as
+  a component of the LKrig object.}
 
 \item{nx}{Number of grids in x for prediction grid.}
 
 \item{ny}{ Number of grids in y for prediction grid.}
 
- \item{NC}{Controls the maximum number of grid points. For the first
- level there will be NC grid points in the larger dimension of the
- rectangular spatial domain. If the domain is square there will be
- NC*NC basis functions/lattice points in the coarsest level of
- resolution. If domain is rectangular, the smaller dimension will have
- less than NC points.}
-
-  \item{nlevel}{Number of levels for the multiresolution basis. Each
-level increases the number of basis functions by roughly a factor of
-4.}
-
-  \item{normalize}{If \code{TRUE} basis functions are normalized so
-    that the marginal variance of the process covariance is constant
-    and equal to rho. This normalization avoids some of the edge and
-    periodic artifacts from using a discrete set of basis functions.}
-
-  \item{NtrA}{Number of random samples used in Monte Carlo method for
+\item{NtrA}{Number of random samples used in Monte Carlo method for
 determining effective degrees of freedom. }
  
- \item{nu}{If passed, alpha vector is proportional to \code{
-exp(-(1:nlevel)*nu)} and normalized to sum to one.}
-
 \item{object}{The \code{LKrig} object.}
-
-\item{overlap}{The overlap between basis functions. This scaling is
-    based on centers being spaced 1 unit distance apart and the
-    Wendland function decreasing to zero at 1 unit distance. A
-    scaling/overlap of 2.5 (the default) implies that the support of
-    the basis functions will extend to a disc of radius 2.5.  We
-    recommend that this parameter not be changed unless one is sure of
-    the effect on the implied spatial covariance.}
 
 \item{return.cholesky}{If TRUE the Cholesky decomposition is included
     in the output list (with the name \code{Mc}). This is needed for
@@ -168,66 +119,29 @@ exp(-(1:nlevel)*nu)} and normalized to sum to one.}
 \item{return.levels}{If TRUE the predicted values for each level are
 returned as columns in a matrix. }
 
-  \item{RadialBasisFunction}{An R function that defines the radial
-            basis function to generate the multiresolution basis. Is
-            assumed that this function is compactly supported on the
-            interval [0,1]. See WendlandFunction for an example.}
+\item{return.wXandwU}{If TRUE the matrices wX and xU are included in the LKrig object.}
 
-  \item{rho}{Value of rho (sill variance) to use for spatial
-  estimate. If omitted this is estimated as the MLE based on the value
-  of lambda.}
+\item{U}{For linear inverse problems the matrix that maps coefficients of the fixed part of model to the predicted
+	values of observations.}
 
-  \item{rho.object}{A prediction object that defines a spatially
-           varying component for the marginal variance of the
-           process. The object should be such that the code
-           \code{predict(rho.object, x1)} will evaluate the function
-           at 2-d locations \code{x1}. See Details below.  }
-
-  \item{sigma}{Value of sigma (nugget variance) to use for the spatial
-            estimate.  If omitted this is estimated as the MLE based
-            on the value of lambda.}  \item{wPHI}{If not NULL then use
-            as the "wPHI" regression matrix in the computations. This
-            is only used when just lambda is being changed from a
-            previous call.}
-
-  \item{return.wPHI}{If TRUE return the wPHI regression matrix. This
-  is most likely to be used for a subsequent call to LKrig that avoids
-  recreating this matrix.}
-
+	
   \item{verbose}{If \code{TRUE} print out intermediate results and
   messages.}
-  
 
   \item{use.cholesky}{Use the symbolic part of the Cholesky
   decomposition passed in this argument.}
-
-  \item{V}{A matrix used to scale and rotate coordinates to give an
-anisotropic basis function and covariance model. V is the 2X2 matrix
-describing the inverse linear transformation of the coordinates before
-distances are found.  In R code this transformation is: \code{x1 \%*\%
-t(solve(V))} Default is NULL, that is the transformation is just
-dividing distance by the scalar value \code{theta}. See Details below.
-If one has a vector of "theta's" that are the scaling for each
-coordinate then just express this as \code{V = diag(theta)} in the
-call to this function.}
-
-  \item{weights}{A vector that is proportional to the reciprocal
-  variances of the errors. I.e. errors are assumed to be uncorrelated
-  with variances sigma^2/weights. }
-
+  
+  \item{X}{For linear inverse problems the matrix that maps coefficients of the basis to the   
+  	 predicted values of observations. X must be in spam format. }
+  
+  \item{wU}{The matrix U multiplied by the weights.}
+ 
+  \item{wX}{The matrix X multiplied by the weights.}
+ 
   \item{xnew}{Matrix of locations for prediction.}
 
   \item{xy}{Order of evaluating surface coordinates. This would be used if for example
  a lon-lat surface needed to be transposed as a "lat-lon" object. Usually not needed.}
-
-  \item{x}{Spatial locations of observations. Or the \code{LKrig}
-  object for printing. }
- 
-  \item{y}{Spatial observations.}
- 
-  \item{Z}{Linear covariates to be included in fixed part of the model
-  that are distinct from the default first order polynomial in
-  \code{x} (i.e. the spatial drift).}
 
   \item{Znew}{Values of covariates, distinct from the spatial drift
   for predictions of data locations.}
@@ -240,9 +154,44 @@ a 10X15 grid and with 2 covariates. \code{ dim( ZGrid) == c(10,15, 2)}.
 If ZGrid is a list then the components x and y shold match those of grid.list and
 the z component follows the shape described above for the no list case.   }
 
-  \item{\dots}{Additional arguments to pass to generic methods or from
- LatticeKrig to LKrig.  See help(predictSurface) for the details in
- calling LKrig.predictSurface}.
+  \item{\dots}{For the methods additional arguments to pass to generic methods.
+  
+ For  LKrig  these extra arguments are interpreted as appropriate for the
+ LKrigSetup function and in fact they are just passed through to this function to 
+ create an LKinfo object. 
+ Of particular use is resetting the size of the memory allocation for the 
+ sparse decompositions in spam. This is done by the argument
+ \code{choleskyMemory}. This is a list in the format of the spam \code{memory} argument  for the
+	sparse cholesky function.
+	For example if a warning is printed that nnzR needs to be at least 2e5 in size. Passing 
+	\code{choleskyMemory= list( nnzR= 2e5)} will avoid this warning. 
+  
+ See the help on \code{LKrigSetup} for explanation of the options. Typically one would setup the LKinfo object outside of this call and 
+ just pass a few arguments that are being varied. In particular to 
+ use LKrig with different lambda values   \code{lambda = 1e-3} in the call 
+ would reset the lambda value to 1e-3.
+  The minimal set of arguments for a 2-d rectangular
+ domain, however,  are  \code{alpha}, \code{nlevel}, \code{NC}, and \code{a.wght}.
+ 
+ \strong{alpha} The sequence of positive weights for each level of the multiresolution process. Usually these add to one and are interpreted as the variance of the process at each level. 
+
+ \strong{a.wght} The weight given to the central lattice point in the 
+ 	spatial autoregression (see details below). 
+
+ \strong{nlevel} Number of levels for the multiresolution basis. Each
+level increases the number of basis functions by roughly a factor of
+4. 
+
+\strong{NC}Number of lattice points in first level and along the largest 
+	dimension. e.g. if NC=5 and the domain is square the domain will 
+	contain 25 lattice points at the first level. Note that there may be additional lattice points added as buffers outside the spatial domain 
+	(default is 5 on each side). 
+
+Some additional arguments are \code{V} that defines a linear scaling of the 
+coordinates before the LatticeModel is applied. See detials below. 
+
+  }
+ 
 }
 \details{
 This method combines compactly supported basis
@@ -281,7 +230,7 @@ The data model is
  Y.k = f(x.k) + e.k
 
 Y.k are (scalar) observations made at spatial locations x.k with e.k
-uncorrelated normal errors with variance sigma^2/weights.  Thus there
+uncorrelated normal errors with variance sigma^2/weights. Thus there
 is a minimum of one new parameter from the data model: sigma. Note
 that prediction only depends on the ratio \code{lambda = sigma^2/ rho}
 and not surprisingly lambda plays a key role in specifying and fitting
@@ -290,6 +239,22 @@ parameters needed for a spatial prediction are still four \code{NC,
 a.wght, nu} and \code{lambda}. For fixed lambda there are closed form 
 expressions for the MLEs for sigma and rho. LKrig exploits this feature
 by depending on lambda and then computing the MLEs for sigma and rho. 
+
+The data model can also be written in vector form as 
+
+Y =  T d + PHI c + e 
+
+Where T is a matrix that combines the low order polynomial with other possible covariates
+and PHI is the matrix basis functions evaluated at the observations. A simple extension 
+ is considering a linear invese problem form. This is an experimental of LatticeKrig that is intended for solving large linear inverse problems. In this case
+one supplies to the \code{LKrig} function two matrices (in spam sparse format) such that
+
+Y = U d + X c + e. 
+
+This features allows for observations that are linear functionals of f and not necessarily the function evaluted at the observation locations. This model is useful for working with demographic
+or tomographic problems where the observations are expressed as particular integrals of f over 
+different regions or different projections. See the last example on how to use this option. 
+If U and X are not supplied the default is to consider a model with observations made at evaluating f a the observation locations. 
 
 \strong{Spatial prediction:} The basis functions are assumed to be
 fixed and the coefficients follow a multivariate Gaussian
@@ -356,18 +321,19 @@ The distribution on the basis function coefficients is a multivariate
  precision matrix based on a spatial autoregression with
  \code{a.wght[i]} being related to the spatial autoregressive parameter(s).
  Schematically in the simplest case the weighting for an interior
- lattice point and its four neighbors is
-\preformatted{ 
-.   .    .      .     .                                       
+ lattice point with its four neighbors is
+ 
+ 
+\tabular{ccccc}{
+  .  \tab . \tab   .  \tab    . \tab    .\cr                                   
 
-.   .   -1      .     . 
+  .  \tab .  \tab -1   \tab   .  \tab   . \cr 
                      
-.  -1  a.wght  -1     .
+ . \tab -1 \tab a.wght \tab -1  \tab   . \cr 
                       
-.   .   -1      .     .  
+ . \tab  . \tab  -1   \tab   .  \tab   . \cr  
   
-.   .    .      .     .
-Interior point      
+ . \tab  . \tab   .  \tab    .  \tab   . \cr     
 }
 
 The fundamental idea is that these weights applied to each point in
@@ -420,7 +386,7 @@ the object LKinfo, a required component for many LatticeKrig
 functions. High level functions such as \code{LKrig} only require a
 minimal amount of information and combined with default choices create
 the LKinfo list. One direct way to create the complete list is to use
-\code{LKrig.setup} as in the example below.  For \code{nlevel==1} one
+\code{LKrigSetup} as in the example below.  For \code{nlevel==1} one
 needs to specify \code{a.wght}, \code{NC}, and also \code{lambda}
 related to the measurement error variance.  For a multiresolution
 setup, besides these parameters, one should consider different values
@@ -481,6 +447,33 @@ artifacts are like the marginal variances for a 6 by 6 basis is
 included at the end of the Examples Section.
 
 \strong{Nonstationary and anisotropic modifications to the covariance}
+ The simplest way to build in departures from isotopy is to scale the coordinates.
+The device to specify this transformation is including the \code{V} argument
+in setting up the LKinfo object or passed in the  \dots  for this function. 
+\code{V} should be a matrix that represents the tranposed, inverse transformation applied to the raw coordinates.  For example if \code{x1} are  locations  d- dimensions 
+( i.e. x1 has d columns) and \code{V} is a dXd matrix then the transformed coordinates are 
+
+ x1Transformed <- x1 %*% t(solve(V))
+ 
+and all subsequent computations will use the transformed coordinates for evaluating the basis functions. This also means that the lattice centers are locations in the 
+transformed scale. The following example might be helpful:
+\preformatted{
+set.seed(123)
+x<- matrix( runif( 200),100,2)
+V<- cbind( c( 2,1), c( -1,1) )
+y<-  x[,1] + x[,2]
+LKinfo<- LKrigSetup( x, V=V, nlevel=1, a.wght=5, NC=20)
+
+gridCenters<- LKrigLatticeCenters( LKinfo, Level=1)
+# grid in transformed space:
+plot( make.surface.grid( gridCenters))
+# transformed data:
+points( x\%*\%solve(t(V)), col="red", pch=16) 
+# the model is fit to these locations. 
+}
+Keep in mind that a practical use of this argument is just to
+scale a variable(s) that is \code{V} is a diagonal matrix with diagonal elements being  the values to scale the individual coordinates. 
+
 Given that the process at each level has been normalized to have
 marginal variance of one there are several other points where the
 variance can be modified. The variance at level i is scaled by the
@@ -555,6 +548,9 @@ the least squares regression "hat" matrix and has an inverse,
 monotonic relationship to lambda. The Monte Carlo method uses the fact
 that if e are iid N(0,1) E( t(e) A(lambda) e) = trace( A(lambda)).
 
+
+\strong{An Extension to linear inverse problems} 
+
 \strong{Descriptions of specific functions and objects:}
 
 \strong{\code{LKrig}: } Find spatial process estimate for fixed
@@ -615,11 +611,17 @@ of the image and contour plotting functions.
 Doug Nychka
 }
 
-\seealso{ LatticeKrig, LKrig.sim.conditional,
-mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
+\seealso{ LatticeKrig, LKrig.sim.conditional, LKrig.MLE,
+mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike,
+ LKrig.MRF.precision,
  LKrig.precision
 }
 \examples{
+# NOTE: CRAN requires that the "run" examples to execute within  5 seconds. 
+# so to meet this constraint many of these have been 
+# severely limited to be quick, typically making NC and nlevel
+# unresonably small.
+	
 # Load ozone data set
   data(ozone2)  
   x<-ozone2$lon.lat
@@ -632,7 +634,12 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 
 # fairly arbitrary choices for covariance parameters and lambda
 # just to show a basic level call
-  obj1<- LKrig( x,y, a.wght=5, nlevel=3, nu=1.0, NC=4, lambda=.1)
+  obj1<- LKrig( x,y, a.wght=5, nlevel=3, nu=1.0, NC=10, lambda=.1)
+  print(obj1)
+#  
+# this is the same as:
+#  LKinfoEX<- LKrigSetup( x,y, a.wght5, nlevel=3, nu=1.0, NC=4)
+#  obj1<- LKrig( x,y, LKinfo= LKinfoEX, lambda=.1)  
 
 # thin plate spline-like model with the lambda parameter estimated by
 # maximum likelihood. Default choices are made for a.wght, nlevel, NC
@@ -648,12 +655,12 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
   out.se<- predictSE( obj, xnew= x)
 }
 
-
 # breaking down the LatticeKrig function into several steps. 
 # also use a different covariance model that has fewer basis fucntions
 # (to make the example run more quickly)
- 
-  LKinfo<- LKrig.setup( x, nlevel=1, alpha=1, NC=15, a.wght=5,
+
+\dontrun{ 
+  LKinfo<- LKrigSetup( x, nlevel=3, alpha=1, NC=5, a.wght=5,
                         lambda=.01)
 # maximize likelihood over lambda see help( LKrig.MLE) for details
 # this assumes the value of 5 for a.wght.  In many cases the fit is not
@@ -666,21 +673,21 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 # the LKinfo object.
   obj<- LKrig( x,y, LKinfo=MLE.fit$LKinfo.MLE)  
   print( obj)  
-
 # find prediction standard errors at locations based on fixing covariance
 # at MLE's
   out.se<- predictSE( obj, xnew= x)
 # one could evalute the SE on a grid to get the surface of predicted SE's 
 # for large grids it is better to use LKrig.sim.conditional to estimate
 #  the variances by Monte Carlo
+}
 
 ##########################################################################
 # Use multiresolution model that approximates an exponential covariance
-# Note that a.wght realted to a range/scale parameter
+# Note that a.wght, related to a range/scale parameter
 # is specified at a (seemingly) arbitrary value. 
 ##########################################################################
   
-  LKinfo<- LKrig.setup( x, NC=6, nu=1, nlevel=3, a.wght= 5)
+  LKinfo<- LKrigSetup( x, NC=4, nu=1, nlevel=2, a.wght= 5)
 # take a look at the implied covariance function solid=along x
 #  and  dashed=along y 
   check.cov<- LKrig.cov.plot( LKinfo)
@@ -691,10 +698,8 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 # covariance
 ###########################################################################
 \dontrun{
-  
-  LKinfo.temp<-  LKrig.setup( x, NC=6, nu=1,  nlevel=3, a.wght= 5)
-# starting value for lambda optimzation
-  LKinfo.temp$lambda<- 1 
+  LKinfo.temp<-  LKrigSetup( x, NC=6, nu=1,  nlevel=3, a.wght= 5, lambda=.5)
+# starting value for lambda optimzation 
   MLE.search<- LKrig.MLE(x,y, LKinfo=LKinfo.temp)
 # this function returns an LKinfo object with the MLE for lambda included.
   MLE.ozone.fit<- LKrig( x,y,  LKinfo= MLE.search$LKinfo.MLE)
@@ -712,14 +717,15 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 # single level with large range parameter -- similar to a thin plate spline
 #  lambda specified 
 
-# fit with elevation
-  obj.CO.elev<- LKrig( x.CO,y.CO,Z=Z.CO, nlevel=1, NC=15, alpha=1, lambda=.005,
+# fit with elevation 
+# note how for convenience the LKrig parameters are# just included here and not passed as a separate LKinfo object. 
+  obj.CO.elev<- LKrig( x.CO,y.CO,Z=Z.CO, nlevel=1, NC=50, alpha=1, lambda=.005,
                           a.wght=4.1)
 # BTW the coefficient for the linear term for elevation  is obj.CO$d.coef[4]
 # fitted surface without the elevation term
 \dontrun{
-   LKinfo<- LKrig.setup( x.CO, nlevel=1, NC=20,alpha=1, a.wght=4.1, lambda=1.0)
-  # lambda is the starting vlaue for MLE optimization
+   LKinfo<- LKrigSetup( x.CO, nlevel=1, NC=20,alpha=1, a.wght=4.1, lambda=1.0)
+# lambda given here is just the starting value for MLE optimization
   CO.MLE<- LKrig.MLE( x.CO,y.CO,Z=Z.CO, LKinfo=LKinfo)
   obj.CO.elev<- LKrig( x.CO,y.CO,Z=Z.CO, LKinfo= CO.MLE$LKinfo.MLE)
   CO.surface2<- predictSurface( obj.CO.elev, drop.Z=TRUE, nx=50, ny=50)
@@ -743,7 +749,50 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
     title( "Including elevation")
     US( add=TRUE,lwd=2)
 }
-
+\dontrun{
+#### a 3-d example using alternative geometry
+set.seed( 123)
+N<- 500
+x<-  matrix( runif(3* N,-1,1), ncol=3, nrow=N)
+y<-   10*exp( -rdist( x, rbind( c(.5,.5,.6) ) )/.5)
+LKinfo<- LKrigSetup( x,  
+                 LKGeometry = "LKBox",
+                     nlevel = 1,
+                     a.wght = 6.01,
+                         NC = 5,
+                  NC.buffer = 2,
+                  normalize = TRUE,
+             choleskyMemory = list(nnzR= 2e6),
+                    lambda = .1,
+                    mean.neighbor=200
+                   )  
+# NOTE: memory for the spam routines has been increased to 
+# avoid warnings  
+  out1<- LKrig( x,y, LKinfo=LKinfo)
+}  
+  
+\dontrun{
+# MLE search over lambda and  a bigger problem
+# but no normalization
+N<- 5e4
+x<-  matrix( runif(3* N,-1,1), ncol=3, nrow=N)
+y<-   10*exp( -rdist( x, rbind( c(.5,.5,.6) ) )/.5)
+LKinfo<- LKrigSetup( x,  
+                 LKGeometry = "LKBox",
+                     nlevel = 1,
+                     a.wght = 6.01,
+                         NC = 20,
+                  NC.buffer = 2,
+                  normalize = FALSE,
+             choleskyMemory = list(nnzR= 25e6),
+                    lambda = .1,
+                    mean.neighbor=200
+                   ) 
+# add in timing                    
+ system.time(  out1<- LKrig( x,y, LKinfo=LKinfo) ) # about 25 seconds
+# LKinfo$normalize<- TRUE
+# system.time(  out2<- LatticeKrig( x,y, LKinfo=LKinfo) )# ~250 seconds
+}  
 ########################################################################
 # for a more elaborate search over  a.wght, alpha and lambda to find
 # joint MLEs see help(LKrig.MLE)
@@ -757,41 +806,30 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike, LKrig.MRF.precision,
 #######################################################################
 \dontrun{
   data(CO2)
-  obj1<- LKrig( CO2$lon.lat,CO2$y,NC=100,nlevel=1, lambda=.088,
-                       a.wght=5, alpha=1)
-# 4600 basis functions 100X46 lattice  (number of basis functions
+  # the Ring geometry will be periodic in the first dimension and rectagular on 
+  # second. A useful approximation for spherical data omitting the polar caps. 
+  
+  LKinfo.CO2<- LKrigSetup(CO2$lon.lat, NC=100,nlevel=1, lambda=.2,
+                       a.wght=5, alpha=1, 
+                       LKGeometry="LKRing", choleskyMemory = list(nnzR=2e6) )
+  print(LKinfo.CO2)                                          
+  obj1<- LKrig( CO2$lon.lat,CO2$y,LKinfo=LKinfo.CO2)
+# 5700+ basis functions 101X57 lattice  (number of basis functions
 # reduced in y direction because of a rectangular domain
-  obj1$trA.est # about 1040 effective degrees of freedom 
+  obj1$trA.est # about 2900+ effective degrees of freedom 
 #
   glist<- list( x= seq( -180,180,,200),y=seq( -80,80,,100) )
-  xg<-  make.surface.grid(glist)
-  fhat<- predict( obj1, xg)
-  fhat <- matrix( fhat,200,100) # convert to image
+  fhat<- predictSurface( obj1,grid.list=glist)
 #Plot data and gap-filled estimate
   set.panel(2,1)
   quilt.plot(CO2$lon.lat,CO2$y,zlim=c(373,381))
   title("Simulated CO2 satellite observations")
   world(add=TRUE,col="magenta")
-  image.plot( glist$x, glist$y, fhat,zlim=c(373,381))
+  image.plot( fhat,zlim=c(373,381))
   world( add=TRUE, col="magenta")
   title("Gap-filled global predictions")
 }  
-## same example but use a periodic lattice in longitude and 
-## periodic basis functions. This is the "cylinder" model.
-\dontrun{
-  data(CO2)
-  LKinfo.cyl<- LKrig.setup( cbind( c( -180,180), range( CO2$lon.lat[,2])),
-                            NC=25,nlevel=1, lambda=.1,
-                             a.wght=5, alpha=1,  distance.type="cylinder")
-# 1127 basis functions from a 49X23 lattice
-  search.CO2<- LKrig.MLE( CO2$lon.lat,CO2$y, LKinfo=LKinfo.cyl)
-# MLE search over lambda
-  obj2<- LKrig( CO2$lon.lat,CO2$y, LKinfo=search.CO2$LKinfo.MLE)
-  surface( obj2)
-  world( add=TRUE)
-}  
-
-set.panel()
+ set.panel()
 #########################################################################
 #  Comparing LKrig to ordinary Kriging
 ########################################################################
@@ -824,7 +862,7 @@ set.panel()
   obj1$trA.est
 # The covariance "parameters" are all in the list LKinfo
 # to create this special list outside of a call to LKrig use
-  LKinfo.test <- LKrig.setup( x, NC=16, nlevel=1, alpha=1.0,  a.wght=5)
+  LKinfo.test <- LKrigSetup( x, NC=16, nlevel=1, alpha=1.0,  a.wght=5)
 
 # this call to mKrig should be identical to the LKrig results
 # because it uses the LKrig.cov covariance with all the right parameters.
@@ -842,25 +880,52 @@ set.panel()
   test.for.zero( se1, se2,
                   tag="comparing standard errors for LKrig and mKrig")
 }
-########################################################################
-#  Unnormalized marginal variance for a 6X6 basis on [-1,1]X[-1,1]
-#  This is an example of why normalization seems important. 
-########################################################################
 
 \dontrun{
-# specify covariance without normalization note all we need is the
-#corners of domains to setup the info list. 
-  LKinfo<- LKrig.setup(cbind( c( -1,1), c(-1,1)), NC=6, nlevel=1,
-                        a.wght=4.5,alpha=1, normalize= FALSE)  
-# 80X80 grid of points 
-  xg<- make.surface.grid( list(x=seq(-1,1,,80), y= seq(-1,1,,80))) 
-  look<- LKrig.cov( xg, LKinfo=LKinfo,marginal =TRUE) 
-# surface plot of the marginal variances of the process. 
-  image.plot( as.surface(xg, look)) 
-# basis function centers from the first (and only) level
-  xp<- make.surface.grid( LKinfo$grid[[1]])
-  points(xp)
-}
+# an example of a linear inverse problem 
+# NOTE the settings in the model are small to make for a fast example
+#
+data(ozone2)
+x<- ozone2$lon.lat
+y<- ozone2$y[16,]
+good<- !is.na(y)	
+x<- x[good,]
+y<- y[good]
+
+LKinfo<- LKrigSetup(x, a.wght=4.5, nlevel=3, nu=1, NC=4, lambda=.01)
+
+# now observe a linear combination
+  NNDist<- LKDist(x,x, delta=1.5) 
+  A<- NNDist
+  A$ra<- exp(-NNDist$ra)
+# A is a weight matrix based on neighbors close by and
+# in spind sparse matrix format
+# now convert to spam format
+  A<- spind2spam(A)
+  
+TMatrix <- get(LKinfo$fixedFunction)(x = x)
+# Tmatrix is a 3 column matrix of constant and the two spatial coordinates
+#  i.e. a linear function of the spatial variables 
+PHI<- LKrig.basis(x, LKinfo)
+X<-  A\%*\% PHI
+U<-  A\%*\%TMatrix 
+yIndirect<- A\%*\%y
+#
+# X<-  A%*% PHI ; U<-  A%*%TMatrix;  yIndirect<- A%*%y
+
+out0<- LatticeKrig(x,y, LKinfo=LKinfo)
+out1<- LatticeKrig(x,yIndirect, U=U, X=X, LKinfo=LKinfo)
+
+# the predict function evaluates f in this case -- not the fitted values that
+# are related to the 
+# observations
+# partial agreement but not exact -- this is because the observational models
+# assume different errors
+#
+plot( predict(out0,x), predict( out1,x))
+
+out<- LKrig.sim.conditional( out1,M=5, nx=10, ny=10,verbose=TRUE )
+}	
 
 }
 

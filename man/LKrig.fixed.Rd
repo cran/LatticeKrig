@@ -19,6 +19,7 @@
 
 \name{LKrigDefaultFixedFunction}
 \alias{LKrigDefaultFixedFunction}
+\alias{LKrigPeriodicFixedFunction}
 \alias{predictLKrigFixedFunction}
 \title{
 Creates fixed part of spatial model.
@@ -29,6 +30,7 @@ the linear model.}
 
 \usage{
  LKrigDefaultFixedFunction(x, Z = NULL, m=2,distance.type="Euclidean") 
+ LKrigPeriodicFixedFunction(x, Z = NULL, m = 2, distance.type = "Euclidean")
  
 predictLKrigFixedFunction(object, xnew, Znew = NULL, drop.Z = FALSE)
 }
@@ -66,6 +68,7 @@ For more exotic fixed part models one can specify create and then specify a diff
 function. See LKrig.setup and LKrig. NOTE: If the argument for this function is passed as NULL
 then the subsquent computations do not include a fixed part in the model.
 
+\strong{LKrigDefaultFixedFunction} This is same as LKrigDefaultFixedFunction except the first coordinate is ignored. i.e. it is assumed to be periodic so adding a polynomial doe snot make sense.
 
 \strong{predictLKrigFixedFunction}
 This function is simple, but is introduced to make the code modular and

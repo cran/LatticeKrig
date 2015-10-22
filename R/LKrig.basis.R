@@ -19,17 +19,19 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.basis <- function(x1, LKinfo, verbose = FALSE, 
-    spam.format = TRUE) {
-    grid.info <- LKinfo$grid.info
-    nlevel <- LKinfo$nlevel
-    overlap <- LKinfo$overlap
-    normalize <- LKinfo$normalize
-    scale.basis <- LKinfo$scale.basis
+LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
+  {
+    nlevel        <- LKinfo$nlevel
+    delta         <- LKinfo$latticeInfo$delta
+    overlap       <- LKinfo$basisInfo$overlap
+    normalize     <- LKinfo$normalize
     distance.type <- LKinfo$distance.type
-    V <- LKinfo$V
+    fast          <-  attr( LKinfo$a.wght,"fastNormalize")
+    V <- LKinfo$basisInfo$V
+# coerce x1 to a matrix    
+    x1<- as.matrix( x1)
     # We will transform (scale and rotate) x matrix of locations by   x%*% t(solve(V))
-    #
+    # 
     # For the radial basis functions this
     # will imply that the Euclidean distance norm used between two vectors X1 and X2
     # is  t(X1-X2) solve(A) (X1-X2)  with A = (V %*%t(V))
@@ -37,7 +39,7 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE,
     # It should be equivalent to just transforming the locations outside of LatticeKrig.
     # Where ever the observation locations are used
     # they are first transformed with t(solve(V))).
-    # Surprisingly this needs to happen in one place below and in LKrig.setup to
+    # Surprisingly this only needs to happen in one place below and in LKrig.setup to
     # determine the grid centers.
     #
     # The RBF centers and the delta scale factor, however, assumed to be
@@ -50,57 +52,84 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE,
     #
     # accumulate matrix column by column in PHI
     PHI <- NULL
-    x1Transformed<- x1 %*% t(solve(V))
-         if( verbose){
-          cat(" Dim x1Transformed",  dim( x1Transformed ), fill=TRUE)
+    # transform locations if necessary (lattice centers already in 
+    # transformed scale) 
+    if( !is.null( V[1]) ){     
+      x1<- x1 %*% t(solve(V))     
+    }
+    if( verbose){
+          cat("LKrig.basis: Dim x1 ",  dim( x1), fill=TRUE)
         }
     for (l in 1:nlevel) {
         # Loop over levels and evaluate basis functions in that level.
         # Note that all the center information based on the regualr grids is
         # taken from the LKinfo object
-        delta <- LKinfo$delta[l]
-        grid.list <- LKinfo$grid[[l]]
-        centers <- make.surface.grid(grid.list)
         #  set the range of basis functions, they are assumed to be zero outside
-        #  the radius basis.delta
-        basis.delta <- delta * overlap
-        #     
-        PHItemp <- Radial.basis(x1Transformed, centers, 
-            basis.delta, max.points = NULL, mean.neighbor = 50, 
-            just.distance = FALSE, RadialBasisFunction = get(LKinfo$RadialBasisFunction), 
-            distance.type = LKinfo$distance.type)
+        #  the radius basis.delta and according to the distance type.
+        basis.delta <- delta[l] * overlap
+        # 
+        # There are two choices for the type of basis functions
+        # 
+        centers<- LKrigLatticeCenters( LKinfo,Level=l )
+        if(LKinfo$basisInfo$BasisType=="Radial" ){ 
+        	 t1<- system.time(
+        PHItemp <- Radial.basis(  x1, centers, basis.delta,
+                                max.points = LKinfo$basisInfo$max.points,
+                             mean.neighbor = LKinfo$basisInfo$mean.neighbor, 
+                       BasisFunction = get(LKinfo$basisInfo$BasisFunction),
+                             distance.type = LKinfo$distance.type,
+                                   verbose = verbose)
+                             )
+                             }
+        if(LKinfo$basisInfo$BasisType=="Tensor" ){  
+        	 t1<- system.time(            
+        PHItemp <- Tensor.basis(  x1, centers, basis.delta,
+                                max.points = LKinfo$basisInfo$max.points,
+                             mean.neighbor = LKinfo$basisInfo$mean.neighbor, 
+                       BasisFunction = get(LKinfo$basisInfo$BasisFunction),
+                             distance.type = LKinfo$distance.type)
+                             )
+                             }      	                            
         if( verbose){
           cat(" Dim PHI level", l, dim( PHItemp), fill=TRUE)
+          cat("time for basis", fill=TRUE) 
+          print( t1)
         }
-
-        if (normalize) {
-          normtime<-  system.time(
-            if( LKinfo$fastNormalization){
-               wght <- LKrig.normalize.basis.fast(l, LKinfo, x1Transformed)
-             }
-            else{
-               wght <- LKrig.normalize.basis.slow(l, LKinfo, x1Transformed)
-             }
-           )
-           if( verbose ){
-                cat( "Level",l, normtime, fill=TRUE)
-              }
+        
+        if (normalize) { 
+        	t2<- system.time( 
+        	if( !fast ){
+        	# the default choice should work for all models	
+               wght<-  LKrigNormalizeBasis( LKinfo,  Level=l,  PHI=PHItemp)               
+            }
+            else{ 
+            # potentially a faster method that is likely very specific
+            # to a particular more e.g. LKrectangle with stationary first order GMF
+            # NOTE that locations are passed here rather than the basis matrix	
+               wght<- LKrigNormalizeBasisFast(LKinfo,  Level=l,  x=x1)
+            	}
+            	)
+            	if( verbose){
+            		cat("time for normalization", "fast=", fast,  fill=TRUE)
+            		print( t2)
+            	}
 # now normalize the basis functions by the weights treat the case with one point separately
-          if( nrow( x1)>1){
-           PHItemp <- diag.spam( 1/sqrt(wght) ) %*% PHItemp
+# wghts are in scale of inverse marginal variance of process
+           if( nrow( x1)>1){
+              PHItemp <- diag.spam( 1/sqrt(wght) ) %*% PHItemp
            }
           else{
               PHItemp@entries <- PHItemp@entries/sqrt(wght)
-            }
-        }
-         
-
-        # accumulate new level of basis function.
+              }
+         if( verbose){
+          cat("normalized basis functions", fill=TRUE)
+        }    
+        }   
+        # accumulate this new level of basis functions.
         PHI <- cbind(PHI, PHItemp)
     }
     # include a spatially varying multiplication of process.
-    # wght are in scale of inverse marginal variance of process
-    if (scale.basis) {
+    if (!is.null( LKinfo$rho.object) ) {
         wght <- c(predict(LKinfo$rho.object, x1))
         PHI <- diag.spam(sqrt(wght)) %*% PHI
         }

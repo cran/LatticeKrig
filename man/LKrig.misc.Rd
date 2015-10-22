@@ -19,7 +19,8 @@
 
 \name{LKrig Miscellaneous Matrix Functions}
 \alias{LKrig.rowshift.periodic}
-\alias{ LKrig.shift.matrix}
+\alias{LKrig.shift.matrix}
+\alias{LKArrayShift}
 \alias{LKrig.rowshift}
 \alias{which.max.matrix}
 \alias{which.max.image}
@@ -27,23 +28,34 @@
 \alias{expandMatrix0}
 \alias{expandMatrix}
 \alias{repMatrix}
+\alias{convertIndexPeriodic}
+\alias{grid2Index}
+\alias{convertIndexArray}
+
 \title{
 Miscellaneous internal functions for LatticeKrig package. 
 }
 \description{
 Some utility functions used internally by higher level \code{LKrig}
 functions. Currently these are simple functions that perform shifts of
-a matrix.
+a matrix and operations on indices for multidimensional arrays.
 }
 \usage{
 LKrig.shift.matrix( A, shift.row=0, shift.col=0, periodic=c(FALSE, FALSE))
 LKrig.rowshift.periodic( A, shift.row)
-LKrig.rowshift( A,shift.row,shift.col)
+LKrig.rowshift( A, shift.row, shift.col)
+LKArrayShift(A, shift, periodic = FALSE)
+
 which.max.matrix(z)
 which.max.image(obj)
 expandMatrix0( A, B)
 expandMatrix( ...)
 expandMList( Mlist, byrow=TRUE)
+
+
+convertIndexPeriodic(I, nGrid, nPad = NULL)
+convertIndexArray(I, nGrid)
+grid2Index(I, grid)
 }
 
 \arguments{
@@ -54,16 +66,28 @@ expandMList( Mlist, byrow=TRUE)
 this will be done column by column.}
 
 \item{B}{Another matrix.}
+\item{grid}{A vector giving the size of each dimension of array.}
+
+\item{I}{A matrix of multidimensional indices where each row
+	identifies an element of the array. e.g. If I[1,] == c( 3,4,2)
+	this refers to  A[3,4,2] }
 
 \item{Mlist}{A list where each component is a matrix.}
 
+\item{nGrid}{ A array giving number of elements in each dimension.}
+
+\item{nPad}{An array with the number of padding indices in each dimension.}
+
 \item{obj}{An image list with the usual components x, y, and z.}
 
-\item{periodic}{ A vector of two logicals pertaining to rows and
-columns. TRUE indicates an index where the shift will be periodic --
+\item{periodic}{  A vector of  logicals columns.TRUE indicates an index where the shift will be periodic --
 entries shifted beyond the dimensions will be wrapped to the other
-side.}
-
+side. e.g. for the matrix version c(FALSE, TRUE) indicates the 
+columns of the matrix will be shifted in a periodic way but not the 
+rows. 
+	}
+\item{shift}{A integer vector that gives the shifts for each dimension of the
+	array.}
 \item{shift.row}{An integer that specifies the number of positions
  that the rows of the matrix are shifted.}
 
@@ -84,6 +108,11 @@ These functions are useful for creating a sets of covariance parametes that
 follow a factorial pattern. For example repeating the rows of the "alpha" paramters
 as the "a.wght" parameters are varied. \code{expandMList} is particularly useful for creating
 a factorial design of parameters to pass to LKrig.MLE for searching the likelihood.
+
+\strong{Index related:}
+The function \code{convertIndexPeriodic} converts a  single index for a multidimensional array, into index that reflects wrapping into a smaller grid to reflect the padding. 
+This is used in the \code{LKDistGrid} function to handle distances when the grid has periodic dimensions. The other two functions are used for checking and debugging of going back and
+forth between the multidimensional and single indexes.  
 
 }
 \value{
@@ -117,10 +146,10 @@ LKrig.rowshift.periodic( A, 2)
 }
 
 \strong{Expand:}
-\code{ExpandMList}{Returns a list of matrices where the original matrices are repeated so that are
+\code{ExpandMList} Returns a list of matrices where the original matrices are repeated so that are
 combinations of rows are represented. The example below illustrates.  \code{byrow=FALSE} does the repetition
 by columns instead of rows.
-}
+
 \preformatted{
 > A
      [,1] [,2]
@@ -166,6 +195,17 @@ $C
 \author{
 Doug Nychka
 }
-
+\examples{
+	A<- array( 1:90, c( 4,5,3))
+	LKArrayShift( A, c( -1,-1,0))	
+	
+# welcome to the world of unrolling multiarray indices
+A<- array( 1:60, c( 4,3,5))	
+I<- rbind( c(1,2,1), c( 3,2,5))
+look<- grid2Index( I, c( 4,3,5) )
+# A has been filled with the right unrolled index
+print( look)
+print(A[look])
+}
 
 \keyword{spatial}
