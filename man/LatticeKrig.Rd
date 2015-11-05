@@ -51,11 +51,10 @@ LatticeKrig(x, y, Z = NULL, nlevel = 3, LKinfo = NULL,
 
 \arguments{
  
-
   \item{LKinfo}{An optional list giving the full specification of the
-   covaraince. If missing will be created internally and
+   covariance. If this is missing  it will be created internally and
    returned. If passed this parametrization will be used
-   except lambda will will be reestimated by maximum likelihood.}
+   except lambda will be reestimated by maximum likelihood.}
    
   \item{digits}{Number of significant digits in printed summary.}
   
@@ -74,9 +73,9 @@ LatticeKrig(x, y, Z = NULL, nlevel = 3, LKinfo = NULL,
     Or for the \code{print.LatticeKrig} the returned object from LatticeKrig for a print summary. }
     
       \item{X}{For linear inverse problems the matrix that maps coefficients of the basis to the   
-  	 predicted values of observations. X must be in spam format. To convert to 
-  	 spam format see \code{full2spam} and \code{\link{spind2spam}}.
-  	 	}
+  	 predicted values of observations. X must be in spam format. To convert from spind or dense format  to 
+  	 spam format see \code{help(spam)} and also as an alternative  
+  	 \code{\link{spind2spam}}.}
   	 
   	 \item{U}{For linear inverse problems the matrix that maps coefficients of the   fixed part of model to the predicted
 	values of observations.}

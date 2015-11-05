@@ -38,8 +38,8 @@ options( echo=FALSE)
                                  NtrA=5, iseed=122)
  
 ###### check of formula with weights
-  PHI<- spam2full(LKrig.basis( x,LKinfo))
-  Q <- spam2full(LKrig.precision(LKinfo))
+  PHI<- as.matrix(LKrig.basis( x,LKinfo))
+  Q <- as.matrix(LKrig.precision(LKinfo))
   M1<- PHI%*%solve( Q)%*%t(PHI) +  lambda*solve( W) 
   B1<- (t(PHI)%*%(W/lambda)%*%PHI + Q)
   B2<- (1/lambda) * ( t(PHI)%*%(W)%*%PHI + lambda*Q)

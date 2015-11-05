@@ -59,10 +59,10 @@ temp<- matrix( 1:m, mx[1,1],mx[1,2])
   LKinfo<- LKrigSetup( cbind( c( -1,1), c( -1,1) ),
              nlevel=3, NC=4, a.wght=c(5,6,7), alpha=c(6,6,6) )
   X<- LKrig.basis(x1, LKinfo)
-  X<- spam2full(X)
+  X<- as.matrix(X)
 # check on normalization to unit variance at each level
   Q<- LKrig.precision( LKinfo)
-  Q<- spam2full( Q)
+  Q<- as.matrix( Q)
   look<- (X)%*% solve( Q) %*%t(X)
   marginal.var<- sum(unlist(LKinfo$alpha))
   test.for.zero( diag(look), rep( marginal.var,10),
@@ -78,10 +78,10 @@ temp<- matrix( 1:m, mx[1,1],mx[1,2])
 # Now test w/o normalization
   LKinfo$normalize<- FALSE
   X<- LKrig.basis(x1, LKinfo)
-  X<- spam2full(X)
+  X<- as.matrix(X)
 # check on normalization to unit variance at each level
   Q<- LKrig.precision( LKinfo)
-  Q<- spam2full( Q)
+  Q<- as.matrix( Q)
   look<- (X)%*% solve( Q) %*%t(X)
   look3<- LKrig.cov( x1, x1,LKinfo= LKinfo)
   test.for.zero( look3, look,
@@ -115,7 +115,7 @@ temp<- matrix( 1:m, mx[1,1],mx[1,2])
                         alpha=1)
 
   look<- LKrig.precision( LKinfo=LKinfo, return.B=TRUE)
-  look2<- spam2full( look)
+  look2<- as.matrix( look)
   test.for.zero( diag( look2), a.wght[[1]], tag="spatial a.wght 1 level")
 # three levels
   LKinfo0 <- LKrigSetup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4,
@@ -131,7 +131,7 @@ temp<- matrix( 1:m, mx[1,1],mx[1,2])
                         a.wght=a.wght,
                         alpha=c(1,1,1), edge=FALSE)
   look<- LKrig.precision( LKinfo=LKinfo, return.B=TRUE)
-  look2<- spam2full( look)
+  look2<- as.matrix( look)
   test.for.zero( diag( look2), unlist(a.wght), tag="spatial a.wght 3 levels")
 #
 # STOPPPED HERE
@@ -146,15 +146,15 @@ temp<- matrix( 1:m, mx[1,1],mx[1,2])
                         a.wght=5,
                         alpha=alpha, edge=FALSE)
   look<- LKrig.precision( LKinfo, return.B=TRUE)
-  look2<- spam2full( look)
+  look2<- as.matrix( look)
  
   LKinfo2 <- LKrigSetup( cbind( c( -1,1), c( -1,1) ), nlevel=3, NC=4, NC.buffer=3,
                         a.wght=5,
                         alpha=c(1,1,1), edge=FALSE)
-  look3<- spam2full(LKrig.precision( LKinfo2, return.B=TRUE))
+  look3<- as.matrix(LKrig.precision( LKinfo2, return.B=TRUE))
   look3<-  diag( 1/sqrt(unlist(alpha)))%*%look3
   test.for.zero( look3, look2, tag=" 3 levels spatial alpha buffer=0")
-  look4<-  spam2full(LKrig.precision( LKinfo))
+  look4<-  as.matrix(LKrig.precision( LKinfo))
   test.for.zero( t(look3)%*%look3, look4, tag="3 levels spatial alpha Q buffer=3")
 
 

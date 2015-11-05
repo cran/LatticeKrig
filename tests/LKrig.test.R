@@ -152,7 +152,7 @@ options( echo=FALSE)
   PHI<- LKrig.basis( x,LKinfo)
   Q <- LKrig.precision(LKinfo)
 # coerce to full matrix
-  Q<- spam2full(Q)
+  Q<- as.matrix(Q)
   Mtest<- PHI%*% (solve( Q)) %*% t( PHI) + diag(lambda, N)
   temp<- t(PHI)%*%PHI + lambda*Q
   A<- Q*lambda
@@ -185,8 +185,8 @@ options( echo=FALSE)
   weights<- runif(N)
   W<- diag(weights)
   lambda<- .5
-  PHI<- spam2full(LKrig.basis( x,LKinfo))
-  Q <- spam2full(LKrig.precision(LKinfo))
+  PHI<- as.matrix(LKrig.basis( x,LKinfo))
+  Q <- as.matrix(LKrig.precision(LKinfo))
   M1<- PHI%*%solve( Q)%*%t(PHI) +  lambda*solve( W) 
 
   

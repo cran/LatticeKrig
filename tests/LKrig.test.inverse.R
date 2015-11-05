@@ -14,10 +14,10 @@ nObs <- nrow(x)
 LKinfo <- LKrigSetup(x, NC = 4, nlevel = 1, alpha = 1, lambda = lambda, 
 	a.wght = 5, NC.buffer = 1)
 W <- LKrig.basis(x, LKinfo)
-W<- spam2full(W)
+W<- as.matrix(W)
 x0<- matrix(runif( 5* 2), 5, 2)
 W0 <- LKrig.basis(x0, LKinfo)
-W0<- spam2full(W0)
+W0<- as.matrix(W0)
 T.matrix <- do.call(LKinfo$fixedFunction, c(list(x = x, distance.type = LKinfo$distance.type), 
 	LKinfo$fixedFunctionArgs))
 T0 <- do.call(LKinfo$fixedFunction, c(list(x = x0, distance.type = LKinfo$distance.type), 
@@ -35,7 +35,7 @@ rho<- obj$rho.MLE
 
 Q <- LKrig.precision(LKinfo)
 Sigma <- solve(Q)
-Mlambda <- solve(spam2full(X %*% Sigma %*% t(X) + lambda * diag(1, nObs)))
+Mlambda <- solve(as.matrix(X %*% Sigma %*% t(X) + lambda * diag(1, nObs)))
 PMatrix <- solve(t(U) %*% Mlambda %*% U) %*% t(U) %*% Mlambda
 d.check <- PMatrix %*% y
 test.for.zero(d.check, obj$d.coef, tag = "checking d coef with inverse X")

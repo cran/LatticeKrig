@@ -266,7 +266,22 @@ functions.  To plot the returned list use
 \strong{ \code{LKrig.normalize.basis},
 \code{LKrig.normalize.basis.fast}, \code{LKrig.normalize.basis.slow}:} A vector of variances
 corresponding to the unnormalized process at the locations.
+
+
+\strong{ \code{LKrig.spind2spam}} This converts a matrix in spind sparse format to spam sparse format. Although useful for checking, LatticeKrig now uses the
+the \code{spam} function directly to do the conversion. 
+If obj is a list in spind format then the 
+
+\code{ obj2<- LKrig.spind2spam(obj)} 
+
+and
+
+\code{ obj2<- spam(obj[c("ind","ra")], nrow=obj$da[1], ncol=obj$da[2])}
+
+give the same result. 
+
 }
+
 \author{
 Doug Nychka
 }

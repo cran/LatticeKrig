@@ -66,12 +66,13 @@ LKrig.precision <- function(LKinfo, return.B = FALSE,
             1])) {
             stop("Mismatch of dimension with size in LKinfo")
         }
-        # convert to spam format:
-        tempB <- list(ind = ind, ra = ra, da = da) 
+        # convert to spind format:
+        # tempBtest <- list(ind = ind, ra = ra, da = da) 
+        # tempB<- spind2spam( tempBtest)
         if( verbose){
         	cat("dim of ind (fullB):", dim( ind), fill=TRUE)
         }
-        tempB <- LKrig.spind2spam(tempB)
+        tempB <- spam( list( ind=ind, ra), nrow=da[1], ncol=da[2])
          if( verbose){
         	cat("dim after spind to spam in precision:", dim( tempB), fill=TRUE)
         }

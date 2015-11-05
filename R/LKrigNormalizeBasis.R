@@ -22,7 +22,8 @@
 LKrigNormalizeBasis <- function(LKinfo, Level, PHI,   ...) {
 	# get  SAR matrix at level Level
 	tempB <- LKrigSAR(LKinfo, Level = Level)
-	tempB <- LKrig.spind2spam(tempB)
+	# tempB is in spind format
+	tempB<- spam( tempB[c("ind", "ra")], nrow=tempB$da[1], ncol=tempB$da[2])
 	# quadratic form involves applying inverse precision matrix to basis function evaluted at
 	# locations for evaluation
 wght <- LKrig.quadraticform(t(tempB) %*% tempB, PHI = PHI,

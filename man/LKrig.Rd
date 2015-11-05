@@ -660,7 +660,7 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike,
 # (to make the example run more quickly)
 
 \dontrun{ 
-  LKinfo<- LKrigSetup( x, nlevel=3, alpha=1, NC=5, a.wght=5,
+  LKinfo<- LKrigSetup( x, nlevel=3, nu=1, NC=5, a.wght=5,
                         lambda=.01)
 # maximize likelihood over lambda see help( LKrig.MLE) for details
 # this assumes the value of 5 for a.wght.  In many cases the fit is not

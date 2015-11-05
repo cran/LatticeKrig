@@ -57,6 +57,6 @@ Tensor.basis <- function(x1, centers, basis.delta,
         }
     } 
     out$ra<- temp  
-    out <- LKrig.spind2spam(out)
+    out <- spam(out[c("ind", "ra")], nrow=out$da[1], ncol= out$da[2] )
     return(out)
 }

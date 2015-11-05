@@ -56,7 +56,7 @@ Radial.basis <- function(x1, centers, basis.delta,
     }          
     # evaluate distance  with RBF ---  usually Wendland2.2   
     out$ra <- do.call(BasisFunction, list(d = out$ra/basis.delta) )
-    out <- LKrig.spind2spam(out)
+    out <- spam(out[c("ind", "ra")], nrow=out$da[1], ncol= out$da[2] )
     return(out)
 }
 

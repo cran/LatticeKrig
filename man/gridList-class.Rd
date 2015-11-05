@@ -4,7 +4,7 @@
 \alias{gridList-class}
 \alias{gridListInfo}
 \alias{gridList}
-\title{Class \code{"gridList"}. A  description of a regular, 
+\title{Class \code{"gridList"}. A  description of a regular and 
 	multidimensional grid.}
 \description{
 	This object is mainly designed to work with methods that take a 
@@ -57,3 +57,4 @@ grid<- structure(
  class= "gridList" )
 }
 \keyword{classes}
+

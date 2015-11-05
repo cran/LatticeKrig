@@ -92,7 +92,7 @@ n1<- nrow(x1)
 n2<- nrow(x2)
 
 look1<-Radial.basis(x1,x2, basis.delta=.5)
-look1<- spam2full(look1)
+look1<- as.matrix(look1)
 look2<- Wendland2.2(rdist( x1,x2)/.5)
 test.for.zero( look1,look2, tag="Radial.basis verses rdist")
 
@@ -110,7 +110,7 @@ test.for.zero( look1,look2, tag="Radial.basis verses rdist")
         normalize=FALSE, NC.buffer=1)
    xg<- make.surface.grid( list(x= seq( -90, -85,, 4), y= seq( 38, 42,,3)) )
    PHI1<- LKrig.basis(x, LKinfo)
-   look1<- spam2full( PHI1)
+   look1<- as.matrix( PHI1)
    dtemp<- LKinfo$latticeInfo$delta[1]* LKinfo$basisInfo$overlap
    # NOTE: 2d rectangle model returnd a gridList object for the 
    # centers so need to expand this into a grid of locations
