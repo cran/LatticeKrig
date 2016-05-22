@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -15,7 +15,7 @@
 % # GNU General Public License for more details.
 
 % # Modified DH Dec 2013
-% Ealier modifications DH 2/03/2012
+% Earlier modifications DH 2/03/2012
 
 \name{LKrig.MLE}
 \alias{LKrig.MLE}
@@ -23,7 +23,7 @@
 \alias{LKrig.make.par.grid}
 
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Simple function to search over covariance parameters for Lattice Krig}
+\title{Simple function to search over covariance parameters for Lattice Krig.}
 \description{
 Given a list of different covariance parameters for the Lattice Krig
 covariance model this function computes the likelihood or a profiled
@@ -91,7 +91,7 @@ sequentially replaces the alpha and a.wght arguments in this list by
 the values in par.grid but leaves everything else the same. If
 par.grid is not passed the parameter values in LKinfo are used to
 evaluate the likelihood. This option is most useful if one has fixed
-values of alpha and a.wght and the goal is to maximze the likelihood
+values of alpha and a.wght and the goal is to maximize the likelihood
 over lambda.  }
 
 \item{lowerBoundLogLambda}{Lower limit for lambda in searching for
@@ -99,7 +99,7 @@ MLE.}
 
 \item{nTasks}{If using Rmpi the number of slaves available.}
 
-\item{tol}{tolerance on log likelihood use to determine convergence}
+\item{tol}{Tolerance on log likelihood use to determine convergence.}
 
 \item{taskID}{If using Rmpi the slave id.}
 
@@ -113,12 +113,12 @@ the likelihood.}
        \code{y}, \code{Z} a covariate or \code{weights}.}  }
 \details{
 
-\strong{ \code{LKrigFindLambda}}: Uses a simple one dimensional optimizer 
+\strong{LKrigFindLambda:} Uses a simple one dimensional optimizer 
 \code{optimize}. To maximize the log likelihood for log lambda over the
 range: llambda.start + [-8,5]. This function is used to determine lambda in 
 \code{LatticeKrig}. 
 
-\strong{ \code{LKrig.MLE}}: This is a simple wrapper function to accomplish
+\strong{LKrig.MLE:} This is a simple wrapper function to accomplish
 repeated calls to the LKrig function to evaluate the profile
 likelihood and/or to optimize the likelihood over the lambda
 parameters. The main point is that maximization over the lambda
@@ -129,7 +129,7 @@ rho that can then be substituted back into the log full
 likelihood. This operation that is the default throughout LatticeKrig
 (and fields) can concentrate the likelihood on a reduced set
 of parameters. The further refinement when \code{lambda.profile==TRUE}
-is to maximized the concentrated likelihood over lambda and report
+is to maximize the concentrated likelihood over lambda and report
 this result. This will be a profile likelihood over the remaining
 parameters of the covariance.
 
@@ -150,7 +150,7 @@ parameters to search in the right form.  It is useful to normalize the
 alpha parameters to sum to one so that the marginal variance of the
 process is only parameterized by rho.  To make this easy to implement
 there is the option to specify the alpha parameters in the form of a
-mixture model so that the components are positive and add to one. (the
+mixture model so that the components are positive and add to one (the
 gamma variable below). If a component \code{gamma} is passed as a
 component of \code{par.grid} then this is assumed to be in the mixture
 model form and the alpha weights are computed from this. Note that
@@ -162,13 +162,13 @@ For those readers that use \code{which.max} these functions are natural
 extensions and are handy for looking at interpolated surfaces of the
 likelihood function.
 
-\strong{ \code{which.max.matrix }} Finds the maximum value in a matrix and
+\strong{which.max.matrix:} Finds the maximum value in a matrix and
 returns the row/column index.
 
 \strong{ \code{which.max.image }} Finds the maximum value in an image matrix and
 returns the index and the corresponding grid values.
 
-\strong{  \code{LKrig.make.par.grid }} This is usually used as an internal
+\strong{LKrig.make.par.grid:} This is usually used as an internal
 function that converts the list of parameters in par.grid and the
 LKinfo object into an more complex data structure used by
 LKrig.MLE. Its returned value is a "list of lists" to make the search
@@ -179,7 +179,7 @@ over different parameters combinations simple.
 
 \strong{LKrigFindLambda} 
 
-\item{summary}{Giving information on the optimzation over lambda.}
+\item{summary}{Giving information on the optimization over lambda.}
 
 \item{LKinfo}{Covariance information object.}
 
@@ -195,7 +195,7 @@ over different parameters combinations simple.
 
 \item{summary}{A matrix with columns: effective degrees of freedom, ln
 Profile likelihood, Generalized cross-validation function, MLE sigma,
-MLE rho, full likelihood and number of parameter evalutations. The
+MLE rho, full likelihood and number of parameter evaluations. The
 rows correspond to the different parameters in the rows of the
 \code{par.grid} components. }
 
@@ -221,9 +221,10 @@ likelihood.}
 \strong{which.max.matrix} Returns a 2 column matrix with row and column
 index of maximum. 
 
-\strong{which.max.image} Returns components x,y,z locating maximum value
-and component in giving the row and column of maximum in the image
-matrix. 
+\strong{which.max.image} For an object in image format 
+returns components x,y,z giving the location and the maximum value
+for the image.
+Also included is the component ind that is  the row and column indices for the maximum in the image matrix. 
 
 \strong{LKrig.make.par.grid} Returns a list with components, alpha,
 a.wght. Each component is a list where each component of the list is a
@@ -415,3 +416,4 @@ print( obj$rho.MLE)
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{spatial}
+

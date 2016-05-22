@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -30,7 +30,8 @@ function ( x, y, weights=NULL, Z,  X, U, LKinfo, verbose=FALSE)
     }		
 	n <- nrow(x)
 	if (any(duplicated(cat.matrix(x)))) 
-		stop("locations are not unique see help(LKrig) ")
+		warning("Not all x locations are unique: see the results of
+                           duplicated(cat.matrix(x)) ")
 	# make sure covariate is a matrix
 	if (!is.null(Z)) {
 		Z <- as.matrix(Z)

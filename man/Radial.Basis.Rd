@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -97,7 +97,7 @@ In pseudo R code for delta a scalar \code{Radial.basis} evaluates as
 The actual code uses a FORTRAN subroutine to search over distances
 less than delta and also returns the matrix in sparse format.
 
-The function \code{Tensor.basis} has simliar function as the radial 
+The function \code{Tensor.basis} has similar function as the radial 
 option. The main difference is that a slightly different distance function is 
 used to return the component distances for each dimension.  In pseudo R code
 for delta a scalar  and for just two dimensions  Tensor.basis  evaluates as
@@ -162,4 +162,5 @@ center<- as.matrix(center)
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{spatial}
+
 

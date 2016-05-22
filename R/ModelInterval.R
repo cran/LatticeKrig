@@ -1,7 +1,6 @@
-
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -20,7 +19,24 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
+
 ## LKrig model for 1-d data on an interval
+
+
+# This is not really needed but serves as an 
+# example of setting a default in the arguments passed 
+# LKrigSetup.
+#
+# This function is called in LKrigSetup before the
+# lattice is constucted.
+
+setDefaultsLKinfo.LKInterval <- function(object, ...) {
+  object$distance.type <- "Euclidean"
+  return(object)
+}
+
+## define the centers of the basis functions for the
+## multiresolution. These one grids are also the "lattices"
 
 LKrigSetupLattice.LKInterval <- function(object, x, verbose,
                                        NC, NC.buffer=5,  ...){
@@ -68,6 +84,10 @@ LKrigSetupLattice.LKInterval <- function(object, x, verbose,
  return( out )
 }
 
+# for a given level define spatial autoregressive weights
+# The interpretation is that these weights applied to the
+# coefficients result in uncorrelated random variables
+
 LKrigSAR.LKInterval<- function(object, Level, ... ){
    m<- object$latticeInfo$mLevel[Level] 
    a.wght<- (object$a.wght)[[Level]]
@@ -80,6 +100,8 @@ LKrigSAR.LKInterval<- function(object, Level, ... ){
    Bj<- c( 1:m, 1:(m-1), 2:m)
   return(list(ind = cbind(Bi, Bj), ra = ra, da = da)) 
 }  
+
+# For a given level return the lattice centers.
 
 LKrigLatticeCenters.LKInterval<- function(object, Level, ... ){
 # return locations as a gridList object to be consistent with the

@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -21,10 +21,19 @@
 
 
 setDefaultsLKinfo.LKRectangle <- function(object, ...) {
-	# logic for V happens in lattice setup  	
-	#  	if( is.null(object$basisInfo$V[1])){
-#  		object$basisInfo$V <- diag( rep(1,2))
-#  	}
+# object ==  LKinfo intital list passed to the LKrigSetup function 
+# logic for V happens in lattice setup  	
+        if( is.null(object$lonlatModel) ){
+          object$lonlatModel<- object$distance.type=="Chordal" |
+              object$distance.type=="GreatCircle"
+        }
+  if( object$lonlatModel){
+    stop( "Great Circle or chordal distance not supported.
+           See help(LKRectangle for alternatives")
+  }
+       if( !is.null( object$basisInfo$V) & object$lonlatModel){
+               stop("V not allowed with chordal or great circle distance")
+       }
 return(object)
 }
 
@@ -46,10 +55,10 @@ LKrigSetupLattice.LKRectangle <- function(object, x, verbose, NC = NULL,
 	#        stop("distance type is not supported (or is misspelled!).")        
 #     }
 # find range of scaled locations
-if (is.null(object$basisInfo$V)) {
+if (is.null(LKinfo$basisInfo$V)) {
 		Vinv <- diag(1, 2)
 	} else {
-		Vinv <- solve(object$basisInfo$V)
+		Vinv <- solve(LKinfo$basisInfo$V)
 	}
 	range.x <- apply(x %*% t(Vinv), 2, "range")
 	if (verbose) {
@@ -57,12 +66,12 @@ if (is.null(object$basisInfo$V)) {
 	}
 	grid.info <- list(xmin = range.x[1, 1], xmax = range.x[2, 1], ymin = range.x[1, 
 		2], ymax = range.x[2, 2], range = range.x)
-	# set the coarsest spacing of centers           
+# set the coarsest spacing of centers           
 	d1 <- grid.info$xmax - grid.info$xmin
 	d2 <- grid.info$ymax - grid.info$ymin
-	grid.info$delta <- max(c(d1, d2))/(NC - 1)
-	#
-	# actual number of grid points is determined by the spacing delta
+  grid.info$delta <- max(c(d1, d2))/(NC - 1)
+#
+# actual number of grid points is determined by the spacing delta
 # delta is used so that centers are equally
 # spaced in both axes and NC is the maximum number of grid points
 # along the larger range. So for a rectangular region
@@ -92,13 +101,16 @@ NC.buffer.x <- NC.buffer
 		buffer.width.x <- NC.buffer.x * delta
 		buffer.width.y <- NC.buffer.y * delta
 		# rectangular case
-		grid.list <- list(x = seq(grid.info$xmin - buffer.width.x, grid.info$xmax + 
-			buffer.width.x, delta), y = seq(grid.info$ymin - buffer.width.y, 
-			grid.info$ymax + buffer.width.y, delta))
+		grid.list <- list(
+		    x = seq(grid.info$xmin - buffer.width.x, grid.info$xmax + 
+		 	           buffer.width.x, delta),
+		    y = seq(grid.info$ymin - buffer.width.y, grid.info$ymax +
+		             buffer.width.y, delta)
+		                )
 		class(grid.list) <- "gridList"
 		mx[j, 1] <- length(grid.list$x)
 		mx[j, 2] <- length(grid.list$y)
-		mxDomain[j, ] <- mx[j, ] - 2 * NC.buffer
+		mxDomain[j, ] <- mx[j, ] - 2 * NC.buffer            
 		grid.all.levels <- c(grid.all.levels, list(grid.list))
 	}
 	# end multiresolution level loop
@@ -108,24 +120,26 @@ mLevel <- mx[, 1] * mx[, 2]
 	offset <- as.integer(c(0, cumsum(mLevel)))
 	m <- sum(mLevel)
 	mLevelDomain <- (mx[, 1] - 2 * NC.buffer.x) * (mx[, 2] - 2 * NC.buffer.y)
-	# first five components are used in the print function and
-	# should always be created.
+
+# first five components are used in the print function and
+# should always be created.        
 # The remaining compoents are specific to this geometry.
-out <- list(m = m, offset = offset, mLevel = mLevel, delta = delta.save, 
+        out <- list(m = m, offset = offset, mLevel = mLevel, delta = delta.save,                 
 		rangeLocations = rangeLocations)
 	# specific arguments for LKrectangle 
 	out <- c(out, list(mLevelDomain = mLevelDomain, mx = mx, mxDomain = mxDomain, 
-		NC.buffer = NC.buffer, grid = grid.all.levels, grid.info = grid.info))
+                           NC.buffer = NC.buffer, grid = grid.all.levels, grid.info = grid.info)
+                            
+          )
 	return(out)
 }
-
-
 
 LKrigSetupAwght.LKRectangle <- function(object, ...) {
 	# the object here should be of class LKinfo	
 	a.wght <- object$a.wght
 	nlevel <- object$nlevel
 	mx <- object$latticeInfo$mx
+       
 	if (!is.list(a.wght)) {
 		# some checks on a.wght
 		# coerce a.wght to list if it is passed as something

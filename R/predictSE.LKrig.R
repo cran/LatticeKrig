@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -59,8 +59,8 @@ if (is.null(Znew) & (object$nZ > 0)) {
     # as "observations"
     # it may not be obvious why this formula makes sense!	
 	hold <- LKrig.coef(
-	                   Mc = object$Mc,
-	                   wX = object$wX, 
+	          GCholesky = object$Mc,
+	                 wX = object$wX, 
 		               wU = object$wU,
 		               wy = wk0,
 		           lambda = lambda,

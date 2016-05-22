@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -34,7 +34,7 @@ variances.) Despite the simple syntax,
 LatticeKrig still takes advantage of the multi-resolution feature of
 \code{LKrig} and any \code{LKrig} parameter can be passed through the
 function call. See the example below for varying the range parameter.
-Also see \code{\link{LKinfo}} for documentation on the complete object that describes the LatticeKrig model and \code{\link{LKGeometry}} for documentation on extending or adding other spatial models to this package. 
+Also, see \code{\link{LKinfo}} for documentation on the complete object that describes the LatticeKrig model and \code{\link{LKGeometry}} for documentation on extending or adding other spatial models to this package. 
 
 The returned value from this function can be used subsequently for prediction, 
 conditional simulation, and other parts of the spatial analysis. See 
@@ -68,16 +68,19 @@ LatticeKrig(x, y, Z = NULL, nlevel = 3, LKinfo = NULL,
 
  \item{verbose}{ If TRUE print out intermediate results. }
 
- \item{x}{Spatial locations of observations. This should be a matrix
-   where the columns are the number of dimensions and rows index the observations.
-    Or for the \code{print.LatticeKrig} the returned object from LatticeKrig for a print summary. }
+ \item{x}{Spatial locations of observations.  For the \code{LatticeKrig} function this should be a matrix
+   where the columns index the spatial dimensions and rows index the observations.
+For example for 100 2-d locations, \code{x} would be a  100X2 matrix. 
+
+    Or for the function \code{print.LatticeKrig} \code{x} is the returned object from  the \code{LatticeKrig}
+function. }
     
       \item{X}{For linear inverse problems the matrix that maps coefficients of the basis to the   
   	 predicted values of observations. X must be in spam format. To convert from spind or dense format  to 
-  	 spam format see \code{help(spam)} and also as an alternative  
+  	 spam format see \code{help(spam)} as an alternative  
   	 \code{\link{spind2spam}}.}
   	 
-  	 \item{U}{For linear inverse problems the matrix that maps coefficients of the   fixed part of model to the predicted
+  	 \item{U}{For linear inverse problems the matrix that maps coefficients of the   fixed part of the model to the predicted
 	values of observations.}
   
  
@@ -87,7 +90,10 @@ LatticeKrig(x, y, Z = NULL, nlevel = 3, LKinfo = NULL,
   that are distinct from the default first order polynomial in
   \code{x} (i.e. the spatial drift).}
 
-  \item{\dots}{Additional arguments to pass to LKrig. See help(LKrig) }
+  \item{\dots}{Additional arguments to pass to LKrig. See help(LKrig) for a complete list. But for convenience we note that  if you get some pesky memory warnings from spam
+  you can set the storage higher by adding the argument \code{choleskyMemory}. For example to bump up to 2E6 include:
+  \code{choleskyMemory=list(nnzR= 2E6)}.
+  }
 
 }
 \details{
@@ -101,20 +107,20 @@ covariance and at least specifying all the relevant parameters may be
 discouraging to a new (or impatient!) user.  LatticeKrig is a "wrapper" that generates some simplified, default model choices to call the more general
 function \code{LKrig}. It is useful for users not fully familiar with
 the LatticeKrig methodology or those that wish to try a default
-approach to get a quick look at a spatial analysis. You always go back and add some specific nondefault choices to the LatticeKrig call (e.g. changing \code{a.wght}). 
+approach to get a quick look at a spatial analysis. You always go back and add some specific non default choices to the LatticeKrig call (e.g. changing \code{a.wght}). 
 For the 2-d case the  default values
 are set to give about 4 times as many basis functions as observations, use 5 extra lattice points on the edge to minimize boundary effects, 
 and to use four levels of multi-resolution. 
-An important default is that a linear spatial drift is include in the model and so the model will relax to a linear prediction based on the x values in the absence of a spatial component. In other words the model includes by default a fixed part that is linear in x.
+An important default is that a linear spatial drift is included in the model so the model will relax to a linear prediction based on the x values in the absence of a spatial component. In other words, the model includes by default a fixed part that is linear in x.
 The spatial correlation
 range is nearly stationary and set large to mimic a thin-plate
 spline. The smoothness mimics the Whittle covariance function (
-smoothness = 1 for the Matern).  (see \link{LKrig.cov.plot} to get a plot of
+smoothness = 1 for the Matern).  (See \link{LKrig.cov.plot} to get a plot of
 the implied covariance function.) LatticeKrig also provides maximum likelihood 
 estimates
-of the measurement error standard deviation ("sigma") and process varaince parameter ("rho") that are perhaps the 
+of the measurement error standard deviation ("sigma") and process variance parameter ("rho") that are perhaps the 
 parameters that most effect the shape of the estimated spatial field. The ubiquitous
-parameter lambda thorugh out LatticeKrig is just the reparametrization lambda == sigma^2 / rho.
+parameter lambda throughout LatticeKrig is just the reparametrization lambda == sigma^2 / rho.
 
 This top level function is pitched with all the caveats that
 statistical model assumptions should always be checked and applying
@@ -133,13 +139,13 @@ The main call inside \code{LatticeKrig} is to \code{LKrig} and so a
 \code{LKrig} object is returned. Thus all of the functionality that
 comes with \code{LKrig} objects such as \code{predict},
 \code{summary}, \code{predictSurface}, etc. remain the same as
-described in \code{LKrig}.  Also see the components \code{residuals}
+described in \code{LKrig}.  Also, see the components \code{residuals}
 and \code{fitted.values} in the returned object for these parts of the
 fitted spatial model. The component \code{LKinfo} has all the details
-that specfiy the basis functions and covariance model.
+that specify the basis functions and covariance model.
 
 This function also supports a model where the observations are simply
-expressed as linear combinations of the coeffients. Typically these 
+expressed as linear combinations of the coefficients. Typically these 
 linear maps represent observing integrals or weighted combinations of the 
 fields. See help(LKrig) for an example of how this model is set up at the end of the
 Examples section.  
@@ -161,6 +167,7 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo, LKrig.sim.conditional
 # thin plate spline-like model with the lambda parameter estimated by
 # maximum likelihood. Default choices are made for a.wght, nlevel, NC
 # and alpha.
+
   obj<- LatticeKrig( x, y)
 \dontrun{
 # summary of fit and a plot of fitted surface
@@ -171,6 +178,21 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo, LKrig.sim.conditional
 # prediction standard errors
   out.se<- predictSE( obj, xnew= x)
 }
+#
+# In this example lon/lat are treated as just Euclidean coordinates 
+# a quick adjustment to account for the difference in physical distance in N-S verses E_W
+# is to just scale the longitude degrees to be comparable to degrees in latitude
+# at least in the middle of the domain. The assumption is that for small spatial
+# domains this approximation will not be bad for the coordinates at the edges too.
+# You accomplish this by adding a scaling, V matrix:
+\dontrun{
+  meanLat<- mean( x[,2])*pi/180
+  Vlonlat <- diag(  c( 1/cos(meanLat), 1) )
+  obj1<- LatticeKrig( x, y, V = Vlonlat )
+}
+#
+# The example below for North American Rainfall
+# has some more strategies for adjusting to an approximate spherical geometry.
 
 \dontrun{
 # Refit using the tensor product type of basis functions
@@ -261,6 +283,7 @@ cat( "a.wght:", a.wghtGrid[k], "ln Profile Like:",
 # JCGS LatticeKrig paper.
 #########################################################################
 
+#### Here is an example of dealing with approximate spherical geometry.
 \dontrun{
 data(NorthAmericanRainfall)
 library(mapproj)
@@ -268,9 +291,18 @@ x<- cbind(NorthAmericanRainfall$longitude, NorthAmericanRainfall$latitude)
 y<- NorthAmericanRainfall$precip
 log.y<- log(y)
 elev<- NorthAmericanRainfall$elevation
+# this is a simple projection as part of this and handled by the mapproj package
 x.s<- mapproject( x[,1], x[,2], projection="stereographic")
 x.s<- cbind( x.s$x, x.s$y)
 
+# an alternative is to transform coordinates using another projection,
+# e.g. a Lambert conformal projection
+# with the project function from the rgdal package
+# library( rgdal)
+# x.s<- project(x,"+proj=lcc +lat_1=22 +lat_2=58 +lon_0=-93 +ellps=WGS84")
+# this package has the advantage that the inverse projection is also 
+# included ( inv=TRUE) so it is easy to evaluate the surface back on a Mercator grid.
+             
 obj0<- LatticeKrig(x.s, log.y, Z=elev )
 
 fitSurface<- predictSurface( obj0, drop.Z=TRUE)
@@ -285,4 +317,5 @@ map( "world", add=TRUE, col="grey30", lwd=3, proj="")
 
 }
 \keyword{spatial}
+
 

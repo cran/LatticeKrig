@@ -35,6 +35,8 @@ S3method(LKrigLatticeCenters,LKRectangle)
 S3method(LKrigLatticeCenters,LKRing)
 S3method(LKrigLatticeCenters,default)
 
+S3method(LKrigLatticeScales,default)
+
 S3method(LKrigSetupLattice,LKBox)
 S3method(LKrigSetupLattice,LKCylinder)
 S3method(LKrigSetupLattice,LKInterval)
@@ -42,11 +44,13 @@ S3method(LKrigSetupLattice,LKRectangle)
 S3method(LKrigSetupLattice,LKRing)
 S3method(LKrigSetupLattice,default)
 
+S3method(setDefaultsLKinfo,LKInterval)
 S3method(setDefaultsLKinfo,LKBox)
 S3method(setDefaultsLKinfo,LKCylinder)
 S3method(setDefaultsLKinfo,LKRectangle)
 S3method(setDefaultsLKinfo,LKRing)
 S3method(setDefaultsLKinfo,default)
+
 
 S3method(setDefaultsLKinfo,default)
 

@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -22,8 +22,8 @@
 LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
   {
     nlevel        <- LKinfo$nlevel
-    delta         <- LKinfo$latticeInfo$delta
-    overlap       <- LKinfo$basisInfo$overlap
+#    delta         <- LKinfo$latticeInfo$delta
+#    overlap       <- LKinfo$basisInfo$overlap
     normalize     <- LKinfo$normalize
     distance.type <- LKinfo$distance.type
     fast          <-  attr( LKinfo$a.wght,"fastNormalize")
@@ -59,21 +59,21 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
     }
     if( verbose){
           cat("LKrig.basis: Dim x1 ",  dim( x1), fill=TRUE)
-        }
+    }
+    basis.delta <- LKrigLatticeScales(LKinfo)
     for (l in 1:nlevel) {
         # Loop over levels and evaluate basis functions in that level.
         # Note that all the center information based on the regualr grids is
         # taken from the LKinfo object
         #  set the range of basis functions, they are assumed to be zero outside
         #  the radius basis.delta and according to the distance type.
-        basis.delta <- delta[l] * overlap
         # 
         # There are two choices for the type of basis functions
         # 
         centers<- LKrigLatticeCenters( LKinfo,Level=l )
         if(LKinfo$basisInfo$BasisType=="Radial" ){ 
         	 t1<- system.time(
-        PHItemp <- Radial.basis(  x1, centers, basis.delta,
+        PHItemp <- Radial.basis(  x1, centers, basis.delta[l],
                                 max.points = LKinfo$basisInfo$max.points,
                              mean.neighbor = LKinfo$basisInfo$mean.neighbor, 
                        BasisFunction = get(LKinfo$basisInfo$BasisFunction),
@@ -83,10 +83,10 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
                              }
         if(LKinfo$basisInfo$BasisType=="Tensor" ){  
         	 t1<- system.time(            
-        PHItemp <- Tensor.basis(  x1, centers, basis.delta,
+        PHItemp <- Tensor.basis(  x1, centers, basis.delta[l],
                                 max.points = LKinfo$basisInfo$max.points,
                              mean.neighbor = LKinfo$basisInfo$mean.neighbor, 
-                       BasisFunction = get(LKinfo$basisInfo$BasisFunction),
+                             BasisFunction = get(LKinfo$basisInfo$BasisFunction),
                              distance.type = LKinfo$distance.type)
                              )
                              }      	                            
@@ -109,12 +109,20 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
                wght<- LKrigNormalizeBasisFast(LKinfo,  Level=l,  x=x1)
             	}
             	)
+                
             	if( verbose){
             		cat("time for normalization", "fast=", fast,  fill=TRUE)
             		print( t2)
             	}
 # now normalize the basis functions by the weights treat the case with one point separately
 # wghts are in scale of inverse marginal variance of process
+# the wght maybe zero if the x location does not overlap with nay basis function (e.g. x outside spatial
+# adjust for this case by setting wght =1. This should be valid because the row of PHI will be zero
+                indZero <- wght == 0
+                if( any( indZero) ){
+                    warning( "Some normalization weights are zero")
+                }
+                wght[ indZero] <- 1.0
            if( nrow( x1)>1){
               PHItemp <- diag.spam( 1/sqrt(wght) ) %*% PHItemp
            }

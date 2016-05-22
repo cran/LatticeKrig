@@ -20,7 +20,7 @@ Type 'q()' to quit R.
 > # University Corporation for Atmospheric Research
 > # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
 > 
-> library(LatticeKrig)
+> library( LatticeKrig)
 Loading required package: spam
 Loading required package: grid
 Spam version 1.3-0 (2015-10-24) is loaded.
@@ -42,26 +42,9 @@ Loading required package: maps
  # 'lakes' database. Type '?world' or 'news(package="maps")'.  #
 
 
-> options(echo = FALSE)
-Testing:  comparing predicted values LKrig and mKrig
-PASSED test at tolerance  1e-08
-Testing:  
-comparing effective degrees of freedom from MC trace (same seed) LKrig and mKrig
-PASSED test at tolerance  1e-08
-Testing:  comparing predicted values LKrig and Krig
-PASSED test at tolerance  1e-08
-Testing:  comparing SE values LKrig and mKrig equal weights
-PASSED test at tolerance  1e-08
-Testing:  comparing SE values LKrig and Krig equal weights
-PASSED test at tolerance  1e-08
-Testing:  sanity for SE Krig and mKrig unequal weights
-PASSED test at tolerance  1e-08
-Testing:   SE LKrig and mKrig unequal weights
-PASSED test at tolerance  1e-08
-Testing:  check on SE values with drop.Z=FALSE
-PASSED test at tolerance  1e-08
-All done with SE tests TRUE> 
-> 
+> options( echo=FALSE)
+Testing:  LKCylinder basis using expliciti formula
+PASSED test at tolerance  1e-10
 > proc.time()
    user  system elapsed 
- 18.148   0.114  18.340 
+  0.979   0.069   1.043 

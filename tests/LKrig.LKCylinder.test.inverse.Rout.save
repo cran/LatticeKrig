@@ -15,10 +15,7 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-> # LatticeKrig
-> # Copyright 2004-2011, Institute for Mathematics Applied Geosciences
-> # University Corporation for Atmospheric Research
-> # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
+> 
 > 
 > library(LatticeKrig)
 Loading required package: spam
@@ -43,25 +40,14 @@ Loading required package: maps
 
 
 > options(echo = FALSE)
-Testing:  comparing predicted values LKrig and mKrig
+Testing:  checking d coef with inverse X
 PASSED test at tolerance  1e-08
-Testing:  
-comparing effective degrees of freedom from MC trace (same seed) LKrig and mKrig
+Testing:  checking c coef with inverse X
 PASSED test at tolerance  1e-08
-Testing:  comparing predicted values LKrig and Krig
+Testing:  checking A matrix coef with inverse X
 PASSED test at tolerance  1e-08
-Testing:  comparing SE values LKrig and mKrig equal weights
+Testing:  SE inverse from first formulas
 PASSED test at tolerance  1e-08
-Testing:  comparing SE values LKrig and Krig equal weights
-PASSED test at tolerance  1e-08
-Testing:  sanity for SE Krig and mKrig unequal weights
-PASSED test at tolerance  1e-08
-Testing:   SE LKrig and mKrig unequal weights
-PASSED test at tolerance  1e-08
-Testing:  check on SE values with drop.Z=FALSE
-PASSED test at tolerance  1e-08
-All done with SE tests TRUE> 
-> 
 > proc.time()
    user  system elapsed 
- 18.148   0.114  18.340 
+  1.243   0.031   1.265 

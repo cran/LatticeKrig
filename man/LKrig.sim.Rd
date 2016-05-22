@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -56,7 +56,7 @@ describing a multiresolution basis with a Markov random field used for
 the covariance of the basis coefficients. This list is created in
 \code{LKrig} and is returned as part of the output object or in a more
 hands on manner directly using \code{LKrigSetup} (See section on
-returned Value below for this list's description.)}
+returned value below for this list's description.)}
 
 
 \item{M}{Number of independent simulated fields.}
@@ -68,7 +68,7 @@ returned Value below for this list's description.)}
 \item{LKrigObj}{An \code{LKrig} object, i.e. the output list returned by
 \code{LKrig}.}
 
-\item{seed}{Seed to set random number generator}
+\item{seed}{Seed to set random number generator.}
 
 \item{x1}{ A two column matrix of 2-dimension locations to evaluate
 basis functions or the first set of locations to evaluate the
@@ -79,7 +79,7 @@ index the different locations: to be precise \code{x1[i,1:2]} are the
 \item{x.grid}{Locations to evaluate conditional fields. This is in the
 form of a two column matrix where each row is a spatial location.}
 	
-\item{Z.grid}{The covariates that are assoicated with the x.grid
+\item{Z.grid}{The covariates that are associated with the x.grid
 values. This is useful for conditional simulation where the fields are
 evaluated at x.grid locations and using covariate values
 Z.grid. Z.grid is matrix with columns indexing the different
@@ -91,9 +91,9 @@ the LKinfo list returned by LKrig.}
 
 \item{verbose}{If TRUE prints out debugging information.}
 
-\item{ghat}{The predicted surface at the grid}
+\item{ghat}{The predicted surface at the grid.}
 
-\item{index}{The index for the random seed to use in the vector \code{seeds}}
+\item{index}{The index for the random seed to use in the vector \code{seeds}.}
 
 \item{PHIGrid}{Basis function matrix at grid points.}
 
@@ -102,10 +102,10 @@ the LKinfo list returned by LKrig.}
 } 
 
 \details{
-The simulation of the unconditiational random field is done by
+The simulation of the unconditional random field is done by
 generating a draw from the multi-resolution coefficients using a
 Cholesky decomposition and then multiplying by the basis functions to
-evaluate the field at arbitrary points. Currently there is no
+evaluate the field at arbitrary points. Currently, there is no
 provision to exploit the case when one wants to simulate the field on
 a regular grid. The conditional distribution is a draw from the
 multivariate normal for the random fields conditioned on the
@@ -132,7 +132,7 @@ of the model is also handled correctly in this algorithm.  See the
 commented source for \code{LKrig.sim.conditional} for the details of
 this algorithm.
 
-\code{simConditionalDraw} is low level function that is called to generate each
+\strong{simConditionalDraw} is low level function that is called to generate each
 ensemble member i.e. each draw from the conditional distribution. The large number of 
 arguments is to avoid recomputing many common elements during the loop in generating these
 draws. In particular passing the  basis function matrices avoid having to recompute the 
@@ -143,10 +143,10 @@ normalization at each step, often an intensive computation for a large grid.
 
 \value{
 
-\code{LKrig.sim:} A matrix with dimensions of \code{nrow(x1)} by
+\strong{LKrig.sim:} A matrix with dimensions of \code{nrow(x1)} by
   \code{M} of simulated values at the locations \code{x1}.
 
-\code{LKrig.sim.conditional:} A list with the components. \describe{
+\strong{LKrig.sim.conditional:} A list with the components. \describe{
 \item{xgrid}{The locations where the simulated field(s) are
 evaluated.}
 
@@ -211,4 +211,5 @@ LKrig, mKrig, Krig, fastTps, Wendland
 }
 
 \keyword{spatial}
+
 

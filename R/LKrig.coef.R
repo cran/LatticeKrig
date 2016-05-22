@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -19,18 +19,18 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.coef <- function(Mc, wX, wU, wy, lambda, verbose=FALSE) {
+LKrig.coef <- function(GCholesky, wX, wU, wy, lambda, verbose=FALSE) {
     if (length(lambda) > 1) {
         stop("lambda must be a scalar")
     }
     if( !is.null(wU) ){
-        A <- forwardsolve(Mc, transpose = TRUE, t(wX) %*% wU, 
+        A <- forwardsolve(GCholesky, transpose = TRUE, t(wX) %*% wU, 
                               upper.tri = TRUE)
-        A <- backsolve(Mc, A)
+        A <- backsolve(GCholesky, A)
         A <- t(wU) %*% (wU - wX %*% A)/lambda
 #   A is  (T^t M^{-1} T)
-        b <- forwardsolve(Mc, transpose = TRUE, t(wX) %*% wy, upper.tri = TRUE)
-        b <- backsolve(Mc, b)
+        b <- forwardsolve(GCholesky, transpose = TRUE, t(wX) %*% wy, upper.tri = TRUE)
+        b <- backsolve(GCholesky, b)
         b <- t(wU) %*% (wy - wX %*% b)/lambda
 # b is   (T^t M^{-1} y)
 # Save the intermediate matrix   (T^t M^{-1} T) ^{-1}
@@ -47,16 +47,24 @@ LKrig.coef <- function(Mc, wX, wU, wy, lambda, verbose=FALSE) {
        residualFixed<- wy
    }     
 # coefficients of basis functions.
-    c.coef <- forwardsolve(Mc, transpose = TRUE,
+    c.coef <- forwardsolve(GCholesky, transpose = TRUE,
                        t(wX) %*% (residualFixed), upper.tri = TRUE)
-    c.coef <- backsolve(Mc, c.coef)
-#    c.mKrig <- sqrt(weights) * (residualFixed - wX %*% c.coef)/lambda
+# This is the formula from the LKrig article to 
+# to evaluate  M^{-1}. The W from this formula is absorbed into weighting of
+# the observations and fixed part of the model. ( e.g. wy is  W^{1/2}y )
+# Note that older versions have a mistake 
+# where the factor (1/lambda) has been omitted. quad.form is not needed for the 
+# coefficients but is used in computing the likelihood.
+#     
+    quad.form<-  (1/lambda) * c( colSums(as.matrix(residualFixed^2))  - 
+                                    colSums( as.matrix( c.coef^2) ) )
+   c.coef <- backsolve(GCholesky, c.coef)
     if( verbose){
     	cat("d.coef: ", d.coef, fill=TRUE)
     	cat( fill=TRUE)
     	cat("c.coef: ", c.coef, fill=TRUE)
     }
-    
-    return( list(c.coef = c.coef, d.coef = d.coef, Omega = Omega) )
+    return( list(c.coef = c.coef, d.coef = d.coef,
+                 Omega = Omega, quad.form=quad.form) )
 }
 

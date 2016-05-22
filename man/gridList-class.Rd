@@ -1,3 +1,19 @@
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2016
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
 \name{gridList-class}
 \Rdversion{1.1}
 \docType{class}
@@ -8,7 +24,7 @@
 	multidimensional grid.}
 \description{
 	This object is mainly designed to work with methods that take a 
-	set of locations organized on a grid. The object is list where
+	set of locations organized on a grid. The object is a list where
 	there are as many components as dimensions and  each list component is a vector of values being the grid points in that dimension. It is consistent with the older use of the older \code{grid.list} format used in the fields package.
 	This form is somewhat redundant because for an equally spaced grid all one needs is the beginning value, spacing and number of points but it makes it simpler to pass the grid information to functions such as image and contour. 
 	
@@ -57,4 +73,5 @@ grid<- structure(
  class= "gridList" )
 }
 \keyword{classes}
+
 

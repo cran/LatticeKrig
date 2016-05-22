@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -14,7 +14,7 @@
 % # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % # GNU General Public License for more details.
 
-\name{Periodic geometries for  spherical data.}
+\name{Periodic geometries for  spherical data. } 
 \alias{LKRing}
 \alias{LKCylinder}
 \title{Geometries to approximate a cross section of 
@@ -24,7 +24,7 @@
 \description{This model is a simple geometry that assumes the first coordinate is 
 	periodic in the interval [0,360]. The remaining coordinates are regular (Euclidean).   
 	This might be used to approximate a section of spherical data that excludes the 
-	polar caps. These approximations are useful because one can take advantage og
+	polar caps. These approximations are useful because one can take advantage of
 	faster methods based on rectangular grids rather the more complex grids on a
 	sphere. The disadvantage is that the mapping from these coordinates to the
 	sphere is distorted as one gets close to the poles. 
@@ -41,7 +41,7 @@
 		\bold{\code{LKRing}}
 		This model follows the Mercator projection for a sphere where 
 		longitude and latitude are treated as Euclidean coordinates except that 
-		longitude is periodic. So the actually coordinates represent the surface of 
+		longitude is periodic. So the actual coordinates represent the surface of 
 		 cylinder which is one way of visualizing the Mercator projection. 
 		To keep things simple the first coordinate is 
 		essentially hardwired to be in the scale of degrees (sorry for all you fans of radians) and wrapping 
@@ -49,17 +49,17 @@
 		geometry to be comparable in spatial scale to degrees (use the \code{V}
 		argument in LKrigSetup). However, if the second coordinate can be interpreted as a latitude it is often reasonable to assume the spatial scales are the same in these two coordinates. 
 		
-		Note this geometry can also be used to represent an equitorial section of a spherical volume. Here the first coordinate is longitude but the second can be 
+		Note this geometry can also be used to represent an equatorial section of a spherical volume. Here the first coordinate is longitude but the second can be 
 		interpreted as a radius from the sphere's center. 
 		This is a case where care needs to taken to scale the radial component to make sense with the degrees in the first.  
 		
 		\bold{\code{LKCylinder}}
-		This is just the three dimension extension of LKRing
+		This is just the three dimensional extension of LKRing
 		with the first coordinate being periodic in (0,360) and the
 		remaining two treated as Euclidean	
 	
 	The periodicity in the first coordinate is implemented in two places. 
-	First in setting up the spatial autoregresion (SAR) weights, the weights
+	First in setting up the spatial autoregression (SAR) weights, the weights
 	reflect the wrapping. Second in finding distances between coordinates the
 	nodes in the lattice has the first coordinate tagged as being periodic. 
 	Specifically in LKrigSetupLattice the gridList for each lattice has an attribute vector that indicates which coordinates are periodic. This information is used in the distance function LKrigDistance when called with arguments of a matrix and a gridList. 
@@ -67,7 +67,7 @@
 	Why is this so complicated? This structure is designed around the fact that one 
 	can find the pairwise distance matrix quickly between an arbitrary set of locations and a rectangular grid (a gridList object in this package).
 	The grid points within a delta radius of an arbitrary point can be found by simple arithmetic and indexing.  Because these two geometries have regular 
-	lattice spacings is it useful to explot this. See \code{ \link{LKrigDistance}}
+	lattice spacings is it useful to exploit this. See \code{ \link{LKrigDistance}}
 	for more details about the distance function. 
 	
 	Finally, we note that for just patches of the sphere one can use the usual

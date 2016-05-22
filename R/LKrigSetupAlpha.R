@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -32,9 +32,12 @@ LKrigSetupAlpha.default<- function( object, ...){
           alpha<- 1.0
         }
        else{
-# define alpha based on the power nu.       	
-       	if( !is.null( object$nu)){
-       		alpha<- exp( (1:nlevel)*object$nu )
+           # define alpha based on the power nu.
+           # See Corollary 4.1   Nychka et al. (2015) JCGS
+           if( !is.null( object$nu)){
+                thetaL<-  2^(-1*(1:nlevel))
+       		alpha<- thetaL^(2*object$nu)
+                # normalize to sum to 1
        		alpha<- alpha/ sum( alpha)
        	}
        	else{

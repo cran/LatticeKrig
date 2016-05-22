@@ -1,19 +1,38 @@
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2016
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
 \name{LKrigLatticeCenters}
 \alias{LKrigLatticeCenters}
-\alias{LKrigLatticeCenters.default}        
+\alias{LKrigLatticeCenters.default} 
+\alias{LKrigLatticeScales}
+\alias{LKrigLatticeScales.default}
 \alias{LKrigLatticeCenters.LKBox}        
 \alias{LKrigLatticeCenters.LKInterval}     
 \alias{LKrigLatticeCenters.LKRectangle}
 \alias{LKrigLatticeCenters.LKRing}
 \alias{LKrigLatticeCenters.LKCylinder}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Method to create the locations associated with the lattice points.
+\title{Methods to report the locations  or scales associated with the lattice points.
 %%  ~~function to do ... ~~
 }
-\description{This method takes the lattice information for a particular geometry 
-	from an LKinfo object and finds the locations at each lattice points.
+\description{These method takes the lattice information for a particular geometry 
+	from an LKinfo object and finds the locations or scales at each lattice points.
 	 These locations are the 
-	"nodes" or centers of the basis functions. The 
+	"nodes" or centers of the basis functions. The "scales" scales that distance function when the 
+	basis functions are evaluated and combine the spacing of lattice and the specificed overlap. 
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
@@ -24,6 +43,8 @@ LKrigLatticeCenters(object, ...)
 \method{LKrigLatticeCenters}{LKBox}(object, Level, ...)
 \method{LKrigLatticeCenters}{LKCylinder}(object, Level = 1, physicalCoordinates = FALSE, ...)
 \method{LKrigLatticeCenters}{LKRing}(object, Level = 1, physicalCoordinates = FALSE, ...)
+LKrigLatticeScales(object, ...)
+\method{LKrigLatticeScales}{default}(object, ...)
 
 }
 %- maybe also 'usage' for other objects documented here.
@@ -54,13 +75,24 @@ sight integral through the domain. This integral is obvious found with respect t
 	gives an error warning that a version based on the geometry is required. 
 	Typically generating these lattice points from the information in LKinfo
 	should be easy as the grid points are already determined. 
+	
+	The scales reported are in the simplest form  delta*overlap where delta is a 
+	vector of the lattice spacings and overlap (default is 2.5) is the amount of 
+	overlap between basis functions. 
+	
+	See the source for the function \code{\link{LKrig.basis}} for how each of these
+	is used to evaluate the basis functions. 
+	
+	
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-A matrix where the rows index the points and columns index dimension. 
-In the case of the LKRectangle geometry  attribute is added to indicate the
+\strong{Centers} A matrix where the rows index the points and columns index dimension. 
+In the case of the LKRectangle geometry attribute is added to indicate the
 grid points used to generate the lattice. 
 
+\strong{Scales} The default method returns the vector  \code{delta*offset} with length being the
+number of multiresolution levels. 
 }
 
 \author{
@@ -95,6 +127,8 @@ grid points used to generate the lattice.
     look1<- LKrigLatticeCenters( LKinfo, Level=1)               
     look2<- LKrigLatticeCenters( LKinfo, Level=1, physicalCoordinates=TRUE )
     look3<- polar2xy( look2$Locations )
+# Basis scales:    
+      LKrigLatticeScales( LKinfo)
     
     set.panel(3,1)
     plot( make.surface.grid( look1))
@@ -106,3 +140,4 @@ grid points used to generate the lattice.
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ spatial }
+

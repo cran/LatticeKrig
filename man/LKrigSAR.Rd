@@ -1,3 +1,19 @@
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2016
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
 \name{LKrigSAR}
 \alias{LKrigSAR}
 \alias{LKrigSAR.LKBox}
@@ -7,7 +23,7 @@
 \alias{LKrigSAR.LKCylinder}
 \alias{LKrigSAR.default}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Method that creates the spatial autoregressive (SAR) matrix 
+\title{Method that creates the spatial autoregressive (SAR) matrix. 
 	%%  ~~function to do ... ~~
 }
 \description{Using the information in LKinfo create the SAR matrix 
@@ -54,7 +70,7 @@ LKrigSAR(object, ...)
 }
 \value{
 	A matrix in the sparse matrix format, spind, with dimensions given by the 
-	number of lattice points at level \code{Level}.
+	number of lattice points at \code{Level}.
 		Because this construct is geometry dependent the default version of
 	this method just returns an error message.
 }
@@ -81,4 +97,5 @@ LKrigSAR(object, ...)
 	image.plot( B)
 }
 \keyword{spatial}
+
 

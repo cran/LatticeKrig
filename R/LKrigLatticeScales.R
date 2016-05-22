@@ -19,12 +19,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-setDefaultsLKinfo <- function(object,...){
-  UseMethod("setDefaultsLKinfo")
+LKrigLatticeScales <- function( object, ...){
+  UseMethod("LKrigLatticeScales")
 }
 
-# default is that no modifications are made to the LKinfo object
-setDefaultsLKinfo.default <- function(object,...)
-  {
-    return(object)
-  }
+LKrigLatticeScales.default<- function( object,...){
+   LKinfo        <- object
+   delta         <- LKinfo$latticeInfo$delta
+   overlap       <- LKinfo$basisInfo$overlap
+   return( delta*overlap)
+ }

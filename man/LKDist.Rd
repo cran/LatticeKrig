@@ -1,3 +1,19 @@
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2016
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
 \name{LKDist}
 \alias{LKDist}
 \alias{LKDistComponents}
@@ -43,7 +59,7 @@ LKGridFindNmax(n1, max.points, mean.neighbor, delta, gridList)
 }
 
 \arguments{
-  \item{gridList}{A list with each component a vecotr that specifies the
+  \item{gridList}{A list with each component vector that specifies the
   	grid points for an equally spaced grid. Can have class
   	gridList. (See also help on gridlist).}	
   \item{n1}{Number of rows of x1.}
@@ -61,7 +77,7 @@ LKGridFindNmax(n1, max.points, mean.neighbor, delta, gridList)
 
 }
   \item{max.points}{
-  	Used for dynamically assigning matrix size this should be larger than  the total number of pairwsie distances less than delta. 
+  	Used for dynamically assigning matrix size this should be larger than  the total number of pairwise distances less than delta. 
 }
   \item{mean.neighbor}{
   	Used for dynamically assigning matrix size this is the average number of 
@@ -85,7 +101,7 @@ LKGridFindNmax(n1, max.points, mean.neighbor, delta, gridList)
 	\strong{directionCosine} a matrix where rows index the different points and 
 	columns index x,y,z.
 	
-	\strong{LKGridFindNmax} returns the maximum number of nonsero elements expected in a pairwise distance matrix. 
+	\strong{LKGridFindNmax} returns the maximum number of nonzero elements expected in a pairwise distance matrix. 
 	
 	\strong{LKGridFindNmax} checks that the calling arguments are 
 	compatible with the  pairwise distance computation. 
@@ -135,3 +151,4 @@ look<- LKDistGrid( x1, gridL, delta=.45)
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{spatial}
+

@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -36,7 +36,7 @@ predictLKrigFixedFunction(object, xnew, Znew = NULL, drop.Z = FALSE)
 }
 
 \arguments{
-\item{drop.Z}{If TRUE only spatial drift is evaluated the comtribution for covariates
+\item{drop.Z}{If TRUE only spatial drift is evaluated the contribution for covariates
 is omitted.}
 
 \item{distance.type}{The distance metric. See the entry in
@@ -46,7 +46,7 @@ is omitted.}
 splines the polynomial will have maximum order (m-1). Throughout LKrig
 m==2 is the default giving a linear polynomial.}
 
-\item{object}{An LKrig object.}
+\item{object}{A LKrig object.}
 
 \item{x}{ A 2 column matrix of 2-d locations to evaluate the
    polynomial.}
@@ -62,13 +62,13 @@ m==2 is the default giving a linear polynomial.}
 
 \strong{LKrigDefaultFixedFunction} This function creates the regression matrix for the 
 fixed part of the spatial model. The default is a low order polynomial regression matrix 
-of degree m-1. To this matrix are bound as columns any covaraites passed as Z. 
+of degree m-1. To this matrix are bound as columns any covariates passed as Z. 
 Typically one would not need to modify this function. 
 For more exotic fixed part models one can specify create and then specify a different 
 function. See LKrig.setup and LKrig. NOTE: If the argument for this function is passed as NULL
-then the subsquent computations do not include a fixed part in the model.
+then the subsequent computations do not include a fixed part in the model.
 
-\strong{LKrigDefaultFixedFunction} This is same as LKrigDefaultFixedFunction except the first coordinate is ignored. i.e. it is assumed to be periodic so adding a polynomial doe snot make sense.
+\strong{LKrigDefaultFixedFunction} This is same as LKrigDefaultFixedFunction except the first coordinate is ignored. i.e. it is assumed to be periodic so adding a polynomial does not make sense.
 
 \strong{predictLKrigFixedFunction}
 This function is simple, but is introduced to make the code modular and
@@ -97,4 +97,5 @@ T.matrix<- LKrigDefaultFixedFunction(x, m=3)
 }
 
 \keyword{spatial}
+
 

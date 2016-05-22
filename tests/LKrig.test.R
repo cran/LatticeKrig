@@ -65,7 +65,19 @@ options( echo=FALSE)
                                  NtrA=20, iseed=122)
   test.for.zero( obj0$fitted.values, obj$fitted.values)
   test.for.zero( obj$d.coef, obj0$d, tag= "d from Lattice Krig and mKrig")
-
+###########################################################################
+### test that code works with locations outside spatial domain.
+  xTest<- rbind(x, c( -100,20) )
+  yTest<- c( y, 1000)              
+ LKinfoTest<- LKrigSetup( x, NC=5, nlevel=3, nu=1, a.wght=5)
+  obj<- LKrig( xTest,yTest, LKinfo= LKinfoTest, lambda=.1)
+  
+### test that code works with replicated locations
+  xTest<- rbind(x, x)
+  yTest<- c( y, y) 
+  LKinfoTest<- LKrigSetup( x, NC=5, nlevel=3, nu=1, a.wght=5)
+  obj<- LKrig( xTest,yTest, LKinfo= LKinfoTest, lambda=.1)
+  
 #### tests with  spatially varying alpha's
 
 # first a sanity check that the marginalization and alpha option is working
@@ -281,17 +293,20 @@ test.for.zero(  lnDet( B3) - lnDet(Q) - sum( log( weights))  + (N-N2)*log(lambda
 
  obj<- LKrig( x,y,weights=weights,NC=15, lambda=lambda,alpha=alpha,
                     nlevel=nlevel,a.wght=a.wght, return.cholesky=TRUE)
+ 
  obj2<- LKrig( x,y,weights=weights,NC=15, lambda=2*lambda,alpha=alpha,
                     nlevel=nlevel,a.wght=a.wght, use.cholesky=obj$Mc)
  obj3<-  LKrig( x,y,weights=weights,NC=15, lambda=2*lambda,alpha=alpha,
-                    nlevel=nlevel,a.wght=a.wght, return.cholesky=TRUE)
+                    nlevel=nlevel,a.wght=a.wght, return.cholesky=FALSE)
 
- test.for.zero( obj3$c.coef, obj2$c.coef, tag="test of LatticeKrig.coef c")
- test.for.zero( obj3$d.coef, obj2$d.coef, tag="test of LatticeKrig.coef d")
+ test.for.zero( obj3$c.coef, obj2$c.coef, 
+                tag="reuse Mc test of LatticeKrig.coef c")
+ test.for.zero( obj3$d.coef, obj2$d.coef,
+                tag="reuse Mctest of LatticeKrig.coef d")
 
- Q<- LKrig.precision(obj3$LKinfo)
- look2<-LKrig.lnPlike(obj3$Mc,Q,sqrt(weights)*y, obj3$residuals, weights,obj3$LKinfo)
- test.for.zero( look2$lnProfileLike, obj3$lnProfileLike)
+ test.for.zero( obj2$lnProfileLike, obj3$lnProfileLike,
+                tag="reuse Mc test of lnProfileLike")
+ 
 
 # all done!
  cat("Done testing LatticeKrig",fill=TRUE)

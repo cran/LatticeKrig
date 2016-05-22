@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -65,13 +65,14 @@ LKrig <- function(x, y,
 
     object<- createLKrigObject( x, y, weights, Z,
                                     X, U,  LKinfo, verbose=verbose)
-                                   
+    nObs <-  nrow( object$y )
+    nReps <- ncol( object$y )
 # for readablity make a local copy of LKinfo
 # but don't change it in this function! 
     LKinfo<- object$LKinfo                                              	 	
 	# Begin computations ....
 	# weighted observation vector
-    wy <- sqrt(object$weights) * object$y    
+    wy <- sqrt(object$weights) * object$y
 # create matrix for fixed part of model    
 # Spatial drift matrix -- default is assumed to be linear in coordinates (m=2)
 # and includes possible covariate(s) -- the Z matrix.
@@ -103,13 +104,13 @@ timeQ<-system.time(
         if( verbose){
 		cat("LKrig: Nonzero entries in Q:", length(Q@entries), fill=TRUE)		
 	}
-# M is the regularized (ridge) regression matrix that is 
+# G is the regularized (ridge) regression matrix that is 
 # the key to the entire algorithm:
 timeM<- system.time(	
-	M <- t(wX) %*% wX + LKinfo$lambda * (Q)
+	G <- t(wX) %*% wX + LKinfo$lambda * (Q)
 	)
 	if( verbose){
-		cat("LKrig: Nonzero entries in M:", length(M@entries), fill=TRUE)		
+		cat("LKrig: Nonzero entries in M:", length(G@entries), fill=TRUE)		
 	}	
 #  Find Cholesky square root of M
 #  This is where the heavy lifting happens!  M is in sparse, spam format so
@@ -121,22 +122,24 @@ timeM<- system.time(
 #  This can speed the computation as the symbolic decomposition part of the
 #  sparse Cholesky is a nontrivial step. The condition is that
 #  the current 'M' matrix  has the same sparse pattern as that
-#  which resulted in the factorization  cholesky as 'use.cholesky'
+#  which  will result in the same sparse pattern of factorization 
+#  as when chol was applied to the case passed in 'use.cholesky'
 if (is.null(use.cholesky)) {
 	timeChol<- system.time(
-		Mc <- chol(M, memory = LKinfo$choleskyMemory)
+		GCholesky <- chol(G, memory = LKinfo$choleskyMemory)
 		)
 	} else {	
 			timeChol<- system.time(
-		Mc <- update.spam.chol.NgPeyton(use.cholesky, M)
+		GCholesky <- update.spam.chol.NgPeyton(use.cholesky, G)
 		)
 	}
      if( verbose){
-     	cat("LKrig: nonzero entries of Mc:",length(Mc@entries), fill=TRUE)
+     	cat("LKrig: nonzero entries of GCholesky:",length(GCholesky@entries), fill=TRUE)
      }
-# use Mc to find coefficients of estimate
+# use GCholesky to find coefficients of estimate
+# Note that this functions also finds an important piece of the likelihood (quad.form)
 	timeCoef<- system.time(
-	out1 <- LKrig.coef(Mc, wX, wU, wy,
+	out1 <- LKrig.coef(GCholesky, wX, wU, wy,
 	               LKinfo$lambda,
 	               verbose=verbose)
 	)
@@ -156,10 +159,13 @@ if (is.null(use.cholesky)) {
 	object$residuals <- object$y - object$fitted.values	
 # find likelihood
 timeLike<- system.time(	
-	out2 <- LKrig.lnPlike(Mc, Q, wy,
-	             object$residuals, object$weights,
-	             LKinfo)
-	   )
+#	out2 <- LKrig.lnPlikeOLD(GCholesky, Q, wy,
+#	             object$residuals, object$weights,
+#	             LKinfo)
+  out2 <- LKrig.lnPlike(GCholesky, Q, object$quad.form,
+                           nObs, nReps,
+                           object$weights,LKinfo)
+  )
 	if( verbose){
 		cat("Likelihood/MLE list:",  fill=TRUE)
 		print( out2)
@@ -170,7 +176,7 @@ timeLike<- system.time(
 # by Monte Carlo if NtrA greater than zero
 timeTrA<- system.time(
 	if (NtrA > 0) {
-		out3 <- LKrig.traceA(Mc, wX, wU, LKinfo$lambda, object$weights, NtrA, iseed = iseed)
+		out3 <- LKrig.traceA(GCholesky, wX, wU, LKinfo$lambda, object$weights, NtrA, iseed = iseed)
 		# find GCV using this trace estimate
 		n<- length( object$weights)
 		out3$GCV = (sum(object$weights * (object$residuals)^2)/n)/(1 - out3$trA.est/n)^2
@@ -189,14 +195,17 @@ timingTable <- rbind( timingTable, colSums(timingTable))
 object <- c(object,
  list( 
         lambda.fixed = LKinfo$lambda, 
-     nonzero.entries = length(M@entries),                   
+     nonzero.entries = length(G@entries),                   
                 call = match.call(), 
          timingLKrig = timingTable )
     )
 # finally add in some large matrices that can be reused if only 
-# lambda is varied    
+# lambda is varied  
+# NOTE to keep the code with smae components the name Mc is kept although
+# this is actually the cholesky decomposition of the G matrix as in the LKrig
+# article. 
 if (return.cholesky) {
-		object$Mc <- Mc
+		object$Mc <- GCholesky
 	}
 if (return.wXandwU) {
 		object$wX <- wX

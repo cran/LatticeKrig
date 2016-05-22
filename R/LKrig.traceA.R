@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrig.traceA <- function(Mc, wX, wU, lambda, weights, NtrA, iseed = NA) {
+LKrig.traceA <- function(GCholesky, wX, wU, lambda, weights, NtrA, iseed = NA) {
 # do not disrupt an external use of the random number generator    	
     if (exists(".Random.seed", 1)) {
         save.seed <- .Random.seed
@@ -39,7 +39,7 @@ LKrig.traceA <- function(Mc, wX, wU, lambda, weights, NtrA, iseed = NA) {
         assign(".Random.seed", save.seed, pos = 1)
     }
     #
-    out3 <- LKrig.coef(Mc, wX, wU, wEy, lambda) 
+    out3 <- LKrig.coef(GCholesky, wX, wU, wEy, lambda) 
     wEyhat <- (wX %*% out3$c.coef)
     if( !is.null(wU) ){
         wEyhat <- wEyhat + wU %*% out3$d.coef

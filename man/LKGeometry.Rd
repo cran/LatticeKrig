@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -19,7 +19,7 @@
 \alias{LKBox}
 \alias{LKRectangle}
 \alias{LKInterval}
-\title{Tailoring the LatticeKrig model to a specific geometry
+\title{Tailoring the LatticeKrig model to a specific geometry.
 }
 \description{To implement a spatial model for specific geometry, e.g. 
 	a rectangular spatial domain, one needs to specify a few functions
@@ -35,52 +35,52 @@
 		\item{LKrigSAR.LKInterval}{Creates a sparse 1-d spatial autoregressive matrix.}
 		\item{LKrigLatticeCenters.LKInterval}{Returns the spatial locations of the lattice points.}
 	}
-	Nothing else is needed to coax the LatticeKrig computation to fit a 1-d spatial model. There are more details and flexibility in specifying the model but the ones listed above are generic in that they makes sense for any LatticeKrig model and are not specific to the 1-d case.  
+	Nothing else is needed to coax the LatticeKrig computation to fit a 1-d spatial model. There are more details and flexibility in specifying the model, but the ones listed above are generic in that they make sense for any LatticeKrig model and are not specific to the 1-d case.  
 The \code{.LKInterval} tag on each of these functions indicates that these are S3 versions of a "method". The actual source code in LatticeKrig just relies on calling the generic 
 method, e.g. LKrigSetupLattice, and the geometry, added as a class indicates, which function is actually used. Checking what each of these functions does and then 
-seeing how they are called in \code{LKrigSetup} and \code{LKrig.basis} will give a simple introdution to how the code is structured. 
+seeing how they are called in \code{LKrigSetup} and \code{LKrig.basis} will give a simple introduction to how the code is structured. 
 }
 
 \section{Use of the LKInfo object}{
 The basic idea behind this package is to consolidate all the
 details of the spatial model including the geometry in the \code{LKinfo} object.
-The way to create this object is by the function \code{SetupLKinfo} and we believe that this function has enough flexibility to avoid having to modify this object outside of this function call. Typically for deliberate spatial modeling the first step will be creating the LKinfo object, however, the  quick and more "black box" function LatticeKrig is designed to take a minimal amount of information and then 
+The way to create this object is by the function \code{SetupLKinfo} and we believe that this function has enough flexibility to avoid modifying this object outside of this function call. Typically for deliberate spatial modeling the first step will be creating the LKinfo object; however, the  quick and more "black box" function LatticeKrig is designed to take a minimal amount of information and then 
 calls \code{SetupLKinfo} internally to fill out the LKinfo object. 
-In fact, LatticeKrig( x,y) with just \code{x} as locations and \code{y} the observations will fit a spatial model using reasonable defaults  and the returned object from this fit will include the full LKinfo object that it used.  
+In fact, LatticeKrig( x,y) with just \code{x} as locations and \code{y} as observations will fit a spatial model using reasonable defaults  and the returned object from this fit will include the full LKinfo object that it used.  
 
-A subtle and perhaps a potential disadvantage with the coding is that the LKinfo object is built in steps within the LKrigSetup function. In particular the method that setups up the lattice is called before information is added about the alpha and
-a.wght parameters. The source code LKrigSetup has been kept concise and it should be clear how the LKinfo is formed. The conceptually the sequence of steps are
+A subtle and perhaps a potential disadvantage with the coding is that the LKinfo object is built in steps within the LKrigSetup function. In particular the method that setups the lattice is called before information is added about the alpha and
+a.wght parameters. The source code LKrigSetup has been kept concise and it should be clear how the LKinfo is formed. Conceptually, the sequence of steps are:
 \describe{
      	\item{The calling arguments}{Initialize the LKinfo object with the
-     		 all the passed arguments}
+     		 all the passed arguments.}
      	\item{Call: setDefaultsLKinfo}{If necessary add some components that fill in 
      		specific default parameters for a given method.}
-        \item{Create basis information}{The component \code{ LKinfo\$basisInfo} holds the specific components for the basis functions. Currently there is not much flexibility here are it just derived from the calling arguments.}
+        \item{Create basis information}{The component \code{ LKinfo\$basisInfo} holds the specific components for the basis functions. Currently there is not much flexibility here are as it is just derived from the calling arguments.}
      	\item{Call: LKrigSetupLattice}{Setup the lattice information and put in the 
      		component \code{LKinfo\$latticeInfo} }
          \item{Call: LKrigSetupAlpha}{Setup the format for the alpha parameters based on 
-         	what was passed and out this in the component \code{ LKinfo\$alpha}}
+         	what was passed in and out this in the component \code{ LKinfo\$alpha}}
          \item{Call: LKrigSetupAwght}{Setup the format for the alpha parameters based on 
-         	what was passed and out this in the component \code{ LKinfo\$a.wght}}
+         	what was passed in and out this in the component \code{ LKinfo\$a.wght}}
          \item{Check using: LKinfoCheck}{Check for the required components in the object.}	
  }
 
  The LKinfo object is a list with  
 class \code{LKinfo} and comes with a print method to make it easier to  read and also has the class of the geometry, e.g \code{LKInterval} for the 1-d model. The functions that are required for a geometry all take the LKinfo object as their first argument and the S3 object dispatching then calls the correct version. 
-Put more simply, if  \code{LKinfoExample} has class \code{LKInterval} then then code
+Put more simply, if  \code{LKinfoExample} has class \code{LKInterval} then the code
 \code{LKrigLatticeCenters(LKinfoExample, Level= 1)} will result in computing the 
 lattice centers at the first level and using the 1-d geometry.
 In this way much of this package can use "generic" functions for the 
 computational steps without revealing the extra complications and 
 exceptions for particular models and geometries. 
-The structure of the \code{LKinfo} object is not copmpletely rigid. Certain components of the list are required and these are checked  by \code{LKinfoCheck}. Other components of this list can be geometry and problem dependent and this is a useful way to pass information to the computations. In general when faced with what should be included in LKinfo follow the style in \code{LKInterval} but also include
+The structure of the \code{LKinfo} object is not completely rigid. Certain components of the list are required and these are checked  by \code{LKinfoCheck}. Other components of this list can be geometry and problem dependent and this is a useful way to pass information to the computations. In general when faced with what should be included in LKinfo follow the style in \code{LKInterval} but also include
 additional components that are needed to define the model.  Some examples are mentioned below. 
 }
 
 \section{Required methods}{
-	For any model there three functions are required for a new geometry. By a new geometry we mean any variation from the regular grids and beyond  a
-second order SAR. As a first step choose a name for the new geometry e.g. 
-MyNewIdea and this should also be the name passed as the argument LKGeometry in the 
+	For any model there are three functions required for a new geometry. By a new geometry we mean any variation from the regular grids and beyond  a
+second order SAR. As a first step choose a name for the new geometry, e.g. 
+MyNewIdea, and this should also be the name passed as the argument LKGeometry in the 
 \code{LKrigSetup} function. Three new functions need to be supplied and that end in .MyNewIdea and the user will recognize these as S3 methods
 being added to LatticeKrig.
 
@@ -115,10 +115,10 @@ faster computation some additional methods can be added but are not required. An
 e.g.  \code{setDefaultsLKinfo} should have the 
 new name:  \code{setDefaultsLKinfo.MyNewIdea} and have the default arguments listed in the generic function (\code{setDefaultsLKinfo}).
 
-\strong{setDefaultsLKinfo} This function takes the skeleton LKinfo list based on the arguements passed to LKrigSetup and can modifiy and add to them. The returned value is now taken as the initial LKinfo object. The default method is that no changes are made. But adding versions to this method can be very useful for  specific cases (e.g. see \code{setDefaultsLKinfo}) without complicating the main function with lots of conditional statements. 
+\strong{setDefaultsLKinfo} This function takes the skeleton LKinfo list based on the arguments passed to LKrigSetup and can modify and add to them. The returned value is now taken as the initial LKinfo object. The default method is that no changes are made. But adding versions to this method can be very useful for  specific cases (e.g. see \code{setDefaultsLKinfo}) without complicating the main function with lots of conditional statements. 
 
 \strong{LKrigSetupAlpha} These methods convert the alpha  information passed into 
-LKrigSetup to a list format. A default is provided if you do not supply a specific verion.  See help(LKrigSetupAlpha).
+LKrigSetup to a list format. A default is provided if you do not supply a specific version.  See help(LKrigSetupAlpha).
 
 \strong{LKrigSetupAwght} These methods convert the a.wght information passed into 
 LKrigSetup to a list format.
@@ -128,7 +128,7 @@ normalizing the basis functions. There is no default method because it is assume
 as an example of how this is done. Note that there is already a "slow" method, 
 \code{\link{LKrigNormalizeBasis}} involving a Cholesky solve of the precision matrix for each point where the basis function is evaluated. 
 
-\strong{LKinfoCheck} This function checks the LKinfo object for necessary components and does some rudimentary comparisonsto make sure arrays are the right size. It is always good to add more checks!
+\strong{LKinfoCheck} This function checks the LKinfo object for necessary components and does some rudimentary comparisons to make sure arrays are the right size. It is always good to add more checks!
 
 }
 
@@ -147,3 +147,4 @@ as an example of how this is done. Note that there is already a "slow" method,
 \keyword{ spatial }
  
 	
+

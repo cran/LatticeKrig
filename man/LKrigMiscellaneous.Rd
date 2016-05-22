@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -104,13 +104,13 @@ These functions are used to create the nearest neighbor indices for
 the precision matrices.
 
 \strong{Expand related:}
-These functions are useful for creating a sets of covariance parametes that 
-follow a factorial pattern. For example repeating the rows of the "alpha" paramters
+These functions are useful for creating a sets of covariance parameters that 
+follow a factorial pattern. For example repeating the rows of the "alpha" parameters
 as the "a.wght" parameters are varied. \code{expandMList} is particularly useful for creating
 a factorial design of parameters to pass to LKrig.MLE for searching the likelihood.
 
 \strong{Index related:}
-The function \code{convertIndexPeriodic} converts a  single index for a multidimensional array, into index that reflects wrapping into a smaller grid to reflect the padding. 
+The function \code{convertIndexPeriodic} converts a  single index for a multidimensional array, into an index that reflects wrapping into a smaller grid to reflect the padding. 
 This is used in the \code{LKDistGrid} function to handle distances when the grid has periodic dimensions. The other two functions are used for checking and debugging of going back and
 forth between the multidimensional and single indexes.  
 
@@ -146,7 +146,7 @@ LKrig.rowshift.periodic( A, 2)
 }
 
 \strong{Expand:}
-\code{ExpandMList} Returns a list of matrices where the original matrices are repeated so that are
+\code{ExpandMList} Returns a list of matrices where the original matrices are repeated so that
 combinations of rows are represented. The example below illustrates.  \code{byrow=FALSE} does the repetition
 by columns instead of rows.
 
@@ -161,7 +161,7 @@ by columns instead of rows.
 [2,]   12
 [3,]   13
 > C
-[1] 100
+[1,] 100
 > expandMList( list( A=A, B=B, C=C))
 $A
      [,1] [,2]
@@ -209,3 +209,4 @@ print(A[look])
 }
 
 \keyword{spatial}
+

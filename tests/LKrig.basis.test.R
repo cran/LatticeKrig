@@ -96,7 +96,7 @@ look1<- as.matrix(look1)
 look2<- Wendland2.2(rdist( x1,x2)/.5)
 test.for.zero( look1,look2, tag="Radial.basis verses rdist")
 
-#### check marginal variances this is an global test of basis function function
+#### check marginal variances this is a global test of the basis functions code
    data( ozone2)
    x<-ozone2$lon.lat
    y<- ozone2$y[16,]
@@ -129,20 +129,7 @@ test.for.zero( look1,look2, tag="Radial.basis verses rdist")
    Ktest2<- PHI2%*%solve(Q)%*%t(PHI2)
    test.for.zero( diag(Ktest2), LKrig.cov( xg, LKinfo=LKinfo, marginal =TRUE),
                    tag="marginal variance")      
-#                               
-# lon lat geometry but with Great Circle distance
-#
-   LKinfo<- LKrigSetup(x, NC=4,  a.wght=a.wght, alpha=1, nlevel=1,
-                           normalize = FALSE,
-                       distance.type = "GreatCircle",
-                           NC.buffer = 1) 
-# artifically reset lattice spacing to be on the order of GC distance                          
-                           LKinfo$latticeInfo$delta<- 100      
-           PHI1<- LKrig.basis(x, LKinfo)
-           PHI1test<-  Radial.basis( x, LKrigLatticeCenters(LKinfo, Level=1),
-        basis.delta = LKinfo$latticeInfo$delta[1]*LKinfo$basisInfo$overlap,
-        distance.type = LKinfo$distance.type)
-       test.for.zero( PHI1, PHI1test, tag="check basis functions great circle")
-#
+
+ 
 cat( "Done with testing LKrig basis", fill=TRUE)
 options( echo=TRUE)

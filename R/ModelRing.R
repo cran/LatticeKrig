@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2012
+# Copyright (C) 2016
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -30,7 +30,7 @@ setDefaultsLKinfo.LKRing <- function(object, ...) {
 		object$setupArgs$NC.buffer <- 5
 	}
 	#lazy default: set alpha to 1 if only one level.
-	if (object$nlevel == 1 & is.na(object$alpha)) {
+	if (object$nlevel == 1 & is.na(object$alpha[1])) {
 		object$alpha <- list(1)
 	}
 # hard wire the fixed part to just fit a constant function

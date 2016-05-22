@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2012
+% # Copyright (C) 2016
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -20,6 +20,7 @@
 \name{LKrig Internal}
 \alias{LKrig.coef}
 \alias{LKrig.lnPlike}
+\alias{LKrig.lnPlikeOLD}
 \alias{LKrig.traceA}
 \alias{dfind2d}
 \alias{dfind3d}
@@ -39,9 +40,10 @@ coefficients of the basis functions and compute the likelihood.
 createLKrigObject(x, y, weights = NULL, Z, X, U, LKinfo, verbose = FALSE)
 LKrigMakewU(object, verbose = FALSE)
 LKrigMakewX(object, verbose = FALSE)
-LKrig.coef( Mc, wX, wU, wy, lambda, verbose = FALSE)
-LKrig.lnPlike(Mc, Q, wy, residuals, weights, LKinfo)
-LKrig.traceA(Mc, wX, wU, lambda, weights, NtrA, iseed = NA)
+LKrig.coef( GCholesky, wX, wU, wy, lambda, verbose = FALSE)
+LKrig.lnPlike( GCholesky, Q, quad.form, nObs, nReps, weights, LKinfo)
+LKrig.lnPlikeOLD(Mc, Q, wy, residuals, weights, LKinfo)
+LKrig.traceA(GCholesky, wX, wU, lambda, weights, NtrA, iseed = NA)
 LKrigUnrollZGrid( grid.list, ZGrid=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -50,7 +52,8 @@ LKrigUnrollZGrid( grid.list, ZGrid=NULL)
 %  \item{distance.type}{Distance (and geometry) for coordinates.}
 
   
-  \item{grid.list}{The grid for evaluting surface}
+  \item{grid.list}{The grid for evaluating surface}
+  \item{GCholesky}{SPAM cholesky decomposition of the "G" matrix.}
 
   \item{iseed}{Random seed used to generate the Monte Carlo
    samples. Keep the same to compare results with mKrig and also for
@@ -67,13 +70,19 @@ LKrigUnrollZGrid( grid.list, ZGrid=NULL)
   \item{NtrA}{Number of Monte Carlo samples to estimate trace. Default
   is 20 in LKrig.}
   
+  \item{nObs}{Number of observations.}
+  
+  \item{nReps}{Number of replicate fields. }
+  
   \item{object}{The LKrig object.}
 
   \item{Q}{Precision matrix for coefficients.}
+  \item{quad.form}{The part of the log likelihood that is a quadratic form.
+  (This is typically found in \code{LKrig.coef}.)}
 
    \item{residuals}{Residuals from fitting spatial process.}
    
-\item{U}{The matrix that maps the d.coef coefficents of the fixed component
+\item{U}{The matrix that maps the d.coef coefficients of the fixed component
   	(typically a low order polynomial) part of the observation model.}
   	
  	
@@ -83,9 +92,9 @@ LKrigUnrollZGrid( grid.list, ZGrid=NULL)
   variances of the errors. I.e. errors are assumed to be uncorrelated
   with variances sigma^2/weights. }
   
-\item{wU}{Weighted U matrix the fixed part of the model}
+\item{wU}{Weighted U matrix the fixed part of the model.}
 \item{wX}{Weighted X matrix (in spam format) related to nonparametric (stochastic) part of 
-	model. Here weights refer to the sqrt(wieghts).
+	model. Here weights refer to the sqrt(weights).
 	
 	NOTE: predicted values are  U\%*\%d.coef + X\%*\%c.coef
 	
@@ -94,18 +103,24 @@ LKrigUnrollZGrid( grid.list, ZGrid=NULL)
   \item{wy}{Weighted observations.}
   
   
-  \item{X}{The matrix that maps the c.coef coefficents into the nonparametric component
+  \item{X}{The matrix that maps the c.coef coefficients into the nonparametric component
   	(spatial process) part of the observation model.}
 
  \item{x}{Matrix of spatial locations passed to LKrig.}
  \item{y}{Vector or matrix of observations passed to LKrig.}
- \item{Z}{A matrix of covariates}
+ \item{Z}{A matrix of covariates.}
 
   \item{ZGrid}{A list or array with the covariates on the same grid as that specified by 
 the  grid.list argument. }
 
 }
 \details{
+
+The LatticeKrig article can be used as a reference for the matrix computations
+and the G matrix from those formulas figures prominently. The GCholesky object
+in these functions is the cholesky decompoistion of this matrix. For
+compatibility with older version of this package this object may also be named
+as \code{Mc} ( Cholesky of the M  matrix) but the user should not identify this M with that in the article. Ideally all coding using Mc should be changed to GCholesky.
 
 \code{createLKrigObject} Based on the arguments passed into LKrig forms the 
 prototype LKrig object. This object is added to as one computes additional steps in the LKrig function. 
@@ -115,7 +130,7 @@ sparse matrix format.
 
 \code{LKrig.coef} and \code{LKrig.lnPlike} are two low level functions
 to find the basis function coefficients and to evaluate the
-likelihood. The coefficents (\code{c.mKrig}) are also found because
+likelihood. The coefficients (\code{c.mKrig}) are also found because
 they provide for shortcut formulas for the standard errors and MLE
 estimates.  These coefficients are identical to the basis coefficients
 (\code{c.coef}) found for usual Kriging in the mKrig
@@ -142,36 +157,38 @@ cylinder.
 
 \code{LKrigDefaultFixedFunction} Is called to construct the fixed part of the 
 spatial model. The default is a polynomial of degree (m-1).
-
 }
 \value{
-\code{LKrig.coef} a list with components d.coef the coefficients of
+\describe{
+\item{LKrig.coef}{a list with components d.coef the coefficients of
 the spatial dirft and for covariates (Z) and c.coef the basis function
 coefficients. The logical vector ind.drift from the LKrig object
 indicates with components of d.coef are associated with the polynomial
-spatial drift and which are other fixed spatial covariates.
+spatial drift and which are other fixed spatial covariates.}
 
-\code{LKrig.lnPlike} has the components:
-\describe{
+\item{LKrig.lnPlike}{has the components:}
 
-\item{lnProfileLike:}{the log likelihood profiled for lambda, alpha
+
+\item{lnProfileLike}{the log likelihood profiled for lambda, alpha
 and a.wght}
 
-\item{rho.MLE:}{the MLE of rho given lambda, alpha and a.wght}
+\item{rho.MLE}{the MLE of rho given lambda, alpha and a.wght}
 
-\item{shat.MLE:}{ the MLE of sigma given lambda, alpha and a.wght}
+\item{shat.MLE}{ the MLE of sigma given lambda, alpha and a.wght}
 
-\item{quad.form:}{the quadratic form in the exponent of the
+\item{quad.form}{the quadratic form in the exponent of the
  multivariate normal likelihood}
 
-\item{lnDetCov:}{the log determinant of the covariance matrix in the
+\item{lnDetCov}{the log determinant of the covariance matrix in the
  likelihood}
 
+
+\item{LKrigDefaultFixedFunction}{A matrix with dimension nrow(x) and columns
+of the number of polynomial terms  and the number of columns of Z if given.}
 }
-
-\code{LKrigDefaultFixedFunction} A matrix with dimension nrow(x) and columns
-of the number of polynomial terms  and the number of columns of Z if given.
-
+}
+\references{
+Nychka, D., Bandyopadhyay, S., Hammerling, D., Lindgren, F., & Sain, S. (2015). A multiresolution gaussian process model for the analysis of large spatial datasets.{Journal of Computational and Graphical Statistics}, 24(2), 579-599.
 }
 \author{
 Doug Nychka
@@ -180,3 +197,4 @@ Doug Nychka
 LKrig, LKrig.basis
 }
 \keyword{spatial}
+

@@ -1,3 +1,19 @@
+% # LatticeKrig  is a package for analysis of spatial data written for
+% # the R software environment .
+% # Copyright (C) 2016
+% # University Corporation for Atmospheric Research (UCAR)
+% # Contact: Douglas Nychka, nychka@ucar.edu,
+% # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+% #
+% # This program is free software; you can redistribute it and/or modify
+% # it under the terms of the GNU General Public License as published by
+% # the Free Software Foundation; either version 2 of the License, or
+% # (at your option) any later version.
+% # This program is distributed in the hope that it will be useful,
+% # but WITHOUT ANY WARRANTY; without even the implied warranty of
+% # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% # GNU General Public License for more details.
+
 \name{LKrigSetup}
 \alias{LKrigSetup}
 \alias{LKinfoUpdate}
@@ -5,7 +21,7 @@
 \alias{LKinfo}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Create or update the LatticeKrig model object  (LKinfo) for spatial fitting 
+Create or update the LatticeKrig model object  (LKinfo) for spatial fitting. 
 }
 \description{
 This function combines some input arguments with defaults for other to create a list 
@@ -46,15 +62,15 @@ variances for the different multiresolution levels.  }
   	needed for standard models. }
   	
   \item{BasisType}{A character string indicating the type of basis function. Currently
-  	this is either \code{"Radial"} or \code{"Tensor"}}
+  	this is either \code{"Radial"} or \code{"Tensor"}. }
 
 \item{choleskyMemory}{A list that will be used in the spam call to 
 do the Cholesky decomposition. See the \code{memory} argument in 
 \code{chol.spam}. }
 
- \item{distance.type}{A texst string indicate type distance to use
+ \item{distance.type}{A text string indicate type distance to use
   	between spatial locations when evaluating the basis
-  	fucntions. Default is "Euclidean". Other choices when
+  	functions. Default is "Euclidean". Other choices when
   	locations are in degrees longitude and latitude are "Chordal"
   	and "GreatCircle".  The default radius is in miles (3963.34)
   	but can be reset using the "Radius" attribute to the text
@@ -113,17 +129,17 @@ do the Cholesky decomposition. See the \code{memory} argument in
   	number of basis functions within the spatial domain size by a
   	factor of roughly 4. }
  
- \item{noCheck}{If FALSE do not make any checks on the conssitency of
+ \item{noCheck}{If FALSE do not make any checks on the consistency of
   	the different parts of the final LKinfo object. e.q. values of
-  	a.wght within the range of a stationary Markov randon field. }
+  	a.wght within the range of a stationary Markov random field. }
  
   \item{normalize}{ If TRUE the basis functions will be normalized to
   	give a marginal variance of one for each level of
   	multiresolution.  (Normalizing by levels makes it easier to
   	interpret the \code{alpha} weights.)  } \item{nu}{ A
-  	smoothness parameter that controlls relative sizes of
+  	smoothness parameter that controls relative sizes of
   	\code{alpha}.  Currently this parameter only makes sense for
-  	the 2D rectanglar domain (LKRectangle) } \item{overlap}{
+  	the 2D rectangular domain (LKRectangle) } \item{overlap}{
   	Controls the overlap among the radial basis functions and
   	should be in units of the lattice spacing. For the rectangular
   	case the default of 2.5 means that the support of the Wenland
@@ -147,7 +163,7 @@ do the Cholesky decomposition. See the \code{memory} argument in
   \item{setupArgs}{A list containing additional components that will
   	be 1) included in the LKinfo object in the component
   	\code{setupArgs} and 2) passed to \code{LKrigSetupLattice} to
-  	use for any specific features of constucting the lattice. }
+  	use for any specific features of constructing the lattice. }
   
   \item{sigma}{ The measurement error standard deviation.  Also called
   	the nugget variance in geostatistics.  }
@@ -158,20 +174,20 @@ do the Cholesky decomposition. See the \code{memory} argument in
   
   	\item{x}{Spatial locations that define the spatial domain for
 prediction. This is only used to determine ranges of the grid for the basis
-functions so, for example, for a rectangluar domain only two points
+functions so, for example, for a rectangular domain only two points
 are required that bound the rest of the data locations. E.g.  x=
 rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 
  	
   \item{\dots}{Specific arguments that will be included in
   	\code{setupArgs} list and also passed to
-  	\code{LKrigSetupLattice} }
+  	\code{LKrigSetupLattice}. }
 }
 \details{
 	Many of the functions within LKrigSetup are overloaded to
 	adapt to the LKGeometry class.  This makes it easy to add new
 	geometries or other models to the LatticeKrig framework.  The
-	required components of this object ( see below) outline how
+	required components of this object (see below) outline how
 	the latticeKrig model is structured and what should be common
 	features independent of the geometry. The key components are
 	latticeInfo that contains the information used to generate the
@@ -181,7 +197,7 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 	the radial basis function (see LKrig.basis)
 
 	The function LKrigEasyDefaults is used in the top level 
-	function LattticeKrig to make the logic of different defautl choices 
+	function LattticeKrig to make the logic of different default choices 
 	more readable and reduces the clutter in this function. Its main 
 	purpose is to find a reasonable choice for NC when this is not
 	specified. 
@@ -195,7 +211,7 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 }
 \value{
 	An object with class "LKinfo" and also the additional class given by LKGeometry. The required components are:
-
+\describe{
 	\item{nlevel}{ Number of levels}
 	\item{alpha}{alpha parameters as a list that has  nlevel components and possibly some attributes. }
 	\item{a.wght}{a.wght parameters as a list that has  nlevel components and possibly some attributes. }
@@ -209,6 +225,7 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
     \item{setupArgs}{All arguments passed in the call and any in in \dots }
     \item{basisInfo}{A list with basis information.}
     \item{call}{The actual call used to create this object.}	 
+}
 
 }
 
@@ -225,3 +242,4 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ spatial}
+

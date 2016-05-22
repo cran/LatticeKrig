@@ -1,3 +1,19 @@
+c****  # LatticeKrig  is a package for analysis of spatial data written for
+c****  # the R software environment .
+c****  # Copyright (C) 2016
+c****  # University Corporation for Atmospheric Research (UCAR)
+c****  # Contact: Douglas Nychka, nychka@ucar.edu,
+c****  # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
+c****  #
+c****  # This program is free software; you can redistribute it and/or modify
+c****  # it under the terms of the GNU General Public License as published by
+c****  # the Free Software Foundation; either version 2 of the License, or
+c****  # (at your option) any later version.
+c****  # This program is distributed in the hope that it will be useful,
+c****  # but WITHOUT ANY WARRANTY; without even the implied warranty of
+c****  # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+c****  # GNU General Public License for more details.
+
 
 c     234567
 c     Finds all distances in x1 that are within delta of a set of grid points.
