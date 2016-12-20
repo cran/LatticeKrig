@@ -1,3 +1,4 @@
+
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
 % # Copyright (C) 2016
@@ -22,6 +23,7 @@
 \alias{LKrigSetupLattice.LKRectangle}
 \alias{LKrigSetupLattice.LKRing}
 \alias{LKrigSetupLattice.LKCylinder}
+\alias{LKrigSetupLattice.LKSphere}
 
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Creates the lattice information for a specific geometry.
@@ -35,23 +37,25 @@
 \usage{
 LKrigSetupLattice(object, ...)
 \method{LKrigSetupLattice}{default}(object, ...)
-\method{LKrigSetupLattice}{LKBox}(object,x, verbose, NC,
+\method{LKrigSetupLattice}{LKBox}(object, verbose, NC,
  NC.buffer = 5, ...) 
-\method{LKrigSetupLattice}{LKRectangle}(object,x, verbose, NC,
+\method{LKrigSetupLattice}{LKRectangle}(object, verbose, NC,
  NC.buffer = 5, ...)
-\method{LKrigSetupLattice}{LKInterval}(object,x, verbose, NC,
+\method{LKrigSetupLattice}{LKInterval}(object, verbose, NC,
  NC.buffer = 5, ...)
- \method{LKrigSetupLattice}{LKRing}(object,x, verbose, NC,
+ \method{LKrigSetupLattice}{LKRing}(object, verbose, NC,
  NC.buffer = 5, ...)
-\method{LKrigSetupLattice}{LKCylinder}(object,x, verbose, NC,
+\method{LKrigSetupLattice}{LKCylinder}(object, verbose, NC,
  NC.buffer = 5, ...)
+ \method{LKrigSetupLattice}{LKSphere}(object, x = NULL, verbose, NC = 1, 
+    ...)
 
 }
 
 \arguments{
-  \item{object}{ A list that is an LKinfo object.
-
-}
+%\item{grid.info}{}
+  \item{object}{ A list that is an LKinfo object.}
+  
   \item{NC}{For cartesian geometries a parameter to specify to number of the
   	 grid points in the largest dimension of the spatial domain and for the 
   	 coarsest lattice.
@@ -61,18 +65,21 @@ LKrigSetupLattice(object, ...)
 	  NC^2 and NC^3 respectively. Note that the total number of lattice points
 	   at a given level is also effected the size of NC.buffer (see below). 
 }
+
   \item{NC.buffer}{The number of lattice points to add to the margins beyond the
   	 spatial domain. Thus in the largest spatial dimension there are a total of 
 		NC + NC.buffer*2 grid points. This is the number of lattice points for 
 		LKInterval.
-} 
+}
+
 \item{verbose}{If TRUE print out intermediate information for debugging.
 }
-\item{x}{Locations of the observations that define spatial domain.
-}
-  \item{\dots}{Any additional arguments. 
-%%     ~~Describe \code{\dots} here~~
-}
+
+\item{x}{Locations of the observations that define spatial domain. For LKSphere locations
+are in lon/lat degrees.}
+
+\item{\dots}{Any additional arguments. }
+  
 }
 \details{
 	This method takes the LKInfo object and the other arguments and computes the 
@@ -106,7 +113,7 @@ LKrigSetupLattice(object, ...)
 	}
 	
 	In addition, the methods for cartesian and cartesian-like  spatial domains (
-	LKInterval, LKRectangle, LKBox, LKRing, LKCylinder) include the additional components:
+	LKInterval, LKRectangle, LKBox, LKRing, LKCylinder, LKSphere) include the additional components:
 	\describe{	
 		\item{mx}{A matrix giving number of grid points at each level and for each dimension.}
 		\item{mLevelDomain}{Same as mLevel but restricted to lattice points
@@ -117,7 +124,11 @@ LKrigSetupLattice(object, ...)
 		\item{NC}{Passed value.}
 		\item{NC.buffer}{Passed value.}
 		\item{grid}{A list where each component is also list giving the grid points of the lattice in each coordinate. }
-    }  
+    }
+    
+  LKSphere also returns the additional component \code{grid3d} -- the direction Cosines
+  of the grid points. 
+    
     
       
 

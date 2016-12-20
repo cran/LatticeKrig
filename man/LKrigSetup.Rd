@@ -28,16 +28,21 @@ This function combines some input arguments with defaults for other to create a 
 describing the LatticeKrig spatial model. 
 }
 \usage{
-LKrigSetup(x = NULL, nlevel = NULL, alpha = NA, nu = NULL, a.wght
+LKrigSetup(
+x = NULL, nlevel = NULL, alpha = NA, nu = NULL, a.wght
                  = NA, normalize = TRUE, lambda = NA, sigma = NA, rho =
-                 NA, rho.object = NULL, latticeInfo = NULL, basisInfo =
-                 NULL, LKGeometry = "LKRectangle", distance.type =
+                 NA, rho.object = NULL,
+                 latticeInfo = NULL, basisInfo =NULL,
+                 LKGeometry = "LKRectangle", distance.type =
                  "Euclidean", BasisFunction = "WendlandFunction",
                  overlap = 2.5, V = NULL, BasisType = "Radial",
                  fixedFunction = "LKrigDefaultFixedFunction",
                  fixedFunctionArgs = list(m = 2), max.points = NULL,
                  mean.neighbor = 50, choleskyMemory = NULL, verbose =
-                 FALSE, noCheck = FALSE, setupArgs = NULL, ...)                 
+                 FALSE, noCheck = FALSE, returnCall = FALSE, dense=FALSE, ...)
+
+
+                 
 LatticeKrigEasyDefaults(argList, nlevel, x)
 
 LKinfoUpdate(LKinfo, ... )
@@ -50,12 +55,17 @@ LKinfoUpdate(LKinfo, ... )
 \item{alpha}{A vector of length \code{nlevel} with the relative
 variances for the different multiresolution levels.  }
 
- \item{a.wght}{ A vector of length \code{nlevel} that are the weights
-  	for the central point in the Markov random field
-  	specification. To be precise at level k the center point has
-  	weight a.wght[k] with the 4 nearest neighbors given weight
-  	-1. The a.wght must be greater than 4 for the fields to be
-  	stationary.  }
+ \item{a.wght}{ In most cases, a vector of length \code{nlevel} that are the 
+    neighboring weights in the spatial autoregession. The setup function will
+    check that the value is in a valid range for a geometry.
+    
+  	The details of how this is connected to the covariance function varies
+  	based on the geometry. However, qualitatively this is related to a range parameter.
+  	For the LKRectangle geometry and a stationary model,  at level k the center point has
+  	weight 1 with the 4 nearest neighbors given weight
+  	-1/a.wght[k]. In this case a.wght must be greater than 4 for the fields to be
+  	stationary and following Lindgren and Rue the range parameter is approximately
+  	 \code{1/sqrt(a.wght-4)}  }
 
  \item{basisInfo}{ A list with extra components the object used to
   	describe the multiresolution basis.  Usually this will not be
@@ -67,6 +77,11 @@ variances for the different multiresolution levels.  }
 \item{choleskyMemory}{A list that will be used in the spam call to 
 do the Cholesky decomposition. See the \code{memory} argument in 
 \code{chol.spam}. }
+
+\item{dense}{If FALSE sparse linear algebra is used for the computations. If TRUE the matrices are
+made "dense" (zeroes are filled in) and the ordinary Lapack functions are used for the linear algebra.
+This option is primarily
+for testing and timing sparse verses standard algorithms. }
 
  \item{distance.type}{A text string indicate type distance to use
   	between spatial locations when evaluating the basis
@@ -105,7 +120,7 @@ do the Cholesky decomposition. See the \code{memory} argument in
   	supplied by \code{LKrigSetupLattice}.}
   	 
   \item{LKGeometry}{ A text string that gives the names of the model
-  	geometry.  The default is "LKrectangle" assuming the the
+  	geometry.  The default is "LKrectangle" assuming the 
   	spatial domain is a rectangle.  Other common choices are
   	"LKInterval" (1 d problem ) and "LKBox" (3 d problem) }
 
@@ -136,16 +151,20 @@ do the Cholesky decomposition. See the \code{memory} argument in
   \item{normalize}{ If TRUE the basis functions will be normalized to
   	give a marginal variance of one for each level of
   	multiresolution.  (Normalizing by levels makes it easier to
-  	interpret the \code{alpha} weights.)  } \item{nu}{ A
+  	interpret the \code{alpha} weights.)  } 
+  
+  \item{nu}{ A
   	smoothness parameter that controls relative sizes of
   	\code{alpha}.  Currently this parameter only makes sense for
-  	the 2D rectangular domain (LKRectangle) } \item{overlap}{
+  	the 2D rectangular domain (LKRectangle) } 
+  	
+  \item{overlap}{
   	Controls the overlap among the radial basis functions and
   	should be in units of the lattice spacing. For the rectangular
   	case the default of 2.5 means that the support of the Wenland
   	basis function will overlap 2.5 lattice units in each
-  	direction.  See \code{LKrig.basis} for how overlap enters
-  	scaling in the formula. }
+  	direction.  See \code{LKrig.basis} for how overlap adjusts
+  	scaling in the basis function formula. }
   	
   \item{rho}{ A scalar, the sill or marginal variance of the process.
   	} 
@@ -159,12 +178,9 @@ do the Cholesky decomposition. See the \code{memory} argument in
   	should return a vector with the values of h at the (arbitrary)
   	spatial locations in x1.  If omitted assumed to be the
   	constant one -- the usual case.  }
- 	
-  \item{setupArgs}{A list containing additional components that will
-  	be 1) included in the LKinfo object in the component
-  	\code{setupArgs} and 2) passed to \code{LKrigSetupLattice} to
-  	use for any specific features of constructing the lattice. }
-  
+ 	\item{returnCall}{If TRUE the call to LKrigSetup is also included as
+ 	      part of the LKinfo object. }
+ 
   \item{sigma}{ The measurement error standard deviation.  Also called
   	the nugget variance in geostatistics.  }
   	
@@ -179,9 +195,10 @@ are required that bound the rest of the data locations. E.g.  x=
 rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 
  	
-  \item{\dots}{Specific arguments that will be included in
+  \item{\dots}{Specific arguments that will be included in the
   	\code{setupArgs} list and also passed to
-  	\code{LKrigSetupLattice}. }
+  	\code{LKrigSetupLattice}. For LKinfoUpdate these specify the components
+  	       of LKinfo to update.  }
 }
 \details{
 	Many of the functions within LKrigSetup are overloaded to
@@ -235,9 +252,15 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 
 \examples{
   data(ozone2)
-  x<-ozone2$lon.lat
+  # find the ranges of the  data, this is the same as passing the entire set of observation
+  # locations and is more compact 
+  x<-apply( ozone2$lon.lat, 2,"range")
+  
   LKinfo<- LKrigSetup( x, NC=10, nlevel=2, alpha=c(1,.5), a.wght=c(5,5))
   print( LKinfo)
+  LKinfo2<- LKinfoUpdate( LKinfo,  a.wght=c(4.1,4.1), NC=12)
+  LKinfo3<-  LKrigSetup( x, NC=12, nlevel=2, alpha=c(1,.5), a.wght=c(4.1,4.1))
+ 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

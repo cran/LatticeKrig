@@ -1,8 +1,8 @@
 Package: LatticeKrig
-Version: 5.5
-Date: 2016-05-21
+Version: 6.2
+Date: 2016-12-20
 Title: Multiresolution Kriging Based on Markov Random Fields
-Author: Douglas Nychka [aut, cre], Dorit Hammerling [aut], Stephan Sain [aut], Nathan Lenssen [aut]
+Author: Douglas Nychka [aut, cre], Dorit Hammerling [aut], Stephan Sain [aut], Nathan Lenssen [aut], Colette Smirniotis [aut]
 Authors@R: c( 
             person("Douglas", "Nychka", role = c("aut", "cre"),
                email = "nychka@ucar.edu"),
@@ -11,7 +11,10 @@ Authors@R: c(
             person("Stephan", "Sain", role = "aut",
                email = "ssain@ucar.edu"),
             person("Nathan", "Lenssen", role = "aut",
-               email = "lenssen@ucar.edu")) 
+               email = "lenssen@ucar.edu"),
+	    person("Colette", "Smirniotis", role = "aut",
+               email = "cmsmirni@gmail.com")
+	       ) 
 Maintainer: Douglas Nychka <nychka@ucar.edu>
 Description: Methods for the interpolation of large spatial
   datasets. This package follows a "fixed rank Kriging" approach using
@@ -33,7 +36,7 @@ Description: Methods for the interpolation of large spatial
   representation makes the implementation of different geometries
   simple where only a few specific functions need to be added with
   most of the computation and evaluation done by generic routines that
-  have been tuned to be efficient.  One benefit of the LatticeKrig
+  have been tuned to be efficient.  One benefit of this package's
   model/approach is the facility to do unconditional and conditional
   simulation of the field for large numbers of arbitrary points. There
   is also the flexibility for estimating non-stationary covariances
@@ -42,9 +45,9 @@ Description: Methods for the interpolation of large spatial
   methods for prediction, standard errors for prediction, plotting of
   the estimated surface and conditional and unconditional simulation.
 License: GPL (>= 2)
-URL: http://www.r-project.org
-Depends: R (>= 3.0.1), methods, spam, fields (>= 6.9.1)
-Packaged: 2016-05-21 14:22:35 UTC; nychka
+URL: https://www.r-project.org
+Depends: R (>= 3.3.2), methods, spam, fields (>= 8.8)
+Packaged: 2016-12-20 17:53:36 UTC; nychka
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2016-05-22 09:20:48
+Date/Publication: 2016-12-20 19:11:59

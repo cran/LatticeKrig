@@ -22,6 +22,7 @@
 
 setDefaultsLKinfo.LKRectangle <- function(object, ...) {
 # object ==  LKinfo intital list passed to the LKrigSetup function 
+  object$floorAwght<- 4
 # logic for V happens in lattice setup  	
         if( is.null(object$lonlatModel) ){
           object$lonlatModel<- object$distance.type=="Chordal" |
@@ -37,14 +38,14 @@ setDefaultsLKinfo.LKRectangle <- function(object, ...) {
 return(object)
 }
 
-LKrigSetupLattice.LKRectangle <- function(object, x, verbose, NC = NULL, 
+LKrigSetupLattice.LKRectangle <- function(object,  verbose, NC = NULL, 
 	NC.buffer = 5, ...) {
 	###### some common setup operations to all geometries
 	LKinfo <- object
 	if (class(LKinfo)[1] != "LKinfo") {
 		stop("object needs to an LKinfo object")
 	}
-	rangeLocations <- apply(x, 2, "range")
+	rangeLocations <- apply(object$x, 2, "range")
 	nlevel <- LKinfo$nlevel
 	###### end common operations  
 	
@@ -60,7 +61,7 @@ if (is.null(LKinfo$basisInfo$V)) {
 	} else {
 		Vinv <- solve(LKinfo$basisInfo$V)
 	}
-	range.x <- apply(x %*% t(Vinv), 2, "range")
+	range.x <- apply(object$x %*% t(Vinv), 2, "range")
 	if (verbose) {
 		cat("ranges of transformed variables", range.x, fill = TRUE)
 	}
@@ -139,6 +140,7 @@ LKrigSetupAwght.LKRectangle <- function(object, ...) {
 	a.wght <- object$a.wght
 	nlevel <- object$nlevel
 	mx <- object$latticeInfo$mx
+	isotropic<- ifelse( length( a.wght)==1, TRUE, FALSE)
        
 	if (!is.list(a.wght)) {
 		# some checks on a.wght
@@ -174,7 +176,7 @@ stationary <- is.null(dim(a.wght[[1]]))
 	if (stationary) {
 		for (k in 1:length(a.wght)) {
 			N.a.wght <- length(a.wght[[1]])
-			# allowed lengths for a.wght are just the center 1 values
+			# allowed lengths for a.wght are just the center: 1 value
 			# or 9 values for center,  first, and second order neighbors
 if (is.na(match(N.a.wght, c(1, 9)))) {
 				stop("a.wght needs to be of length 1 or 9")
@@ -208,6 +210,7 @@ if (fastNormalization) {
 	attr(a.wght, which = "fastNormalize") <- fastNormalization
 	attr(a.wght, which = "first.order") <- first.order
 	attr(a.wght, which = "stationary") <- stationary
+	attr(a.wght, which = "isotropic") <- isotropic
 	#
 	return(a.wght)
 }
@@ -333,8 +336,9 @@ LKrigSAR.LKRectangle <- function( object, Level, ...){
     if( any(unlist(a.wght)<4) ){
         stop("a.wght less than 4")
       }
-    stationary<-     attr( object$a.wght, "stationary")
+    stationary <-     attr( object$a.wght, "stationary")
     first.order<-    attr( object$a.wght, "first.order")
+    isotropic  <- attr(object$LKinfo$a.wght, "isotropic")
     distance.type <-  object$distance.type
     
     #  pass a.wght as an (mx1 by mx2)  matrix

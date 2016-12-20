@@ -77,7 +77,7 @@ function can be used to solve a linear inverse type problem (see X and U below).
 
 	
 \item{chull.mask}{An additional constraint for evaluating predictions see
-\code{help(in.poly)}. Usually this is not needed. }
+\code{help(in.poly)}. Usually this is not needed.  }
      
 \item{digits}{Number of digits in printed output.}
    
@@ -166,14 +166,16 @@ the z component follows the shape described above for the no list case.   }
 	For example if a warning is printed that nnzR needs to be at least 2e5 in size, passing 
 	\code{choleskyMemory= list( nnzR= 2e5)} will avoid this warning. 
   
- See the help on \code{LKrigSetup} for explanation of the options. Typically one would setup the LKinfo object outside of this call and 
+ See the help on \code{LKrigSetup} for explanation of the options. Typically one
+ would setup the LKinfo object outside of this call and 
  just pass a few arguments that are being varied. In particular to 
  use LKrig with different lambda values   \code{lambda = 1e-3} in the call 
  would reset the lambda value to 1e-3.
   The minimal set of arguments for a 2-d rectangular
  domain, however,  are  \code{alpha}, \code{nlevel}, \code{NC}, and \code{a.wght}.
  
- \strong{alpha} The sequence of positive weights for each level of the multiresolution process. Usually these add to one and are interpreted as the variance of the process at each level. 
+ \strong{alpha} The sequence of positive weights for each level of the multiresolution process.
+ Usually these add to one and are interpreted as the variance of the process at each level. 
 
  \strong{a.wght} The weight given to the central lattice point in the 
  	spatial autoregression (see details below). 
@@ -184,7 +186,8 @@ level increases the number of basis functions by roughly a factor of
 
 \strong{NC} Number of lattice points in first level and along the largest 
 	dimension. e.g. if NC=5 and the domain is square the domain will 
-	contain 25 lattice points at the first level. Note that there may be additional lattice points added as buffers outside the spatial domain 
+	contain 25 lattice points at the first level. Note that there may be
+	additional lattice points added as buffers outside the spatial domain 
 	(default is 5 on each side). 
 
 Some additional arguments are \code{V} that defines a linear scaling of the 
@@ -212,7 +215,8 @@ weighting between these processes.  Thus, the minimum set of
 parameters needed to describe the covariance of f are the integer
 \code{NC}, two scalars \code{rho} and \code{a.wght}, and a vector
 \code{alpha}. \code{alpha} has a length of  the number of multiresolution
-levels but we recommend that it be constrained sum to one.  The parameter rho is the
+levels but we recommend that it be constrained sum to one.  The parameter
+rho is the
 marginal variance of the process and this multiples alpha.  Thus in
 total there are a 1 + 2 + (nlevel - 1) parameters for a minimal
 specification of the covariance.  Note that this parsimonious
@@ -245,17 +249,35 @@ The data model can also be written in vector form as
 
 Y =  T d + PHI c + e 
 
-Where T is a matrix that combines the low order polynomial with other possible covariates
-and PHI is the matrix basis functions evaluated at the observations. A simple extension 
- is considering a linear inverse problem form. This is an experimental of LatticeKrig that is intended for solving large linear inverse problems. In this case
-one supplies to the \code{LKrig} function two matrices (in spam sparse format) such that
+Where T is a matrix that combines the low order polynomial with other
+possible covariates
+and PHI is the matrix basis functions evaluated at the observations. A
+simple extension 
+ is considering a linear inverse problem form. This is an experimental of
+ LatticeKrig that is intended for solving large linear inverse problems. In
+ this case
+one supplies to the \code{LKrig} function two matrices (in spam sparse
+format) such that
 
 Y = U d + X c + e. 
 
-This features allows for observations that are linear functionals of f and not necessarily the function evaluated at the observation locations. This model is useful for working with demographic
-or tomographic problems where the observations are expressed as particular integrals of f over 
-different regions or different projections. See the last example on how to use this option. 
-If U and X are not supplied the default is to consider a model with observations made at evaluating f at the observation locations. 
+This features allows for observations that are linear functionals of f and
+not necessarily the function evaluated at the observation locations. This
+model is useful for working with demographic
+or tomographic problems where the observations are expressed as particular
+integrals of f over 
+different regions or different projections. See the last example on how to
+use this option. 
+If U and X are not supplied the default is to consider a model with
+observations made at evaluating f at the observation locations. 
+
+\strong{About dense matrix computations:} The value of this package is to
+handle larger spatial data sets by exploiting sparse matrix methods using
+the spam package. However, for small problems, checking, or timing it is
+useful to do the computations using the usual dense matrix decompositions.
+If the component \code{dense} in the LKinfo object is \code{TRUE} then dense
+(i.e. standard) methods will be used. Set this switch from the
+LKrigSetup function.
 
 \strong{Spatial prediction:} The basis functions are assumed to be
 fixed and the coefficients follow a multivariate Gaussian
@@ -619,10 +641,10 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike,
  LKrig.precision
 }
 \examples{
-# NOTE: CRAN requires that the "run" examples to execute within  5 seconds. 
+# NOTE: CRAN requires that the "run" examples  execute within  5 seconds. 
 # so to meet this constraint many of these have been 
 # severely limited to be quick, typically making NC and nlevel
-# unreasonably small.
+# very small.
 	
 # Load ozone data set
   data(ozone2)  
@@ -640,7 +662,7 @@ mKrig, Krig, fastTps, Wendland, LKrig.coef, Lkrig.lnPlike,
   print(obj1)
 #  
 # this is the same as:
-#  LKinfoEX<- LKrigSetup( x,y, a.wght5, nlevel=3, nu=1.0, NC=4)
+#  LKinfoEX<- LKrigSetup( x, a.wght=5, nlevel=3, nu=1.0, NC=4)
 #  obj1<- LKrig( x,y, LKinfo= LKinfoEX, lambda=.1)  
 
 # thin plate spline-like model with the lambda parameter estimated by
@@ -928,7 +950,7 @@ out1<- LatticeKrig(x,yIndirect, U=U, X=X, LKinfo=LKinfo)
 #
 plot( predict(out0,x), predict( out1,x))
 
-out<- LKrig.sim.conditional( out1,M=5, nx=10, ny=10,verbose=TRUE )
+out<- LKrig.sim.conditional( out1,M=5, nx=10, ny=10 )
 }	
 
 }

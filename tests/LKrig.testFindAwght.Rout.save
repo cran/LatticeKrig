@@ -15,18 +15,14 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> 
+> # simulation example for estimating covariance
 > # LatticeKrig
-> # Copyright 2004-2011, Institute for Mathematics Applied Geosciences
+> # Copyright 2004-2016, Institute for Mathematics Applied Geosciences
 > # University Corporation for Atmospheric Research
 > # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
 > 
-> 
-> # test of radial basis function based on Wendland
-> # and using sparse formats
-> # Important check is of the FORTRAN function dfind2d
-> # that does pairwise distances among points within a specified range.
-> 
->   library(LatticeKrig)
+> library(LatticeKrig)
 Loading required package: spam
 Loading required package: grid
 Spam version 1.4-0 (2016-08-29) is loaded.
@@ -43,26 +39,24 @@ The following objects are masked from 'package:base':
 
 Loading required package: fields
 Loading required package: maps
->   options( echo=FALSE)
-Testing:  check using Qinverse formula
-PASSED test at tolerance  1e-07
-Testing:  check using Qinverse formula full matrix
-PASSED test at tolerance  1e-07
-Testing:   Qinverse formula norm
-PASSED test at tolerance  1e-07
-Testing:   Qinverse formula nonorm
-PASSED test at tolerance  1e-08
-Testing:   Qinverse formula Tensor no norm
-PASSED test at tolerance  1e-08
-Testing:   Qinverse formula Tensor no norm
-PASSED test at tolerance  1e-08
-Testing:   1 level Marginal variance compared to  fast normalize
-PASSED test at tolerance  2e-07
-Testing:  Marginal variance and fast normalize
-PASSED test at tolerance  1e-07
-Done with testing fast normalize algorithm
-> 
-> 
+> options(echo = FALSE)
+       EffDf   lnProfLike          GCV    sigma.MLE      rho.MLE   lambda.MLE 
+   3.583e+01    2.774e+04    1.457e+01    9.731e-02    1.178e+00    8.040e-03 
+  a.wght.MLE       lnLike functionEval gradientEval    totalEval 
+   4.268e+00           NA    3.000e+00    3.000e+00    1.600e+01 
+       EffDf   lnProfLike          GCV    sigma.MLE      rho.MLE   lambda.MLE 
+   3.661e+01    2.779e+04    1.532e+01    9.928e-02    1.100e+00    8.958e-03 
+ llambda.MLE       lnLike counts value         grad 
+  -4.715e+00           NA    1.100e+01           NA 
+[1] 0.008958
+Testing:   log Like lambda MLE
+PASSED test at tolerance  0.002
+       EffDf   lnProfLike          GCV    sigma.MLE      rho.MLE   lambda.MLE 
+   4.756e+01    6.872e+04    4.800e+00    5.016e-02    1.047e+00    2.403e-03 
+  a.wght.MLE       lnLike functionEval gradientEval    totalEval 
+   4.253e+00           NA    5.000e+00    5.000e+00    2.600e+01 
+PASSED test at tolerance  0.02
+PASSED test at tolerance  0.04
 > proc.time()
    user  system elapsed 
-  2.326   0.043   2.360 
+ 22.261   0.236  22.517 
