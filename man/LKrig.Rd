@@ -22,6 +22,7 @@
 \alias{predict.LKrig}
 \alias{predictSE.LKrig}
 \alias{print.LKrig}
+\alias{summary.LKrig}
 \alias{print.LKinfo}
 \alias{surface.LKrig}
 \alias{predictSurface.LKrig}
@@ -57,6 +58,8 @@ function can be used to solve a linear inverse type problem (see X and U below).
                  ZGrid = NULL, drop.Z = FALSE, ...)
 
 \method{print}{LKrig}( x, digits=4, ...)
+
+\method{summary}{LKrig}( object, digits=4, ...)
 
 }
 \arguments{
@@ -106,7 +109,7 @@ from the other, Z, covariates in the fixed component will be omitted.}
 \item{NtrA}{Number of random samples used in Monte Carlo method for
 determining effective degrees of freedom. }
  
-\item{object}{The \code{LKrig} object.}
+\item{object}{An \code{LKrig} object.}
 
 \item{return.cholesky}{If TRUE the Cholesky decomposition is included
     in the output list (with the name \code{Mc}). This is needed for
