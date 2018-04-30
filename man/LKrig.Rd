@@ -43,10 +43,12 @@ function can be used to solve a linear inverse type problem (see X and U below).
 	LKrig( x, y, weights = NULL, Z = NULL, LKinfo = NULL, iseed =
                  NA, NtrA = 20, use.cholesky = NULL, return.cholesky =
                  TRUE, X = NULL, U = NULL, wX = NULL, wU = NULL,
-                 return.wXandwU = TRUE, ..., verbose = FALSE)
+                 return.wXandwU = TRUE,
+                 ..., verbose = FALSE)
 
 \method{predict}{LKrig}(object, xnew = object$x, Znew = NULL, drop.Z = FALSE,
-                 just.fixed = FALSE, return.levels = FALSE, ...)
+                 just.fixed = FALSE, return.levels = FALSE,
+                 collapseFixedEffect=object$collapseFixedEffect, ...)
                  
 \method{predictSE}{LKrig}(object, xnew = NULL, Znew = object$Z, verbose = FALSE,
                  ...)
@@ -59,7 +61,7 @@ function can be used to solve a linear inverse type problem (see X and U below).
 
 \method{print}{LKrig}( x, digits=4, ...)
 
-\method{summary}{LKrig}( object, digits=4, ...)
+\method{summary}{LKrig}( object, digits=4, stripAwght = TRUE,...)
 
 }
 \arguments{
@@ -81,6 +83,8 @@ function can be used to solve a linear inverse type problem (see X and U below).
 	
 \item{chull.mask}{An additional constraint for evaluating predictions see
 \code{help(in.poly)}. Usually this is not needed.  }
+
+\item{collapseFixedEffect}{If FALSE the fixed part of the model is found seperately for each replicated data set. If TRUE the estimate is polled across replicates.This is largely a modeling decision whether variation among the replicate fields is due to the spatial component or also include variation in the fixed effects across replicates -- guess they are not really fixed then!}
      
 \item{digits}{Number of digits in printed output.}
    
@@ -123,6 +127,15 @@ determining effective degrees of freedom. }
 returned as columns in a matrix. }
 
 \item{return.wXandwU}{If TRUE the matrices wX and xU are included in the LKrig object.}
+\item{stripAwght}{ If TRUE the attributes for the a.wght returned by the summary
+are wiped out. Why do this? In some cases the a.wght list has some attributes
+attached to
+it that are large. For example if fastNormalize is TRUE for LKRectangle 
+there are some 
+precomputed matrices that are included to speed the normalization of the basis
+functions. These attributes make the a.wght itself hard to print out and if the
+summaries for many fits are accumulated these attributes greatly inflate the size
+of the results. }
 
 \item{U}{For linear inverse problems the matrix that maps coefficients of the fixed part of model to the predicted
 	values of observations.}
@@ -178,7 +191,7 @@ the z component follows the shape described above for the no list case.   }
  domain, however,  are  \code{alpha}, \code{nlevel}, \code{NC}, and \code{a.wght}.
  
  \strong{alpha} The sequence of positive weights for each level of the multiresolution process.
- Usually these add to one and are interpreted as the variance of the process at each level. 
+ Usually these sum to one and are interpreted as the variance of the process at each level. 
 
  \strong{a.wght} The weight given to the central lattice point in the 
  	spatial autoregression (see details below). 
@@ -479,7 +492,7 @@ in setting up the LKinfo object or passed in the  \dots  for this function.
 \code{V} should be a matrix that represents the transposed, inverse transformation applied to the raw coordinates.  For example if \code{x1} are  locations  d- dimensions 
 ( i.e. x1 has d columns) and \code{V} is a dXd matrix then the transformed coordinates are 
 
- x1Transformed <- x1 %*% t(solve(V))
+ x1Transformed <- x1 \%*\% t(solve(V))
  
 and all subsequent computations will use the transformed coordinates for evaluating the basis functions. This also means that the lattice centers are locations in the 
 transformed scale. The following example might be helpful:
@@ -519,36 +532,27 @@ predict(rho.object, x)} is associated with the marginal variance of
 the full spatial process.
 
 A second option is to allow the alpha variance component parameters to
-vary across the lattices at each level. For this case alpha is a list
-with \code{nlevel} components and each component being a matrix with
-the same dimensions as the lattice at that level.  The SAR weight
-matrix is taken to be the usual weights but each row is scaled by the
-corresponding value in the alpha weight matrix. To be precise the
-weight matrix is given in pseudo R code by
+vary across space and at each level. The model in this case could be 
 
-\code{diag( 1/sqrt( c(alpha[[i]]))\%*\%B}
+g(x) = sqrt(rho(x)) * sum.i sqrt(alpha(x).i) * g.i(x)
 
-leading to the precision matrix at level i of
+To specifiy this case \code{alpha} should be a list
+with \code{nlevel} components and each component being a "predict" object that will evaluate the alpha  variance at a given level at arbitrary spatial locations. 
+Explicitly alpha should be set up so that  \code{ predict(alpha[[l]], x1) } will return a vector of  values for alpha at level \code{l} and at locations \code{x1}. This happens in \code{LKrig.basis} and the user is referred to this function to see how it is handled and possibly to make modifications to the model.  Similar to the scalar alpha case we recommend that the alpha's across levels sum to one and it still may make sense to have the rho parameter vary across space as well. Here alpha would control a varying correlation range and rho the marginal variance. 
 
-  Q.i = t(B) \%*\% diag( c(1/alpha[[i]]))\%*\%B
-
-In this code, note that the matrix of weights, \code{alpha[[i]]} is
-being stacked as a larger vector to match the implicit indexing of the
-basis coefficients.
 
 LKrig also has the flexibility to handle more general weights in the
 GMRF.  This is accomplished by \code{a.wght} being a list with as many
 components as levels. If each component is a vector of length nine
 then these are interpreted as the weights to be applied for the
-lattice point and its 8 nearest neighbors (see help(
-LKrig.MRF.precision) and the commented source code for details). If
+lattice point and its 8 nearest neighbors see  the commented source code in \code{LKrigSAR.LKRectangle} for details. If
 each component is a matrix then these are interpreted as the
 (nonstationary) center weights for each lattice point. Finally if the
 component is an array with three dimensions this specifies the center
 and 8 nearest neighhors for every point in the lattice.  At this point
 the choice of these weights beyond a stationary model is experimental
 and we will defer further documentation of these features to a future
-version. 
+version of this package. 
 
 \strong{The smoothing parameter lambda and effective degrees of
 freedom} Consistent with other fields package functions, the two main
@@ -575,7 +579,7 @@ monotonic relationship to lambda. The Monte Carlo method uses the fact
 that if e are iid N(0,1) E( t(e) A(lambda) e) = trace( A(lambda)).
 
 
-\strong{An Extension to linear inverse problems} 
+%\strong{An Extension to linear inverse problems} 
 
 \strong{Descriptions of specific functions and objects:}
 
@@ -911,7 +915,9 @@ LKinfo<- LKrigSetup( x,
 }
 
 \dontrun{
-# an example of a linear inverse problem 
+##################################################################
+#  a linear inverse problem 
+##################################################################
 # NOTE the settings in the model are small to make for a fast example
 #
 data(ozone2)

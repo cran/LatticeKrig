@@ -1,7 +1,7 @@
 
-R version 3.3.2 (2016-10-31) -- "Sincere Pumpkin Patch"
-Copyright (C) 2016 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin13.4.0 (64-bit)
+R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -20,27 +20,10 @@ Type 'q()' to quit R.
 > # University Corporation for Atmospheric Research
 > # Licensed under the GPL -- www.gpl.org/licenses/gpl.html
 > 
-> library( LatticeKrig)
-Loading required package: spam
-Loading required package: grid
-Spam version 1.4-0 (2016-08-29) is loaded.
-Type 'help( Spam)' or 'demo( spam)' for a short introduction 
-and overview of this package.
-Help for individual functions is also obtained by adding the
-suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
-
-Attaching package: 'spam'
-
-The following objects are masked from 'package:base':
-
-    backsolve, forwardsolve
-
-Loading required package: fields
-Loading required package: maps
+> suppressMessages(library( LatticeKrig))
 > options( echo=FALSE)
-[1] 6.2
 Testing:  LKCylinder basis using expliciti formula
 PASSED test at tolerance  1e-10
 > proc.time()
    user  system elapsed 
-  0.963   0.070   1.025 
+  1.266   0.132   1.403 

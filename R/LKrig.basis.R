@@ -76,7 +76,7 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
         PHItemp <- Radial.basis(  x1, centers, basis.delta[l],
                                 max.points = LKinfo$basisInfo$max.points,
                              mean.neighbor = LKinfo$basisInfo$mean.neighbor, 
-                       BasisFunction = get(LKinfo$basisInfo$BasisFunction),
+                             BasisFunction = get(LKinfo$basisInfo$BasisFunction),
                              distance.type = LKinfo$distance.type,
                                    verbose = verbose)
                              )
@@ -130,23 +130,47 @@ LKrig.basis <- function(x1, LKinfo, verbose = FALSE)
               PHItemp@entries <- PHItemp@entries/sqrt(wght)
               }
          if( verbose){
-          cat("normalized basis functions", fill=TRUE)
+          cat("finding normalized basis functions", fill=TRUE)
         }    
         }   
-        # accumulate this new level of basis functions.
-        # explicit designation of spam prevents this being used 
-        # without the spam library 
-        # NOTE: when spam is loaded this is equivalent to just cbind( PHI, PHItemp)
+       
+# NOTE: when spam is loaded this is equivalent to just cbind( PHI, PHItemp)
+        
+# always weight basis functions by scalar alpha
+        if (is.null( LKinfo$alphaObject[[l]]) ){
+         wght <- LKinfo$alpha[[l]]
+        }
+        else{
+# spatially varying alpha extension         
+          wght <- LKinfo$alpha[[l]]*c(predict(LKinfo$alphaObject[[l]], x1))
+          }
+#  spam does not handle diag of one element so do separately  
+        if( length( wght)>1){
+            PHItemp <- diag.spam(sqrt(wght)) %*% PHItemp
+          }
+        else{
+            PHItemp <-sqrt(wght)*PHItemp
+        }
+# accumulate this level into growing basis matrix        
         PHI <- spam::cbind.spam(PHI, PHItemp)
     }
-    # include a spatially varying multiplication of process.
+# finally multiply the basis functions by sqrt(rho) to give the right
+# marginal variances. This is either a function of the locations or constant.
+# rho may not be provided when estimating a model 
     if (!is.null( LKinfo$rho.object) ) {
-        wght <- c(predict(LKinfo$rho.object, x1))
-        PHI <- diag.spam(sqrt(wght)) %*% PHI
-        }
-    # attach  LKinfo list to the matrix to help identify how the basis functions
-    # are organized.
-    attr(PHI, which = "LKinfo") <- LKinfo
+      wght <- c(predict(LKinfo$rho.object, x1))
+    }
+    else{
+      wght<- ifelse( is.na( LKinfo$rho), 1.0, LKinfo$rho )
+    }
+      
+    if( length( wght)>1){
+      PHI <- diag.spam(sqrt(wght)) %*% PHI
+      }
+    else{
+      PHI <-sqrt(wght)*PHI
+      }
+#############    attr(PHI, which = "LKinfo") <- LKinfo
     return(PHI)
 }
 

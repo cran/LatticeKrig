@@ -34,7 +34,6 @@ LKrig <- function(x, y,
           return.wXandwU = TRUE,
                	            ...,
                	 verbose = FALSE) {
-    	 	
 # if LKinfo is missing create it from passed arguments 
 # if it is passed update this object with the ... arguments
 # for example a new lambda value can be passed in this part.
@@ -98,7 +97,6 @@ else{
 timeQ<-system.time(
         Q <- LKrig.precision(LKinfo, verbose=verbose)
         )
-
 if( LKinfo$dense){
   if( !is.null(  use.cholesky)){
     stop("Can not update (use.cholesky) with dense matrix option")
@@ -161,9 +159,12 @@ if( !LKinfo$dense){
 # Note that this functions also finds an important piece of the likelihood (quad.form)
 	timeCoef<- system.time(
 	out1 <- LKrig.coef(GCholesky, wX, wU, wy,
-	               LKinfo$lambda,
+	               LKinfo$lambda, 
+	   collapseFixedEffect = LKinfo$collapseFixedEffect, 
 	               verbose=verbose)
 	)
+# Note collapseFixedEffect added as component here in the return
+# finding coefficients
 	object <- c(object, out1)
 	
 # compute predicted values  and residuals

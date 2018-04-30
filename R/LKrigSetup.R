@@ -20,7 +20,8 @@
 # or see http://www.r-project.org/Licenses/GPL-2
 
 LKrigSetup <- function(x = NULL,
-                       nlevel=NULL, alpha=NA, nu = NULL, a.wght = NA,
+                       nlevel=NULL, alpha=NA, alphaObject=NULL, nu = NULL,
+                       a.wght = NA, a.wghtObject=NULL, 
                        normalize=TRUE,
                        lambda = NA, sigma = NA, rho = NA, rho.object = NULL,
                        latticeInfo=NULL, basisInfo=NULL, 
@@ -38,12 +39,13 @@ LKrigSetup <- function(x = NULL,
 # setDefaultsLKinfo below.
                        fixedFunction="LKrigDefaultFixedFunction",    
                        fixedFunctionArgs = list(m=2),
+                       collapseFixedEffect = FALSE,
 # defaults for sparse matrix size.                        
                        max.points=NULL, mean.neighbor=50, choleskyMemory=NULL,
 # useful for debugging                       
                        verbose = FALSE, noCheck=FALSE,
                        returnCall = FALSE,
-                       dense=FALSE,
+                       dense=FALSE, 
 # these additional arguments will just be added as a list to the LKinfo object as setupArgs
                           ... ) { 
 #
@@ -54,7 +56,9 @@ LKrigSetup <- function(x = NULL,
    LKinfo<-  list(      x = x,
                    nlevel = nlevel,
                     alpha = alpha,
+              alphaObject = alphaObject,
                    a.wght = a.wght,
+             a.wghtObject = a.wghtObject,
                        nu = nu,
                 normalize = normalize,
                    lambda = lambda,
@@ -69,11 +73,13 @@ LKrigSetup <- function(x = NULL,
                 BasisType = BasisType,
             fixedFunction = fixedFunction,
         fixedFunctionArgs = fixedFunctionArgs,
+      collapseFixedEffect = collapseFixedEffect,
                max.points = max.points,
             mean.neighbor = mean.neighbor,
            choleskyMemory = choleskyMemory,
                 setupArgs =  setupArgs,
                     dense = dense
+        
                  ) 
 # 
     LKinfo$basisInfo<- list(             BasisType = BasisType,
@@ -121,12 +127,12 @@ LKrigSetup <- function(x = NULL,
 # reformat, modify, and check the parameters for the Markox random field/ GP model
 #  fix up the alpha parameters
 #   the default method is probably adequate for most geometries and SARs
-      LKinfo$alpha<- LKrigSetupAlpha(LKinfo)
-      if( verbose){
+    LKinfo$alpha<- LKrigSetupAlpha(LKinfo)
+    if( verbose){
         print(alpha)}
 # fix up the a.wght parameters specfic geometries might need 
 # a specific function here.
-      LKinfo$a.wght<-LKrigSetupAwght(LKinfo)
+    LKinfo$a.wght<-LKrigSetupAwght(LKinfo)
 # set lambda if sigma and rho are passed.
     if (is.na(lambda[1])) {
         lambda <- sigma^2/rho
