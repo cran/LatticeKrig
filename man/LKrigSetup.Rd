@@ -26,22 +26,22 @@ Create or update the LatticeKrig model object  (LKinfo) for spatial fitting.
 \description{
 This function combines some input arguments with defaults for other
 to create a list 
-describing the LatticeKrig spatial model. 
+describing the LatticeKrig spatial model. A key to specifying the LatticeKrig spatial model is specifying the geometry, e.g. LKRectangle for a 2-d rectangular domain. Each geometry has some parameters that control the basic model setup and these are included through the \dots arguments of  this function. See the help for this argument below for some examples.
 }
 \usage{
-LKrigSetup(
-x = NULL, nlevel = NULL, alpha = NA, alphaObject =
-                 NULL, nu = NULL, a.wght = NA, a.wghtObject = NULL,
-                 normalize = TRUE, lambda = NA, sigma = NA, rho = NA,
-                 rho.object = NULL, latticeInfo = NULL, basisInfo =
-                 NULL, LKGeometry = "LKRectangle", distance.type =
-                 "Euclidean", BasisFunction = "WendlandFunction",
-                 overlap = 2.5, V = NULL, BasisType = "Radial",
-                 fixedFunction = "LKrigDefaultFixedFunction",
-                 fixedFunctionArgs = list(m = 2), collapseFixedEffect =
-                 FALSE, max.points = NULL, mean.neighbor = 50,
-                 choleskyMemory = NULL, verbose = FALSE, noCheck =
-                 FALSE, returnCall = FALSE, dense = FALSE, ...)
+LKrigSetup(x = NULL, nlevel = NULL, alpha = NA, alphaObject =
+                 NULL, nu = NULL, a.wght = NA, a.wghtObject = NULL, NC
+                 = NULL, NC.buffer = NULL, normalize = TRUE, lambda =
+                 NA, sigma = NA, rho = NA, rho.object = NULL,
+                 latticeInfo = NULL, basisInfo = NULL, LKGeometry =
+                 "LKRectangle", distance.type = "Euclidean",
+                 BasisFunction = "WendlandFunction", overlap = 2.5, V =
+                 NULL, BasisType = "Radial", fixedFunction =
+                 "LKrigDefaultFixedFunction", fixedFunctionArgs =
+                 list(m = 2), collapseFixedEffect = FALSE, max.points =
+                 NULL, mean.neighbor = 50, choleskyMemory = NULL,
+                 verbose = FALSE, noCheck = FALSE, returnCall = FALSE,
+                 dense = FALSE, ...)
                  
 LatticeKrigEasyDefaults(argList, nlevel, x)
 
@@ -53,8 +53,8 @@ LKinfoUpdate(LKinfo, ... )
 \item{argList}{Argument supplied to the top level LatticeKrig function.}
 	
 \item{alpha}{A vector of length \code{nlevel} with the relative
-variances for the different multiresolution levels.  }
-\item{alphaObject}{For nonstationary models an object to be used with the predict function to give the alpha values at the process locations.
+variances for the different multi-resolution levels.  }
+\item{alphaObject}{For non-stationary models an object to be used with the predict function to give the alpha values at the process locations.
 Typically this is a list of "predict" objects. 
 See \link{nonstationaryModels} for examples how to use this option. 
 }
@@ -83,11 +83,11 @@ See \link{nonstationaryModels} for examples how to use this option.
   	approximately \code{1/sqrt(a.wght-4)}. 
 }
 
-\item{a.wghtObject}{For nonstationary models an object to be used with the predict function to give the a.wght values at the lattice locations. See \link{nonstationaryModels} for examples how to used option. 
+\item{a.wghtObject}{For non-stationary models an object to be used with the predict function to give the a.wght values at the lattice locations. See \link{nonstationaryModels} for examples how to used option. 
 }
 
  \item{basisInfo}{ A list with extra components the object used to
-  	describe the multiresolution basis.  Usually this will not be
+  	describe the multi-resolution basis.  Usually this will not be
   	needed for standard models. }
   	
   \item{BasisType}{A character string indicating the type of basis function. Currently
@@ -98,7 +98,7 @@ do the Cholesky decomposition. See the \code{memory} argument in
 \code{chol.spam}. }
 
 \item{collapseFixedEffect}{If FALSE the fixed part of the model is
-found seperately for each replicated data set. If TRUE the estimate is
+found separately for each replicated data set. If TRUE the estimate is
 polled across replicates.This is largely a modeling decision whether
 variation among the replicate fields is due to the spatial component or
 also include variation in the fixed effects across replicates -- guess
@@ -128,7 +128,9 @@ for testing and timing sparse verses standard algorithms. }
 \item{fixedFunction}{A text string that is the name of the function
 	used to find the fixed part of the spatial model based on the
 	locations. The default is a linear (m=2) polynomial in the
-	spatial coordinates. }
+	spatial coordinates. See \code{LKrigDefaultFixedFunction} for more details.
+	Set this to NULL if you do not want to
+	include a fixed effect in the spatial model. }
 	
 \item{fixedFunctionArgs}{A list containing arguments to supply when
 	evaluating the fixed function.}
@@ -168,8 +170,18 @@ for testing and timing sparse verses standard algorithms. }
   	locations. The easier way to specify space is by using the
   	mean.neighbor argument.  } 
   	
+\item{NC}{For regular grids of lattice points the maximum number of lattice grid points for a spatial coordinate and at the coarsest level of resolution. For a example, for a square region,
+(and \code{LKGeometry = "LKRectangle"})
+\code{NC=5} results in a 5X5  = 25  lattice points at the first level.
+Note that the default is that lattice points are also taken to have the same spacing in every dimension. } 
+\item{NC.buffer}{Number of extra lattice points added outside the spatial domain 
+for regular grids of lattice points. This helps to reduce boundary effects from the
+SAR model.  \code{NC.buffer=5} and \code{NC=5} for a square region will result in 
+(5+ 2*5) X (5+ 2*5) = 225 lattice locations at the coarsest level of resolution.
+Note that this number by default is fixed for finer resolutions and so does not
+contribute as much to the total number of lattice points.}
  \item{nlevel}{Number of levels in
-  	multiresolution. Note that each subsequent level increases the
+  	multi-resolution. Note that each subsequent level increases the
   	number of basis functions within the spatial domain size by a
   	factor of roughly 4. }
  
@@ -179,7 +191,7 @@ for testing and timing sparse verses standard algorithms. }
  
   \item{normalize}{ If TRUE the basis functions will be normalized to
   	give a marginal variance of one for each level of
-  	multiresolution.  (Normalizing by levels makes it easier to
+  	multi-resolution.  (Normalizing by levels makes it easier to
   	interpret the \code{alpha} weights.)  } 
   
   \item{nu}{ A
@@ -190,7 +202,7 @@ for testing and timing sparse verses standard algorithms. }
   \item{overlap}{
   	Controls the overlap among the radial basis functions and
   	should be in units of the lattice spacing. For the rectangular
-  	case the default of 2.5 means that the support of the Wenland
+  	case the default of 2.5 means that the support of the Wendland
   	basis function will overlap 2.5 lattice units in each
   	direction.  See \code{LKrig.basis} for how overlap adjusts
   	scaling in the basis function formula. }
@@ -226,20 +238,21 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
  	
   \item{\dots}{Specific arguments that will be included in the
   	\code{setupArgs} list and also passed to
-  	\code{LKrigSetupLattice}. For LKinfoUpdate these specify the components
-  	       of LKinfo to update.  }
+  	\code{LKrigSetupLattice}. For \code{LKinfoUpdate} these specify the components
+  	       of LKinfo to update. For example for a rectangular domain (the default) the argument \code{NC} is needed to specify the initial lattice size \code{NC.buffer} sets the number of extra points included in the lattice and defaults to 5.  \code{NC} for the LKSphere geometry  is the initial level of the
+	       icosahedral grid.   }
 }
 \details{
 	Many of the functions within LKrigSetup are overloaded to
-	adapt to the LKGeometry class.  This makes it easy to add new
+	adapt to the \code{LKGeometry} class.  This makes it easy to add new
 	geometries or other models to the LatticeKrig framework.  The
 	required components of this object (see below) outline how
 	the latticeKrig model is structured and what should be common
 	features independent of the geometry. The key components are
 	latticeInfo that contains the information used to generate the
 	spatial autoregressive matrix on the lattice (see
-	\code{LKrigSAR}) and the lattice centers (see
-	\code{LKrigCenters}). The component basisInfo used to generate
+	\link{LKrigSAR}) and the lattice centers (see
+	\link{LKrigLatticeCenters}). The component basisInfo used to generate
 	the radial basis function (see LKrig.basis)
 
 	The function LKrigEasyDefaults is used in the top level 
@@ -253,8 +266,8 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 	particular components without having to recreate the entire
 	object. This function is used in the MLE search when just
 	values of alpha or a.wght are being varied.
-
 }
+
 \value{
 	An object with class "LKinfo" and also the additional class given by LKGeometry. The required components are:
 \describe{
@@ -267,10 +280,10 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
 	\item{sigma}{Value of sigma.}
 	\item{rho}{Value for rho.}
 	\item{rho.object}{Value for rho.object.}
-	\item{latticeInfo}{A list with specific multiresolution lattice information}
-    \item{setupArgs}{All arguments passed in the call and any in in \dots }
-    \item{basisInfo}{A list with basis information.}
-    \item{call}{The actual call used to create this object.}	 
+	\item{latticeInfo}{A list with specific multi-resolution lattice information}
+  \item{setupArgs}{All arguments passed in the call and any in in \dots }
+  \item{basisInfo}{A list with basis information.}
+  \item{call}{The actual call used to create this object.}	 
 }
 
 }
@@ -284,15 +297,22 @@ rbind( c( 0,0), c(1,1)) will set the domain to be the unit square.  }
   # find the ranges of the  data, this is the same as passing
   # the entire set of observation locations and is more compact 
   sDomain<-apply( ozone2$lon.lat, 2,"range")
-  LKinfo<- LKrigSetup( sDomain, NC=10, nlevel=2, alpha=c(1,.5),
+  LKinfo0<- LKrigSetup( sDomain, NC=10, nlevel=2, alpha=c(1,.5),
                        a.wght = 5)
+  print( LKinfo0)
+  
+  #Gigantic buffer added note extra basis functions. 
+  LKinfo<- LKrigSetup( sDomain, NC=10, NC.buffer= 15, nlevel=2, 
+  alpha=c(1,.5),a.wght = 5)
   print( LKinfo)
+  
   LKinfo2<- LKinfoUpdate( LKinfo,  a.wght=4.1, NC=12)
   LKinfo3<- LKrigSetup( sDomain, NC=12, nlevel=2, alpha=c(1,.5),
                         a.wght=4.1)
 # LKinfo2 and LKinfo3 should be the same.                         
  
 }
+
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ spatial}

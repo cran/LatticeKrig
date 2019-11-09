@@ -23,6 +23,9 @@
 setDefaultsLKinfo.LKRectangle <- function(object, ...) {
 # object ==  LKinfo intital list passed to the LKrigSetup function 
   object$floorAwght<- 4
+  if( is.null( object$NC.buffer)){
+    object$NC.buffer <- 5
+  }
 # logic for V happens in lattice setup  	
         if( is.null(object$lonlatModel) ){
           object$lonlatModel<- object$distance.type=="Chordal" |
@@ -104,9 +107,8 @@ LKinfoCheck.LKRectangle<- function( object, ...){
      } # end for loop over levels       
 }        
           
-        
-LKrigSetupLattice.LKRectangle <- function(object,  verbose, NC = NULL, 
-	NC.buffer = 5, ...) {
+LKrigSetupLattice.LKRectangle <- function(object, verbose, 
+	 ...) {
 	###### some common setup operations to all geometries
 	LKinfo <- object
 	if (class(LKinfo)[1] != "LKinfo") {
@@ -114,10 +116,14 @@ LKrigSetupLattice.LKRectangle <- function(object,  verbose, NC = NULL,
 	}
 	rangeLocations <- apply(object$x, 2, "range")
 	nlevel <- LKinfo$nlevel
+	NC <-  LKinfo$NC
+	NC.buffer <- LKinfo$NC.buffer
 	###### end common operations  
-	
 	if (is.null(NC)) {
 		stop("Need to specify NC for grid size")
+	}
+	if (is.null(NC.buffer)) {
+	  stop("Need to specify NC.buffer for lattice buffer region")
 	}
 	#  if ( LKinfo$distance.type!= "Euclidean" ) {
 	#        stop("distance type is not supported (or is misspelled!).")        
@@ -369,9 +375,9 @@ LKrigSAR.LKRectangle <- function( object, Level, ...){
     #  4 nearest neighbors and 4 additional second order
     # neighbors
     # labels for these connections are
-    #   'NE'    'top'    'NW'
+    #   'NW'    'top'    'NE'
     #    'L'  'center'    'R'
-    #   'SE'    'bot'    'SW'
+    #   'SW'    'bot'    'SE'
     #
     #  indices for these elements are given by
     #  matrix(1:9, 3,3)
@@ -433,7 +439,8 @@ LKrigSAR.LKRectangle <- function( object, Level, ...){
     dim.a.wght <- dim(a.wght)
    
     # figure out if just a single a.wght or matrix is passed
-    first.order <-  (( length(a.wght) == 1)|( length(dim.a.wght) == 2)) 
+    # OLD see above first.order <-  (( length(a.wght) == 1)|( length(dim.a.wght) == 2)) 
+    
     # order of neighbors and center
     index <- c(5, 4, 6, 2, 8, 3, 9, 1, 7)
     # dimensions of precision matrix
@@ -453,7 +460,7 @@ LKrigSAR.LKRectangle <- function( object, Level, ...){
                 ra[ , kk] <- a.wght[index[kk]]
             }
             else {
-                ra[,  kk] <- a.wght[ , index[kk]]
+                ra[ ,  kk] <- a.wght[ , index[kk]]
             }
         }
     }
@@ -469,10 +476,10 @@ LKrigSAR.LKRectangle <- function( object, Level, ...){
     # indices for center, top, bottom, left, right or ... N, S, E, W
     # NOTE that these are just shifts of the original matrix
     Bj <- c(i.c,
-            LKrig.shift.matrix(i.c, 0, -1),
-            LKrig.shift.matrix(i.c, 0,  1),
-            LKrig.shift.matrix(i.c, 1,  0),
-            LKrig.shift.matrix(i.c, -1, 0)
+            LKrig.shift.matrix(i.c, 0, -1), # top 
+            LKrig.shift.matrix(i.c, 0,  1), #bottom
+            LKrig.shift.matrix(i.c, 1,  0), #left 
+            LKrig.shift.matrix(i.c, -1, 0)  #right
             )
     # indices for NW, SW, SE, SW
     if (!first.order) {
