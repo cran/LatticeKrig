@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -27,8 +27,9 @@ LKrigMakewX <- function(object, verbose = FALSE) {
 		wX <- diag.spam(sqrt(object$weights)) %*% object$X
 	} 
 	else {
-		wX <- diag.spam(sqrt(object$weights)) %*% LKrig.basis(object$x, 
-			object$LKinfo, verbose = FALSE)
+	  tmpX<- LKrig.basis(object$x, 
+	                     object$LKinfo, verbose = FALSE)
+		wX <- diag.spam(sqrt(object$weights)) %*% tmpX
 	}
 	if(verbose){
 	cat( "LKrigMakewX: dim wX ", dim( wX), fill=TRUE)	

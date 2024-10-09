@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -54,9 +54,36 @@ Radial.basis <- function(x1, centers, basis.delta,
     	cat("time for LKDistance")
     	print( t1)
     }          
-    # evaluate distance  with RBF ---  usually Wendland2.2   
+    # evaluate distance  with RBF ---  usually Wendland2.2 
+    t2  <- system.time(
     out$ra <- do.call(BasisFunction, list(d = out$ra/basis.delta) )
-    out <- spam(out[c("ind", "ra")], nrow=out$da[1], ncol= out$da[2] )
+    )
+    if( verbose){
+        cat("time for basis")
+        print( t2)
+    } 
+    
+   
+    
+    t3A<- system.time(
+        out <- spind2spam(out)
+    )
+    if( verbose){
+    cat("time for spam conversion")
+    print( t3A)
+    }
+    #
+    # following code takes much longer
+    # t3<- system.time(
+    #   out <- spam(out[c("ind", "ra")],
+    #               nrow=out$da[1],
+    #               ncol= out$da[2] )
+    # )
+    # if( verbose){
+    #     cat("time for spam conversion")
+    #     
+    #     print( t3)
+    # }
     return(out)
 }
 

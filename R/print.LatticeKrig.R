@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -48,27 +48,29 @@ print.LatticeKrig <- function(x, digits = 4, ...) {
 	}
 	
 	if (NData == 1) {
-		c1 <- c(c1, "MLE sigma ")
-		c2 <- c(c2, signif(x$sigma.MLE, digits))
-		c1 <- c(c1, "MLE rho")
-		c2 <- c(c2, signif(x$rho.MLE, digits))
+		c1 <- c(c1, "MLE tau ")
+		c2 <- c(c2, signif(x$tau.MLE, digits))
+		c1 <- c(c1, "MLE sigma2")
+		c2 <- c(c2, signif(x$sigma2.MLE, digits))
 	}
 	else {
-	  c1 <- c(c1, "Combined MLE sigma  ")
-	  c2 <- c(c2, signif(x$sigma.MLE.FULL, digits))
-	  c1 <- c(c1, "Combined MLE rho")
-	  c2 <- c(c2, signif(x$rho.MLE.FULL, digits))
+	  c1 <- c(c1, "Combined MLE tau  ")
+	  c2 <- c(c2, signif(x$tau.MLE.FULL, digits))
+	  c1 <- c(c1, "Combined MLE sigma2")
+	  c2 <- c(c2, signif(x$sigma2.MLE.FULL, digits))
 	}
 	if( x$findAwght){
 	  c1 <- c(c1, "MLE a.wght")
 	  c2 <- c(c2, signif(x$MLE$a.wght.MLE, digits))
 	}
 	
-	c1 <- c(c1, "MLE lambda = sigma^2/rho ")
+	c1 <- c(c1, "MLE lambda = tau^2/sigma2 ")
 	c2 <- c(c2, signif(x$lambda, digits))
 	
 	sum <- cbind(c1, c2)
 	dimnames(sum) <- list(rep("", dim(sum)[1]), rep("", dim(sum)[2]))
+  objSummary<- summary.LKrig(x)	
+########### beginning of printing 	
 	cat("Call:\n")
 	dput(x$call)
 	if( x$inverseModel){
@@ -91,7 +93,14 @@ print.LatticeKrig <- function(x, digits = 4, ...) {
 			cat("with the argument list:", fill = TRUE)
 			print(x$LKinfo$fixedFunctionArgs)
 		}
+	  cat(" ", fill=TRUE)
+	  cat("Summary of estimated fixed model coefficients",fill = TRUE )
+	  print(objSummary$coefficients)
+	  cat( " Standard errors are  based on generalized LS", fill = TRUE)
+	  cat( " and for covariance parameters fixed at the estimated values",
+	       fill = TRUE)
 	}
+	cat(" ", fill=TRUE)
 	cat("Basis function : ", LKinfo$basisInfo$BasisType, 
 			fill = TRUE)
 	cat("Basis function used: ", LKinfo$basisInfo$BasisFunction, 
@@ -138,14 +147,14 @@ print.LatticeKrig <- function(x, digits = 4, ...) {
 			fill = TRUE)
 	}
 	if( !x$findAwght){
-	  cat("\n", "NOTE: sigma and rho found by maximum likelihood for ", fill = TRUE)  
+	  cat("\n", "NOTE: tau and sigma2 found by maximum likelihood for ", fill = TRUE)  
 	  cat("fixed values of alpha and a.wght", fill = TRUE)
 	  cat("\n"," Summary of MLE computation from optim:", fill=TRUE)
 	  print( x$MLE$summary)
 	  cat(" ", fill = TRUE)
 	}
 	else{
-	  cat("\n", "NOTE: parameters sigma, rho, and the a.wght found  ", fill = TRUE)  
+	  cat("\n", "NOTE: parameters tau, sigma2, and the a.wght found  ", fill = TRUE)  
 	  cat("by maximum likelihood for fixed values of alpha", fill = TRUE)
 	  cat(" Summary of MLE computation from optim:", fill=TRUE)
 	  print( x$MLE$summary)

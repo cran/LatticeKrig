@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -22,7 +22,7 @@ LKrig.make.par.grid <- function(par.grid = NULL, LKinfo = NULL) {
         M<- length( par.grid$nu)
         alpha<- matrix( NA,nrow=M, ncol=LKinfo$nlevel)
         for ( k in 1:M){
-          alphaTemp <- exp(-2 * (1:nlevel) * par.grid$nu[k])
+          alphaTemp <- 2**(-2 * (1:nlevel) * par.grid$nu[k])
           alpha[k,] <- alphaTemp/sum(alphaTemp)
         }
         par.grid$alpha<- alpha

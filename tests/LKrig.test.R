@@ -20,7 +20,8 @@ options( echo=FALSE)
   N<- length( y)
   a.wght<- 5
   lambda <-  1.5
-  obj<- LKrig( x,y,NC=16, lambda=lambda, a.wght=a.wght, alpha=1, nlevel=1, NtrA=5,iseed=122)
+  obj<- LKrig( x,y,NC=16, lambda=lambda, a.wght=a.wght,
+               alpha=1, nlevel=1, NtrA=5,iseed=122)
   LKinfo<- obj$LKinfo
   K<- LKrig.cov( x,x,LKinfo)
   tempM<-  K
@@ -51,7 +52,8 @@ options( echo=FALSE)
  test.for.zero( lambda*obj0$c, (y-obj$fitted.values),
                tag="c from mKrig and from residuals of LatticeKrig (this is big!)" )
 # compare Monte Carlo estimates of trace
- test.for.zero( obj$trA.info, obj0$trA.info, tag="Monte Carlo traces")
+ test.for.zero( obj$trA.info, obj0$trA.info,
+                tag="Monte Carlo traces")
 #
 # test more complex covariance model:
 #
@@ -67,7 +69,12 @@ options( echo=FALSE)
                                  cov.args=list(LKinfo=LKinfo),
                                  NtrA=5, iseed=122)
   test.for.zero( obj0$fitted.values, obj$fitted.values)
-  test.for.zero( obj$d.coef, obj0$d, tag= "d from Lattice Krig and mKrig")
+  test.for.zero( obj$d.coef, obj0$beta,
+                 tag= "d.coef  from Lattice Krig and beta mKrig")
+  
+#### test with specifying grid directly  
+  
+  
 ###########################################################################
 ### test that code works with locations outside spatial domain.
   xTest<- rbind(x, c( -100,20) )
@@ -124,13 +131,14 @@ options( echo=FALSE)
   B1<-  PHI%*% (solve( A)) %*% t( PHI) + diag(1, N)
   B2<-  t(PHI)%*%PHI + A
 # the bullet proof application of identity 
-  test.for.zero(lnDet( B1),lnDet( B2)- lnDet(A))
+  test.for.zero(lnDet( B1),lnDet( B2)- lnDet(A),
+                tag="bullet proof application of identity")
   test.for.zero(
                  lnDet( PHI%*% (solve( Q*lambda)) %*% t( PHI) + diag(1, N)),
                  lnDet( t(PHI)%*%PHI + Q*lambda) - lnDet(Q*lambda) )
 
 # now adjusting for lambda factor 
-  test.for.zero( lambda*B1, Mtest)
+  test.for.zero( lambda*B1, Mtest,tag="adjusting for lambda factor")
   test.for.zero(lnDet( Mtest), lnDet(B2) - lnDet(lambda*Q) + N*log(lambda) )
   test.for.zero(lnDet( Mtest), lnDet(B2) - lnDet(Q) + (-LKinfo$latticeInfo$m + N)*log(lambda) )
 
@@ -143,10 +151,12 @@ options( echo=FALSE)
    lnDetQ<-  2* sum( log( diag( chol(Q))))
    lnDetCov<- lnDetReg - lnDetQ + (-LKinfo$latticeInfo$m + N)*log(lambda)
    test.for.zero( lnDetCov, lnDet( Mtest))
-   test.for.zero( obj$lnDetCov, lnDet( Mtest), tag="LatticeKrig and direct test of lnDetCov")
+   test.for.zero( obj$lnDetCov, lnDet( Mtest),
+                  tag="LatticeKrig and direct test of lnDetCov")
 #
 ###### check of formula with weights
   set.seed(123)
+  nlevel<-3
   weights<- runif(N)
   W<- diag(weights)
   lambda<- .5
@@ -183,17 +193,17 @@ test.for.zero(  lnDet( B3) - lnDet(Q) - sum( log( weights))  + (N-N2)*log(lambda
                                  cov.args=list(LKinfo=obj$LKinfo),
                                  NtrA=5, iseed=122)
  
- test.for.zero( obj$lnDetCov,obj0$lnDetCov, tag= "lnDetCov for mKrig and LatticeKrig")
- test.for.zero( obj$quad.form,  obj0$quad.form, tag= "quadratic forms for rho hat")
- test.for.zero(  obj0$lnProfileLike, obj$lnProfileLike,
+ test.for.zero( obj$lnDetCov,obj0$lnDetCov,
+                tag= "lnDetCov for mKrig and LatticeKrig")
+ test.for.zero(  obj0$summary["lnProfileLike.FULL"], obj$lnProfileLike,
                                 tag="Profile Likelihood concentrated on lambda" )
 
 # repeat tests for weighted measurement errors.
 # recopy data to make reading easier
   rm( obj, obj0) # remove previous objects
   data( ozone2)
-  x<-ozone2$lon.lat[1:10,]
-  y<- ozone2$y[16,1:10]
+  x<-ozone2$lon.lat
+  y<- ozone2$y[16,]
   good <-  !is.na( y)
   x<- x[good,]
   y<- y[good]
@@ -216,15 +226,22 @@ test.for.zero(  lnDet( B3) - lnDet(Q) - sum( log( weights))  + (N-N2)*log(lambda
  
   obj1<- Krig( x,y,weights=weights, lambda=lambda,GCV=TRUE, m=2,
                cov.function="LKrig.cov", cov.args=list(LKinfo=obj$LKinfo))
-            
- test.for.zero( obj0$fitted.values, obj1$fitted.values)
- test.for.zero( predict(obj0), predict(obj1), tag="predicted  values mKrig/Krig  w/weights")
- test.for.zero( obj0$rhohat, obj1$rhohat,tag="compare rhohat for mKrig and Krig with weights")
-
-############ now tests for LatticeKrig
-
+  
+  obj2<-spatialProcess(x,y,weights, 
+                       lambda=lambda, 
+                       m=2, cov.function="LKrig.cov",
+                       cov.args=list(LKinfo=obj$LKinfo),
+                       aRange=NA)
+  
  test.for.zero( obj$fitted.values, obj0$fitted.values)
- test.for.zero( obj$rho.MLE, obj0$rho.MLE)
+ test.for.zero( obj$fitted.values, obj1$fitted.values)
+ test.for.zero( obj$fitted.values, obj2$fitted.values)
+ test.for.zero( predict(obj), predict(obj0), tag="predicted  values mKrig/Krig  w/weights")
+ test.for.zero( predict(obj), predict(obj1), tag="predicted  values mKrig/Krig  w/weights")
+ test.for.zero( predict(obj), predict(obj2), tag="predicted  values mKrig/Krig  w/weights")
+############ now tests for LatticeKrig
+ test.for.zero( obj$fitted.values, obj0$fitted.values)
+ test.for.zero( obj$rho.MLE, obj0$summary["sigma2"])
  test.for.zero( obj$lnDetCov, obj0$lnDetCov)
 ############# tests using reuse Mc options
  data( ozone2)

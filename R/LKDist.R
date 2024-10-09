@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -41,7 +41,11 @@ LKDist<- function(  x1, x2, delta, max.points = NULL,
    	 x2<- directionCosines(x2)*R
    	 if( distance.type=="GreatCircle" ){
 # inflate  delta cutoff to reflect chordal distance 
+   	 
      deltaGC<- delta
+     if( deltaGC > R*pi){
+       deltaGC <- R*pi
+     }
      delta<- 2*R*sin(  deltaGC/ (2*R)) 
      }
    }

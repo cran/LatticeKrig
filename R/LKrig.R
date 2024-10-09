@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -33,6 +33,7 @@ LKrig <- function(x, y,
                 	  wU = NULL,
           return.wXandwU = TRUE,
                	            ...,
+             getVarNames = TRUE,
                	 verbose = FALSE) {
 # if LKinfo is missing create it from passed arguments 
 # if it is passed update this object with the ... arguments
@@ -52,15 +53,50 @@ LKrig <- function(x, y,
 		cat("LKrig: updated LKinfo object", fill=TRUE)
 		print(LKinfo)
 		
-	}		
+	}
+#  
+# the variable names are used to generate column labels if 
+# those are missing. 
+# the getVarNames switch is important -- if
+# LKrig is called via the do.call function then strange things
+# happen with the substitute function and I understand is an unresolved 
+# aspect of Rli
+#
+  if( getVarNames){
+    xName<- as.character( substitute( x) )
+    ZName<- as.character( substitute( Z) )
+    UName<- as.character( substitute( U) )
+    xName<- tail( xName, 1)
+    ZName<- tail( ZName, 1)
+    UName<- tail( UName, 1)
+    
+# just take last component
+    
+  }
+  else{
+    xName<- "xVar"
+    ZName<- "ZVar"
+    UName<- "UVar"
+  }  
+#
 # create the initial parts of LKrig object
 # this list is added to as the computation proceeds 
 # using the device  object<- list( object, newStuff)
 # and the full object is only obtained at the end 
 # NOTE default for weights are just 1's and filled in by 
-# the next call
-    object<- createLKrigObject( x, y, weights, Z,
-                                    X, U,  LKinfo, verbose=verbose)
+# the next call    
+
+    object<- createLKrigObject( x, y, 
+                              weights = weights,
+                                    Z = Z,
+                                    X = X,
+                                    U = U, 
+                               LKinfo = LKinfo,
+                                xName = xName, 
+                                ZName = ZName,
+                                UName = UName, 
+                              verbose = verbose)
+  
     nObs <-  nrow( object$y )
     nReps <- ncol( object$y )
 # for readablity make a local copy of LKinfo
@@ -69,6 +105,7 @@ LKrig <- function(x, y,
 	# Begin computations ....
 	# weighted observation vector
     wy <- sqrt(object$weights) * object$y
+   
 # create matrix for fixed part of model    
 # Spatial drift matrix -- default is assumed to be linear in coordinates (m=2)
 # and includes possible covariate(s) -- the Z matrix.
@@ -76,7 +113,8 @@ LKrig <- function(x, y,
 # (see also LKrigSetup)
    if (is.null(wU)) {
    	wU<- LKrigMakewU( object,  verbose=verbose)
- 	}
+   }
+   
 # some column indices to keep track of fixed part of the model	
 # NOTE nZ <= nt because Z is a subset of U
     object$nt <- ifelse( is.null(ncol(wU)), 0, ncol(wU))
@@ -91,7 +129,8 @@ if (is.null(wX)) {
 	}
 else{
 	timewX<- rep(0,5)
-	}		
+}	
+ 
  #   Precision matrix of the lattice process
 #   inverse of Q is proportional to the covariance matrix of the Markov Random Field
 timeQ<-system.time(
@@ -157,15 +196,25 @@ if( !LKinfo$dense){
   }
 # use GCholesky to find coefficients of estimate
 # Note that this functions also finds an important piece of the likelihood (quad.form)
-	timeCoef<- system.time(
+  timeCoef<- system.time(
 	out1 <- LKrig.coef(GCholesky, wX, wU, wy,
 	               LKinfo$lambda, 
 	   collapseFixedEffect = LKinfo$collapseFixedEffect, 
 	               verbose=verbose)
 	)
+	
 # Note collapseFixedEffect added as component here in the return
 # finding coefficients
+# fill in names of the fixed coefficients 
+# fill in names of fixed model coefficients
+	
+	rownames(out1$d.coef)<- colnames( wU )
+#
 	object <- c(object, out1)
+	if( verbose){
+	  cat("fixed model coefficients", fill=TRUE)
+	  cat( object$d.coef, fill=TRUE)
+	}
 	
 # compute predicted values  and residuals
 	wfitted.values <- (wX %*% out1$c.coef)

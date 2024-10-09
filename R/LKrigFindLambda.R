@@ -1,6 +1,6 @@
 # LatticeKrig  is a package for analysis of spatial data written for
 # the R software environment .
-# Copyright (C) 2016
+# Copyright (C) 2024
 # University Corporation for Atmospheric Research (UCAR)
 # Contact: Douglas Nychka, nychka@ucar.edu,
 # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -19,22 +19,34 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # or see http://www.r-project.org/Licenses/GPL-2
 
-LKrigFindLambda <- function(x, y, ...,  LKinfo,
+LKrigFindLambda <- function(x, y, Z=NULL, U=NULL, X=NULL, ...,  LKinfo,
                             use.cholesky=NULL, 
                  lambda.profile=TRUE,
             lowerBoundLogLambda=-16,
                             tol=.005,
                         verbose=FALSE) {
-# parts of the LKrig call that will be fixed.  (except updates to LKinfo)                           	
-    LKrigArgs <- c(list(x = x, y = y), list( ...),
-                   list( LKinfo=LKinfo, NtrA=ifelse( lambda.profile, 0, 20) ))
+#  
+# NOTE: in using do.call for LKrig below  variable names should not be 
+# tuurned on.  This means default names will be filled in for the
+# table of fixed effect coefficients
+# 
+# parts of the LKrig call that will be fixed.  (except updates to LKinfo)  
+    LKrigArgs <- c(list(x = x, y = y), 
+                   list( ...),
+                   list( LKinfo = LKinfo,
+                         U=U,
+                         X=X,
+                         Z=Z,
+                           NtrA = ifelse( lambda.profile, 0, 20),
+                    getVarNames = FALSE )
+                   )
+ 
     if( verbose){
     	cat( "LKrigFindLambda: Complete set of LKrigArgs:", names(LKrigArgs ), fill=TRUE)
     }               
-   
     capture.evaluations <- matrix(NA, ncol = 4, nrow = 1, 
-                dimnames = list(NULL, c("lambda", "rho.MLE",
-                                         "sigma.MLE", "lnProfileLike.FULL")))
+                dimnames = list(NULL, c("lambda", "sigma2.MLE",
+                                         "tau.MLE", "lnProfileLike.FULL")))
     optim.counts<-  NA
     llambda.start<- log( LKrigArgs$LKinfo$lambda )
     if( is.na(llambda.start)){ llambda.start<- -1 }
@@ -45,7 +57,9 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
 # first fit to get cholesky symbolic decomposition  and wX and wU matrices
 # Note that if use.cholesky != NULL then the symbolic decomposition information is
 # used from the passed object.
-
+    if( verbose){
+    cat("First call to LKrig", fill=TRUE)
+    }
     LKrigObject <- do.call("LKrig", c(
                              LKrigArgs,
                              list( 
@@ -54,10 +68,9 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
                                  return.wXandwU = TRUE,
                                          lambda = exp( llambda.start),
                                         verbose = verbose)))
-                                   
     capture.evaluations[1,] <-  c( LKrigObject$LKinfo$lambda,
-                                   LKrigObject$rho.MLE.FULL,
-                                   LKrigObject$sigma.MLE.FULL,
+                                   LKrigObject$sigma2.MLE.FULL,
+                                   LKrigObject$tau.MLE.FULL,
                                    LKrigObject$lnProfileLike.FULL)                                                   
     llambda.opt<- llambda.start
     Mc.save<- LKrigObject$Mc
@@ -71,7 +84,6 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
 #   
 # objective function    
     temp.fn <- function(x) {
-#    cat("temp.fn: lambda ", exp(x), fill=TRUE)
          lambdaTemp<- exp(x)                       
          hold <- do.call("LKrig",          
                      c(LKrigArgs, list(
@@ -79,15 +91,15 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
                                       wX = wX.save,
                                       wU = wU.save,
                                  verbose = FALSE,
-                                  lambda = lambdaTemp 
+                                  lambda = lambdaTemp
                                   )
                        )
-                       )[c( "rho.MLE.FULL", "sigma.MLE.FULL", 
+                       )[c( "sigma2.MLE.FULL", "tau.MLE.FULL", 
                                    "lnProfileLike.FULL") ]               
             lnProfileLike.FULL<- hold$lnProfileLike.FULL 
             rowForCapture<- c(lambdaTemp,
-                              hold$rho.MLE.FULL,
-                              hold$sigma.MLE.FULL,
+                              hold$sigma2.MLE.FULL,
+                              hold$tau.MLE.FULL,
                               hold$lnProfileLike.FULL)
             temp.eval <- get("capture.evaluations")
             assign("capture.evaluations",rbind(temp.eval, rowForCapture),
@@ -95,8 +107,9 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
                              return(lnProfileLike.FULL)
             }
 #    
-# the try wrapper captures case when optim fails.   
+# the try wrapper captures cases when optim fails.   
             capture.env <- environment()
+            
             look<- try(optimize( temp.fn, interval = llambda.start+c(-8,5),
                                    maximum= TRUE, tol=tol))
             if(verbose){
@@ -114,7 +127,8 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
                                     list(use.cholesky = Mc.save,
                                                    wX = wX.save,
                                                    wU = wU.save,
-                                               lambda = lambda.MLE)
+                                               lambda = lambda.MLE
+                                         )
                                               )
                                    )
    }
@@ -125,8 +139,8 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
    out <-  c( LKrigObject$trA.est,
               LKrigObject$lnProfileLike.FULL,
               LKrigObject$GCV,
-              LKrigObject$sigma.MLE.FULL,
-              LKrigObject$rho.MLE.FULL,
+              LKrigObject$tau.MLE.FULL,
+              LKrigObject$sigma2.MLE.FULL,
               lambda.MLE,
               llambda.MLE,
               LKrigObject$lnLike.FULL,
@@ -134,7 +148,7 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
               NA)
    
    names( out) <-  c("EffDf", "lnProfLike", "GCV", 
-                     "sigma.MLE", "rho.MLE", "lambda.MLE",
+                     "tau.MLE", "sigma2.MLE", "lambda.MLE",
                      "llambda.MLE", "lnLike",
                      "counts value", "grad")
    }
@@ -143,8 +157,8 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
      out <-  c( LKrigObject$trA.est,
                 LKrigObject$lnProfileLike.FULL,
                 LKrigObject$GCV,
-                LKrigObject$sigma.MLE.FULL,
-                LKrigObject$rho.MLE.FULL,
+                LKrigObject$tau.MLE.FULL,
+                LKrigObject$sigma2.MLE.FULL,
                 exp( llambda.start),
                 llambda.start,
                 LKrigObject$lnLike.FULL,
@@ -153,7 +167,7 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
      
       lambda.MLE<- exp( llambda.start)
       names( out) <-  c("EffDf", "lnProfLike", "GCV", 
-                       "sigma.MLE", "rho.MLE", "lambda",
+                       "tau.MLE", "sigma2.MLE", "lambda",
                        "llambda", "lnLike",
                        "counts value", "grad")
    }
@@ -164,10 +178,6 @@ LKrigFindLambda <- function(x, y, ...,  LKinfo,
             lambda.MLE = lambda.MLE,
                lnLike.eval = capture.evaluations
                )
-# call omitted because it can substitute actual
-# values and get large
-#                  call = match.call()
-#                  )
           )        
 
 }

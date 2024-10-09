@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2016
+% # Copyright (C) 2024
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -32,12 +32,13 @@ in this top level function. It uses the defaults that are based on
 a "thin-plate spline" like model for the spatial estimator  
  and also uses \code{LKrigFindLambda} to estimate  some covariance parameters (sill and nugget variances)
 through likelihood maximization (i.e. estimates the measurement and process
-variances.) For the simplest "black box" use only the observations and their 2-d
+variances.) For the simplest "black box" use, only the observations and their 2-d
 locations need to be specified. But please see the caveats below in the Details
-section.
+section and also see the vignette \url{https://github.com/NCAR/LatticeKrig/tree/master/Vignette} for a gentle introduction. 
 
 Despite the simple syntax,
-LatticeKrig still takes advantage of the multi-resolution features of the basic 
+the LatticeKrig function still takes advantage of the
+multi-resolution features of the basic 
 \code{LKrig} function and any \code{LKrig} parameter can be passed through the
 function call. See the example below for varying the range parameter.
 Also, see \code{\link{LKinfo}} and\code{\link{LKrigSetup}}  for documentation on the complete object that
@@ -51,7 +52,7 @@ conditional simulation, and other parts of the spatial analysis. See
 
 
 \usage{
-LatticeKrig(x, y, Z = NULL, nlevel = 3, findAwght = FALSE, LKinfo = NULL,
+LatticeKrig(x, y, Z = NULL,weights = NULL, nlevel = 3, findAwght = FALSE, LKinfo = NULL,
  X=NULL, U=NULL, na.rm =
                  TRUE, tol = 0.005, verbose = FALSE, ...)
 \method{print}{LatticeKrig}( x, digits=4, ...)
@@ -74,7 +75,7 @@ Or for the function \code{print.LatticeKrig} \code{x} is the returned object fro
      \item{X}{For linear inverse problems the matrix that maps coefficients of the basis to the   
   	 predicted values of observations. X must be in spam format. To convert from spind or dense
   	 format  to spam format see \code{help(spam)} as an alternative  
-  	 \code{\link{spind2spam}}. See an example for this extension in the
+  	 \code{help(spind2spam)}. See an example for this extension in the
   	 \code{\link{LKrig}} help file. 
   	 } 
   	 
@@ -97,7 +98,9 @@ Or for the function \code{print.LatticeKrig} \code{x} is the returned object fro
 
  \item{tol}{Tolerance for the log likelihood used to judge convergence.}
 
- \item{verbose}{ If TRUE print out intermediate results. }
+ \item{verbose}{If TRUE print out intermediate results. }
+ \item{weights}{A weight vector to be used for the measurement error variance
+ This is in the same role as the weight vector in ordinary least squares fitting. I.e. the errors are assumed to have variances \code{tau^2/weights} where  \code{tau^2} is estimated by maximum likelihood if it is not specified.}
 
   \item{\dots}{Additional arguments to pass to LKrig. 
   The easiest way to pass a full specification is to create an LKinfo object beforehand and then just pass that (see example below.) This gives more control and the setup function will do some error checking on arguments. Also see help(LKrig) for a complete list of arguments to pass.  For convenience we note that  if you get some pesky memory warnings from spam
@@ -125,10 +128,10 @@ to reproduce the LatticeKrig estimate for smaller data sets and check computatio
 (See \code{\link{LKrig.cov}} with examples ).  Details on the basis functions and the Markov random field are given in the \code{\link{LKrig}}
 help function.  
 Throughout this package we assume the standard deviation of \eqn{e_k}
-is \code{sigma}
-and the marginal variance of  \eqn{h(x)} is \code{rho}. An important derived
-parameter of the spatial estimate is \code{lambda = sigma^2/ rho} the noise to 
-signal ratio. \code{sigma} and \code{rho} are estimated my restricted maximum
+is \code{tau}
+and the marginal variance of  \eqn{h(x)} is \code{sigma2}. An important derived
+parameter of the spatial estimate is \code{lambda = tau^2/ sigma2} the noise to 
+signal ratio. \code{tau} and \code{sigma2} are estimated my restricted maximum
 likelihood in \code{LatticeKrig}. 
  
 This top level function is built on the more basic function \code{\link{LKrig}}
@@ -154,9 +157,9 @@ spline. The smoothness mimics the Whittle covariance function (
 smoothness = 1 for the Matern).  (See \link{LKrig.cov.plot} to get a plot of
 the implied covariance function.) LatticeKrig also provides maximum likelihood 
 estimates
-of the measurement error standard deviation ("sigma") and process variance parameter ("rho") that are perhaps the 
+of the measurement error standard deviation ("tau") and process variance parameter ("sigma2") that are perhaps the 
 parameters that most effect the shape of the estimated spatial field. The ubiquitous
-parameter lambda throughout LatticeKrig is just the reparameterization lambda == sigma^2 / rho.
+parameter lambda throughout LatticeKrig is just the reparameterization lambda == tau^2 / sigma2.
 
 This top level function is pitched with all the caveats that
 statistical model assumptions should always be checked and applying
@@ -164,7 +167,7 @@ generic methods to a specific problems without checking the
 appropriateness can lead to misleading results. So plot your data and
 try several models. Details on the full
 computations can be found in the \code{LKrig} man page.
-The \code{lambda = sigma2/ rho} parameter in \code{LKrig} is essential to the
+The \code{lambda = tau^2/ sigma2} parameter in \code{LKrig} is essential to the
 Lattice Krig computation and an inappropriate value will result in
 over or under fitting and incorrect interpolated values. The function
 \code{LKrigFindLambda} is used within \code{LatticeKrig} to estimate a
@@ -213,7 +216,7 @@ and \code{fitted.values} in the returned object for these parts of the
 fitted spatial model. The component \code{LKinfo} has all the details
 that specify the basis functions and co variance model.
 The component \code{MLE} gives details of the likelihood evaluations to estimate 
-the sigma and rho parameters. 
+the tau and sigma2 parameters. 
 }
   
 \author{
@@ -242,13 +245,22 @@ LKrig, LKrig.setup, LKrigFindLambda, LKinfo, LKrig.sim.conditional
   points(x)
 # prediction standard errors
   out.se<- predictSE( obj, xnew= x)
+  
 # predict at observations:
+# here x can be any two column matrix of coordinates this
+# function returns a vector of predictions
   out.fhat<- predict( obj, xnew= x)
+  
 # conveniently predict on a 100X100 grid for plotting
+# use the grid.list arugment to give more control over the grid choice.
+# output object is the standard list with components x, y, and z
+# suitable for contour, persp, image, etc.
  out.surf<- predictSurface( obj, nx=100, ny=100)
 # image.plot( out.surf) 
 }
+
 # running an example by first setting up the model object
+# this is the main way to specify  the spatial model components 
 \dontrun{
 # this is just a small model to run quickly
 # compare the LKinfo object here  to one created implicitly:  obj$LKinfo

@@ -1,6 +1,6 @@
 % # LatticeKrig  is a package for analysis of spatial data written for
 % # the R software environment .
-% # Copyright (C) 2016
+% # Copyright (C) 2024
 % # University Corporation for Atmospheric Research (UCAR)
 % # Contact: Douglas Nychka, nychka@ucar.edu,
 % # National Center for Atmospheric Research, PO Box 3000, Boulder, CO 80307-3000
@@ -26,7 +26,7 @@
 \alias{omega2Awght}
 \alias{Awght2Omega}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Simple function to search over covariance parameters for Lattice Krig.}
+\title{Functions to search over covariance parameters in the LatticeKrig model.}
 \description{
 Given a list of different covariance parameters for the Lattice Krig
 covariance model this function computes the likelihood or a profiled
@@ -37,11 +37,10 @@ package to efficiently search through the LatticeKrig covariance
 parameter space.
 }
 \usage{
-LKrigFindLambda(x, y, ..., LKinfo,
-                            use.cholesky=NULL,                          
-                            lambda.profile=TRUE,
-                            lowerBoundLogLambda=-16,tol = 0.005,
-                            verbose=FALSE)
+LKrigFindLambda(x, y, Z = NULL, U = NULL, X = NULL, ..., LKinfo,
+                 use.cholesky = NULL, lambda.profile = TRUE,
+                 lowerBoundLogLambda = -16, tol = 0.005, verbose =
+                 FALSE)
 			    
 LKrigFindLambdaAwght(x, y, ..., LKinfo, use.cholesky = NULL,
                  lowerBoundLogLambda = -16, upperBoundLogLambda = 4,
@@ -111,8 +110,15 @@ geometry.}
 the different sets of parameters to evaluate. If M is the number of
 parameter setting to evaluate llambda is a vector length M and alpha
 and a.wght are matrices with M rows and nlevel columns.  Thus, the kth
-trial has parameters par.grid\$llambda[k], par.grid\$alpha[k,] and
-par.grid\$a.wght[k,]. Currently this function does not support passing
+trial has parameters
+
+\preformatted{
+par.grid$llambda[k]
+par.grid$alpha[k,]
+par.grid$a.wght[k,]
+}
+
+Currently this function does not support passing
 a non-stationary spatial parameterization for alpha. The LKinfo object
 details the other parts of the covariance specification (e.g. number
 of levels, grid sizes) that do not change.  Note that par.grid assumes
@@ -135,10 +141,15 @@ MLE.}
 \item{use.cholesky}{If not NULL then this object is used as the
 symbolic cholesky decomposition of the covariance matrix for computing
 the likelihood.}
-\item{x}{ The spatial locations.  }
+\item{U}{U matrix if an inverse problem model.}
+\item{x}{The spatial locations.}
+\item{X}{X matrix if an inverse problem model.}
 \item{y}{ The observations.  }
+\item{Z}{Matrix of additional covariates for fixe part of the model.}
 \item{\dots}{Any arguments to be passed to LKrig. E.g. \code{x},
-       \code{y}, \code{Z} a covariate or \code{weights}.}  }
+       \code{y}, \code{Z} a covariate or \code{weights}.}  
+       
+       }
 \details{
 
 \strong{LKrigFindLambda:} Uses a simple one dimensional optimizer 
@@ -154,10 +165,10 @@ range.
 repeated calls to the LKrig function to evaluate the profile
 likelihood and/or to optimize the likelihood over the lambda
 parameters. The main point is that maximization over the lambda
-parameter (or equivalently for sigma and rho) is the most important
+parameter (or equivalently for tau and sigma2) is the most important
 and should be done before considering variation of other parameters.  If
-lambda is specified then one has closed form expressions for sigma,
-rho that can then be substituted back into the log full
+lambda is specified then one has closed form expressions for tau,
+sigma2 that can then be substituted back into the log full
 likelihood. This operation that is the default throughout LatticeKrig
 (and fields) can concentrate the likelihood on a reduced set
 of parameters. The further refinement when \code{lambda.profile==TRUE}
@@ -180,7 +191,7 @@ starting value with the default starting value being lambda =1.0.
 In the second example below most of the coding is getting the grid of
 parameters to search in the right form.  It is useful to normalize the
 alpha parameters to sum to one so that the marginal variance of the
-process is only parameterized by rho.  To make this easy to implement
+process is only parameterized by sigma2.  To make this easy to implement
 there is the option to specify the alpha parameters in the form of a
 mixture model so that the components are positive and add to one (the
 gamma variable below). If a component \code{gamma} is passed as a
@@ -208,7 +219,11 @@ over different parameters combinations simple.
 
 \strong{omega2Awght, Awght2omega } Converts between the Awght parameter (the diagonal elements
 of the SAR matrix) and the omega parameter that provides an unconstrained range for optimization. 
-The link is \code{Awght <- LKinfo$floorAwght + exp(omega) * (xDimension)}. Note that LKinfo
+The link is 
+
+\preformatted{Awght <- LKinfo$floorAwght + exp(omega) * (xDimension)}.
+
+Note that LKinfo
 supplied the lower bound on the Awght because this is geometry/problem specific. For the 2-d rectangle
 this is 4. 
 
@@ -232,8 +247,8 @@ this is 4.
 \strong{LKrig.MLE}  
 
 \item{summary}{A matrix with columns: effective degrees of freedom, ln
-Profile likelihood, Generalized cross-validation function, MLE sigma,
-MLE rho, full likelihood and number of parameter evaluations. The
+Profile likelihood, Generalized cross-validation function, MLE tau,
+MLE sigma2, full likelihood and number of parameter evaluations. The
 rows correspond to the different parameters in the rows of the
 \code{par.grid} components. }
 
@@ -451,7 +466,7 @@ cbind( par.grid, out$summary[,1:5])
 
 N<- 200
 M<-50 # number of independent replicated fields
-sigma<- sqrt(.01)
+tau<- sqrt(.01)
 set.seed(123)
 x<- matrix( runif(N*2), N,2)
                 
@@ -463,12 +478,12 @@ LKinfo<- LKrigSetup( x, NC=16, nlevel=1,
 # the replicate fields
 truef<-  LKrig.sim(x,LKinfo=LKinfo, M=M )
 set.seed(222)
-error<- sigma*matrix( rnorm(N*M), N,M)
+error<- tau*matrix( rnorm(N*M), N,M)
 y<- truef + error 
 # with correct lambda
 obj<- LKrig( x,y, LKinfo=LKinfo, lambda=.01, )
-print( obj$sigma.MLE.FULL)
-print( obj$rho.MLE.FULL)
+print( obj$tau.MLE.FULL)
+print( obj$sigma2.MLE.FULL)
 
 fitMLE1<- LKrigFindLambda( x,y, LKinfo=LKinfo)
 fitMLE1$summary

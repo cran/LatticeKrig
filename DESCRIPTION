@@ -1,26 +1,19 @@
 Package: LatticeKrig
-Version: 8.4
-Date: 2019-11-08
+Version: 9.3.0
+Date: 2024-10-07
 Title: Multi-Resolution Kriging Based on Markov Random Fields
 Authors@R: c( 
             person("Douglas", "Nychka", role = c("aut", "cre"),
-               email = "nychka@ucar.edu"),
-            person("Dorit", "Hammerling", role = c("aut"),
-               email = "hammerling@samsi.info"),
-            person("Stephan", "Sain", role = "aut",
-               email = "sainsr2@gmail.comlls"),
-            person("Nathan", "Lenssen", role = "aut",
-               email = "lenssen@ucar.edu"),
-	    person("Colette", "Smirniotis", role = "aut",
-               email = "cmsmirni@gmail.com"),
-	    person("Matthew", "Iverson", role = "aut",
-               email = "miverson@mines.edu"),
-	    person("University Corporation for Atmospheric Research",
-               role="cph", email="nychka@ucar.edu")
-	       ) 
-Maintainer: Douglas Nychka <nychka@ucar.edu>
+               email = "nychka@mines.edu"),
+            person("Dorit", "Hammerling", role = c("aut")),
+            person("Stephan", "Sain", role = "aut"),
+            person("Nathan", "Lenssen", role = "aut"),    
+	    person("Colette", "Smirniotis", role = "aut"),     
+	    person("Matthew", "Iverson", role = "aut"),
+	    person("Antony", "Sikorski", role = "aut") )
+Maintainer: Douglas Nychka <nychka@mines.edu>
 Description: Methods for the interpolation of large spatial
-  datasets. This package follows a "fixed rank Kriging" approach but
+  datasets. This package uses a basis function approach that
   provides a surface fitting method
   that can approximate standard spatial data models.
   Using a large number of basis functions allows for estimates that
@@ -48,14 +41,16 @@ Description: Methods for the interpolation of large spatial
   (e.g. an integral) of the spatial process. Included are generic
   methods for prediction, standard errors for prediction, plotting of
   the estimated surface and conditional and unconditional simulation.
-  See the 'LatticeKrig' GitHub repository for a vignette of this package.
+  See the 'LatticeKrigRPackage' GitHub repository for a vignette of this
+  package.
   Development of this package was supported in part by the National
   Science Foundation  Grant 1417857 and the National Center for
   Atmospheric Research. 
 License: GPL (>= 2)
 URL: https://www.r-project.org
-Depends: R (>= 3.5.0), methods, spam, fields (>= 9.9)
-Packaged: 2019-11-08 23:20:37 UTC; nychka
+Depends: R (>= 4.0.0), methods, spam, spam64, fftwtools, fields (>=
+        9.9)
+Packaged: 2024-10-09 01:48:42 UTC; nychka
 NeedsCompilation: yes
 Author: Douglas Nychka [aut, cre],
   Dorit Hammerling [aut],
@@ -63,6 +58,6 @@ Author: Douglas Nychka [aut, cre],
   Nathan Lenssen [aut],
   Colette Smirniotis [aut],
   Matthew Iverson [aut],
-  University Corporation for Atmospheric Research [cph]
+  Antony Sikorski [aut]
 Repository: CRAN
-Date/Publication: 2019-11-09 15:40:03 UTC
+Date/Publication: 2024-10-09 21:40:02 UTC
