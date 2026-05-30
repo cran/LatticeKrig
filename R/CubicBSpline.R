@@ -22,29 +22,22 @@
 #
 ##END HEADER
 
-omega2Awght<- function( omega, LKinfo){
-  # NOTE: typically in 2D the paremeter used is
-  #  kappa where  a.wght=  4 + kappa^2
-  #  omega = log(kappa)
-  #
-  # for a rectangle this should be:
-  #  Awght <- 4 +  exp( omega)^2
-  # in general  a.wght =  2*dim + exp( dim*omega)
-  #
-  xDimension<- dim(LKinfo$x)[2]
-  Awght<- LKinfo$floorAwght + exp( omega * xDimension )
-  return( Awght )
+CubicBSpline <- function(d){
+  # cubic spline assuming knots at -1,-1/2,0,1/2, 1 and d is the distance from location to 
+  # the central knot.
+  # convert to unit knot spacing of -2,-1,0,1,2
+  d<- d*2 
+  # standardized cubic spline basis function
+  # only evaluate distances  <= 2 -- rest are zero. 
+  ind<- (abs(d) <= 2)
+  out<- rep( 0, length( d))
+  # only evaluate distances within 2 units of the the central knot (0).
+  dInd<- d[ind]
+  # piecewise cubic 
+  out[ind]<- 
+  (1/6) *(pmax(dInd + 2, 0)^3 - 4 * (pmax(dInd + 1, 0)^3) + 6 * (pmax(dInd, 0)^3) -
+                   4 * (pmax(dInd - 1, 0)^3)) 
+   return(out)
 }
 
-Awght2Omega<- function( Awght, LKinfo){
-  # for a rectangle this should be:
-  #  Awght <- 4 +  exp( omega)^2
-  # omega  <- log(  Awght - 4)/2
-  if( any(Awght <= LKinfo$floorAwght) ){
-    stop(paste("Awght is less than or equal to (lower limit) " ,
-               LKinfo$floorAwght) )
-  }
-  xDimension<- dim(LKinfo$x)[2]
-  omega<-  log(Awght - LKinfo$floorAwght)/xDimension
-  return( omega )
-}
+

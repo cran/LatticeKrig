@@ -22,38 +22,59 @@
 %
 %%END HEADER
 
-\name{VignetteExamples}
+\name{LatticeKrig internal}
 
-\alias{EquatorData}
-\alias{PolarData}
-\alias{equatorLocations}
-\alias{equatorValues}
-\alias{equatorGrid}
-\alias{equatorGridValues}
-\alias{polarLocations}
-\alias{polarValues}
-\alias{polarGrid}
-\alias{polarGridValues}
-\docType{data}
-\title{Data examples for the LatticeKrig Vignette}
-\description{
-Data sets used for  the R scripts in the vignette
- }
- \usage{
- data(EquatorData)
- data(PolarData)
- }
+\alias{create_awght_obj}
+\alias{generate_param_field}
+\alias{plot_cov_surface}
 
-
-\format{
- See Section 4 in the LatticeKrig Vignette for the use of these data.
- 
-\strong{EquatorData:}
-\code{equatorLocations equatorValues equatorGrid equatorGridValues}
-
-\strong{PolarData:}
-\code{polarLocations polarValues polarGrid polarGridValues}
-
+\title{
+  LatticeKrig internal and secondary functions 
 }
+\description{
+Listed below are supporting functions for some of the help file examples. 
+}
+\usage{
+plot_cov_surface(LKinfo, 
+    real_field,
+    loc_x, 
+    loc_y, 
+    plotting = TRUE, 
+    cov_contour = TRUE,
+    cov_lwd = 1.3,
+    nrows_advanced,
+    sGrid_advanced
+)
 
-\keyword{datasets}
+create_awght_obj(
+    sidelen, 
+    awght_config,
+    awght_override = FALSE,
+    awght_override_val,
+    theta_config, 
+    theta_override = FALSE,
+    theta_override_val,
+    rho_config,
+    rho_override = FALSE,
+    rho_override_val,
+    plotting = FALSE,
+    data_rows,
+     awghts,
+    low_awghts,
+    high_awghts
+)
+
+generate_param_field(
+    paramtype,
+    config,
+    sGrid,
+    rows,
+    columns,
+    n,
+     awghts,
+    low_awghts,
+    high_awghts)
+}
+\keyword{internal}
+% docclass is function
+% Converted by Sd2Rd version 1.21.
